@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'admin_dashboard_page.dart';
+import 'inventory_page.dart';
+import 'donation_management_page.dart';
+import 'user_tracking_page.dart';
+import 'requests_management_page.dart';
+
 
 void main() {
   runApp(const MyApp());
@@ -109,8 +115,79 @@ class _MyHomePageState extends State<MyHomePage> {
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
+
+            Container(
+              margin: const EdgeInsets.only(top: 20),
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AdminDashboardPage(),
+                    ),
+                  );
+                },
+                child: const Text("Go to Admin Dashboard"),
+              ),
+            ),
+            Container(
+              margin: const EdgeInsets.only(top: 20),
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const InventoryPage(),
+                    ),
+                  );
+                },
+                child: const Text("Go to Inventory Page"),
+              )),
+
+              Container(
+                margin: const EdgeInsets.only(top: 20),
+                child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DonationManagementPage(),
+                    ),
+                  );
+                },
+                child: const Text("Go to Donation Management Page"),
+              )),
+
+               Container(
+                margin: const EdgeInsets.only(top: 20),
+                child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const UserTrackingPage(),
+                    ),
+                  );
+                },
+                child: const Text("Go to User Tracking Page"),
+              )) ,
+                Container(
+                margin: const EdgeInsets.only(top: 20),
+                child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const RequestsManagementPage(),
+                    ),
+                  );
+                },
+                child: const Text("Go to Requests Management Page"),
+              ))
+              
           ],
         ),
+        
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _incrementCounter,
