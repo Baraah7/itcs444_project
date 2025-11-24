@@ -1,4 +1,10 @@
+import 'package:care_center_app/widgets/common_widgets.dart';
 import 'package:flutter/material.dart';
+import 'screens/equipment_detail_screen.dart';
+import 'screens/reservation_confirmation_screen.dart';
+import 'screens/reservation_tracking_screen.dart';
+import 'models/equipment_model.dart';
+import 'utils/theme.dart';
 
 void main() {
   runApp(const MyApp());
@@ -7,116 +13,159 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      title: 'Care Center - Equipment Rental',
+      theme: AppTheme.lightTheme,
+      debugShowCheckedModeBanner: false,
+      home: const HomeScreen(),
+      routes: {
+        '/equipment_detail': (context) {
+          final equipment = ModalRoute.of(context)!.settings.arguments as Equipment;
+          return EquipmentDetailScreen(equipment: equipment);
+        },
+        '/reservation_confirmation': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return ReservationConfirmationScreen(
+            equipment: args['equipment'] as Equipment,
+            startDate: args['startDate'] as DateTime,
+            endDate: args['endDate'] as DateTime,
+            duration: args['duration'] as int,
+          );
+        },
+        '/reservation_tracking': (context) => const ReservationTrackingScreen(),
+      },
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+  Equipment get _mockEquipment => Equipment(
+        id: '1',
+        name: 'Premium Wheelchair',
+        type: 'Wheelchair',
+        description: 'A comfortable and lightweight wheelchair with adjustable features. Perfect for daily use and outdoor activities. Features include padded seat, adjustable armrests, and foldable design for easy storage.',
+        imageUrls: [
+          'https://images.unsplash.com/photo-1512295091896-6845b0c2f8f8?w=400',
+          'https://images.unsplash.com/photo-1576675466969-38eeae4b41f6?w=400',
+        ],
+        condition: 'excellent',
+        quantity: 5,
+        availableQuantity: 3,
+        location: 'Downtown Care Center',
+        rentalPricePerDay: 15.99,
+        isRentable: true,
+        isDonated: false,
+        status: 'available',
+        tags: ['lightweight', 'adjustable', 'foldable'],
+        addedDate: DateTime.now().subtract(const Duration(days: 30)),
+      );
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text('Care Center Equipment'),
+        backgroundColor: AppTheme.primaryColor,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.receipt_long),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ReservationTrackingScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Equipment Reservation System',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textColor,
+              ),
+            ),
+            const SizedBox(height: 8),
             Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+              'Test the complete reservation flow for your task',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(height: 20),
+            
+            // Test Equipment Card
+            EquipmentCard(
+              name: _mockEquipment.name,
+              type: _mockEquipment.type,
+              imageUrl: _mockEquipment.imageUrls.isNotEmpty ? _mockEquipment.imageUrls.first : '',
+              condition: _mockEquipment.condition,
+              pricePerDay: _mockEquipment.rentalPricePerDay,
+              isAvailable: _mockEquipment.availableQuantity > 0,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EquipmentDetailScreen(equipment: _mockEquipment),
+                  ),
+                );
+              },
+            ),
+            
+            const SizedBox(height: 20),
+            
+            // Quick Navigation
+            const Text(
+              'Quick Navigation:',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            AppButton(
+              text: 'Start Reservation Flow',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EquipmentDetailScreen(equipment: _mockEquipment),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+            
+            AppButton(
+              text: 'View Reservation Tracking',
+              backgroundColor: AppTheme.secondaryColor,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ReservationTrackingScreen(),
+                  ),
+                );
+              },
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
