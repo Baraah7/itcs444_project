@@ -1,0 +1,1 @@
+// User data + roles (admin, renter, donor)
