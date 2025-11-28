@@ -1,0 +1,1 @@
+//Equipment details + availability status

@@ -1,0 +1,1 @@
+//Browse equipment + quick actions

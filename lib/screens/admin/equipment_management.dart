@@ -1,0 +1,1 @@
+//Add/edit/delete equipment
