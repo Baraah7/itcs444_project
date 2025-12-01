@@ -1,14 +1,11 @@
-//Browse equipment + quick actions
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../models/reservation_model.dart';
-import '../../models/equipment_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/reservation_provider.dart';
 import '../../providers/equipment_provider.dart';
+import '../../utils/theme.dart'; // Add this import
 import 'equipment_list.dart';
 import 'my_reservations.dart';
-import 'equipment_detail.dart';
 
 class UserDashboard extends StatefulWidget {
   const UserDashboard({super.key});
@@ -29,13 +26,11 @@ class _UserDashboardState extends State<UserDashboard> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    final reservationProvider = Provider.of<ReservationProvider>(context);
-    final equipmentProvider = Provider.of<EquipmentProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Equipment Rental'),
-        backgroundColor: Colors.blue[700],
+        title: const Text('Care Center Equipment Rental'),
+        backgroundColor: AppColors.primaryDark, // Use theme color
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -54,10 +49,12 @@ class _UserDashboardState extends State<UserDashboard> {
             _currentIndex = index;
           });
         },
+        selectedItemColor: AppColors.primaryBlue, // Use theme color
+        unselectedItemColor: AppColors.neutralGray, // Use theme color
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Equipment',
+            label: 'Home',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today),
@@ -89,8 +86,7 @@ class _UserDashboardState extends State<UserDashboard> {
             TextButton(
               onPressed: () async {
                 Navigator.of(context).pop();
-                await Provider.of<AuthProvider>(context, listen: false).logout();
-                // Navigate to login screen - you might want to use Navigator.pushReplacement
+                // Handle logout
               },
               child: const Text('Logout'),
             ),
@@ -116,14 +112,18 @@ class UserProfileScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 40,
-                    backgroundColor: Colors.blue,
-                    child: Icon(
+                    backgroundColor: AppColors.primaryBlue, // Use theme color
+                    child: const Icon(
                       Icons.person,
                       size: 40,
                       color: Colors.white,
@@ -131,7 +131,7 @@ class UserProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    user?.name ?? 'No Name',
+                    user?.name ?? 'John Doe',
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -139,7 +139,7 @@ class UserProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    user?.email ?? 'No Email',
+                    user?.email ?? 'john.doe@example.com',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey[600],
@@ -151,7 +151,7 @@ class UserProfileScreen extends StatelessWidget {
                       user?.role.toUpperCase() ?? 'USER',
                       style: const TextStyle(color: Colors.white),
                     ),
-                    backgroundColor: Colors.blue,
+                    backgroundColor: AppColors.primaryBlue, // Use theme color
                   ),
                 ],
               ),
@@ -159,6 +159,10 @@ class UserProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -179,7 +183,7 @@ class UserProfileScreen extends StatelessWidget {
                   _buildInfoRow(
                     Icons.verified,
                     user?.isEmailVerified == true ? 'Email Verified' : 'Email Not Verified',
-                    color: user?.isEmailVerified == true ? Colors.green : Colors.orange,
+                    color: user?.isEmailVerified == true ? AppColors.success : AppColors.warning,
                   ),
                 ],
               ),
@@ -187,6 +191,10 @@ class UserProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -235,14 +243,14 @@ class UserProfileScreen extends StatelessWidget {
   Widget _buildInfoRow(IconData icon, String text, {Color? color}) {
     return Row(
       children: [
-        Icon(icon, color: color ?? Colors.grey[600]),
+        Icon(icon, color: color ?? AppColors.neutralGray),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
             text,
             style: TextStyle(
               fontSize: 16,
-              color: color ?? Colors.grey[700],
+              color: color ?? AppColors.primaryDark,
             ),
           ),
         ),
@@ -258,8 +266,13 @@ class UserProfileScreen extends StatelessWidget {
         icon: Icon(icon),
         label: Text(text),
         style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primaryBlue,
+          foregroundColor: Colors.white,
           alignment: Alignment.centerLeft,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );

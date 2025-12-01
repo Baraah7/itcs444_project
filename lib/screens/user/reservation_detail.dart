@@ -2,245 +2,489 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/reservation_model.dart';
 import '../../providers/reservation_provider.dart';
+import '../../utils/theme.dart';
+import '../../widgets/reservation_card.dart';
 
-class ReservationDetailScreen extends StatelessWidget {
+class ReservationDetailScreen extends StatefulWidget {
   final Reservation reservation;
 
-  const ReservationDetailScreen({super.key, required this.reservation});
+  const ReservationDetailScreen({
+    Key? key,
+    required this.reservation,
+  }) : super(key: key);
+
+  @override
+  State<ReservationDetailScreen> createState() => _ReservationDetailScreenState();
+}
+
+class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
+  bool _isCancelling = false;
 
   @override
   Widget build(BuildContext context) {
+    final reservation = widget.reservation;
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reservation Details'),
-        backgroundColor: const Color(0xFF1976D2),
-        foregroundColor: Colors.white,
+        actions: [
+          if (reservation.canCancel)
+            IconButton(
+              icon: const Icon(Icons.cancel_outlined),
+              onPressed: () => _showCancelDialog(context, reservation),
+              tooltip: 'Cancel Reservation',
+            ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildStatusCard(),
-            const SizedBox(height: 16),
-            _buildEquipmentInfo(),
-            const SizedBox(height: 16),
-            _buildReservationDetails(),
-            const SizedBox(height: 16),
-            _buildPriceDetails(),
-            if (reservation.notes != null) ...[
-              const SizedBox(height: 16),
-              _buildNotesSection(),
-            ],
-            const SizedBox(height: 16),
-            _buildActionButtons(context),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusCard() {
-    return Card(
-      color: _getStatusColor(reservation.status),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Icon(
-              _getStatusIcon(reservation.status),
-              color: Colors.white,
-              size: 32,
+            // Reservation Card
+            ReservationCard(
+              reservation: reservation,
+              showUserInfo: true,
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _getStatusText(reservation.status),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+            
+            const SizedBox(height: 24),
+            
+            // Detailed Information
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.timeline, color: AppColors.primaryBlue),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Reservation Timeline',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _getStatusDescription(reservation.status),
-                    style: const TextStyle(
-                      color: Colors.white70,
+                    const SizedBox(height: 16),
+                    
+                    _buildTimelineItem(
+                      icon: Icons.create,
+                      title: 'Created',
+                      date: reservation.createdAt,
+                      description: 'Reservation request submitted',
+                      color: AppColors.neutralGray,
+                    ),
+                    
+                    if (reservation.approvedAt != null)
+                      _buildTimelineItem(
+                        icon: Icons.check_circle,
+                        title: 'Approved',
+                        date: reservation.approvedAt!,
+                        description: 'Admin approved your request',
+                        color: AppColors.success,
+                      ),
+                    
+                    if (reservation.checkedOutAt != null)
+                      _buildTimelineItem(
+                        icon: Icons.inventory,
+                        title: 'Checked Out',
+                        date: reservation.checkedOutAt!,
+                        description: 'Equipment picked up',
+                        color: Colors.blue,
+                      ),
+                    
+                    if (reservation.returnedAt != null)
+                      _buildTimelineItem(
+                        icon: Icons.assignment_returned,
+                        title: 'Returned',
+                        date: reservation.returnedAt!,
+                        description: 'Equipment returned successfully',
+                        color: Colors.purple,
+                      ),
+                    
+                    if (reservation.cancelledAt != null)
+                      _buildTimelineItem(
+                        icon: Icons.cancel,
+                        title: 'Cancelled',
+                        date: reservation.cancelledAt!,
+                        description: 'Reservation cancelled',
+                        color: AppColors.error,
+                      ),
+                    
+                    // Due Date Warning
+                    if (reservation.status == ReservationStatus.checkedOut)
+                      Container(
+                        margin: const EdgeInsets.only(top: 16),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: reservation.isOverdue
+                              ? AppColors.error.withOpacity(0.1)
+                              : Colors.amber.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: reservation.isOverdue
+                                ? AppColors.error
+                                : Colors.amber,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              reservation.isOverdue ? Icons.warning : Icons.schedule,
+                              color: reservation.isOverdue ? AppColors.error : Colors.amber,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    reservation.isOverdue
+                                        ? 'OVERDUE - URGENT'
+                                        : 'DUE SOON',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: reservation.isOverdue
+                                          ? AppColors.error
+                                          : Colors.amber,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    reservation.isOverdue
+                                        ? 'Equipment was due on ${reservation.formattedEndDate}. Please return immediately.'
+                                        : 'Equipment due in ${reservation.daysUntilDue} days (${reservation.formattedEndDate})',
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Contact Information
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.contact_support, color: AppColors.primaryBlue),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Contact Information',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    _buildContactItem(
+                      icon: Icons.person,
+                      label: 'Reserved By:',
+                      value: reservation.userName,
+                    ),
+                    
+                    _buildContactItem(
+                      icon: Icons.email,
+                      label: 'Email:',
+                      value: reservation.userEmail,
+                    ),
+                    
+                    _buildContactItem(
+                      icon: Icons.phone,
+                      label: 'Phone:',
+                      value: reservation.userPhone,
+                    ),
+                    
+                    const SizedBox(height: 12),
+                    
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.backgroundLight,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.info_outline, size: 16, color: Colors.blue),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'For any questions or changes, please contact the care center admin.',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            // Notes Section
+            if (reservation.notes != null && reservation.notes!.isNotEmpty)
+              Column(
+                children: [
+                  const SizedBox(height: 16),
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.note, color: AppColors.primaryBlue),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Your Notes',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.backgroundLight,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              reservation.notes!,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEquipmentInfo() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Equipment Information',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+            
+            // Admin Notes
+            if (reservation.adminNotes != null && reservation.adminNotes!.isNotEmpty)
+              Column(
+                children: [
+                  const SizedBox(height: 16),
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.admin_panel_settings, color: AppColors.primaryBlue),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Admin Notes',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                            ),
+                            child: Text(
+                              reservation.adminNotes!,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 12),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Container(
-                width: 50,
-                height: 50,
+            
+            // Action Buttons
+            if (reservation.canCancel)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Column(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _isCancelling ? null : () => _showCancelDialog(context, reservation),
+                        icon: const Icon(Icons.cancel_outlined),
+                        label: _isCancelling
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text('Cancel Reservation'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.error,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: const BorderSide(color: AppColors.error),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          // Contact support
+                        },
+                        icon: const Icon(Icons.support_agent),
+                        label: const Text('Contact Support'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            
+            // Status-specific instructions
+            if (reservation.status == ReservationStatus.approved)
+              Container(
+                margin: const EdgeInsets.only(top: 16),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(8.0),
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.green),
                 ),
-                child: const Icon(Icons.construction, color: Colors.grey),
-              ),
-              title: Text(
-                reservation.equipmentName,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.green),
+                        SizedBox(width: 8),
+                        Text(
+                          'Ready for Pickup',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Your reservation has been approved! Please visit the care center to pick up the equipment during business hours.',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Bring your ID and this reservation ID: ${reservation.id}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              subtitle: Text('Reservation ID: ${reservation.id}'),
-            ),
+            
+            const SizedBox(height: 32),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildReservationDetails() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Reservation Details',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            _buildDetailItem('Start Date', _formatDate(reservation.startDate)),
-            _buildDetailItem('End Date', _formatDate(reservation.endDate)),
-            _buildDetailItem('Duration', '${reservation.durationInDays} days'),
-            _buildDetailItem('Created Date', _formatDate(reservation.createdAt)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPriceDetails() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Price Details',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            _buildDetailItem('Total Amount', '\$${reservation.totalPrice.toStringAsFixed(2)}'),
-            _buildDetailItem('Payment Status', 'Paid', color: Colors.green),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNotesSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Additional Notes',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              reservation.notes!,
-              style: const TextStyle(fontSize: 16),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButtons(BuildContext context) {
-    return Consumer<ReservationProvider>(
-      builder: (context, reservationProvider, child) {
-        if (reservation.status != ReservationStatus.pending) {
-          return const SizedBox();
-        }
-
-        return Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () {
-                  _showCancelDialog(context, reservationProvider);
-                },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
-                  side: const BorderSide(color: Colors.red),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: const Text('Cancel Reservation'),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildDetailItem(String title, String value, {Color? color}) {
+  Widget _buildTimelineItem({
+    required IconData icon,
+    required String title,
+    required DateTime date,
+    required String description,
+    required Color color,
+  }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.only(bottom: 16.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.w500,
-              color: Colors.grey,
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+              border: Border.all(color: color),
             ),
+            child: Icon(icon, color: color, size: 20),
           ),
-          Text(
-            value,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: color ?? Colors.black,
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _formatDateTime(date),
+                  style: TextStyle(
+                    color: AppColors.neutralGray,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -248,117 +492,137 @@ class ReservationDetailScreen extends StatelessWidget {
     );
   }
 
-  void _showCancelDialog(BuildContext context, ReservationProvider reservationProvider) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Cancel Reservation'),
-          content: const Text('Are you sure you want to cancel this reservation? This action cannot be undone.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Keep Reservation'),
+  Widget _buildContactItem({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: AppColors.neutralGray),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                try {
-                  await reservationProvider.cancelReservation(reservation.id);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Reservation cancelled successfully'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                    Navigator.of(context).pop();
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Error cancelling reservation: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-              child: const Text(
-                'Cancel Reservation',
-                style: TextStyle(color: Colors.red),
-              ),
-            ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
     );
   }
 
-  String _getStatusText(ReservationStatus status) {
-    switch (status) {
-      case ReservationStatus.pending:
-        return 'Pending Approval';
-      case ReservationStatus.confirmed:
-        return 'Confirmed';
-      case ReservationStatus.active:
-        return 'Active';
-      case ReservationStatus.completed:
-        return 'Completed';
-      case ReservationStatus.cancelled:
-        return 'Cancelled';
+  String _formatDateTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final date = DateTime(dateTime.year, dateTime.month, dateTime.day);
+    
+    String dateStr;
+    if (date == today) {
+      dateStr = 'Today';
+    } else if (date == today.subtract(const Duration(days: 1))) {
+      dateStr = 'Yesterday';
+    } else if (date == today.add(const Duration(days: 1))) {
+      dateStr = 'Tomorrow';
+    } else {
+      dateStr = '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }
+    
+    final timeStr = '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    
+    return '$dateStr at $timeStr';
   }
 
-  String _getStatusDescription(ReservationStatus status) {
-    switch (status) {
-      case ReservationStatus.pending:
-        return 'Waiting for admin approval';
-      case ReservationStatus.confirmed:
-        return 'Your reservation has been confirmed';
-      case ReservationStatus.active:
-        return 'Equipment is currently in use';
-      case ReservationStatus.completed:
-        return 'Reservation has been completed';
-      case ReservationStatus.cancelled:
-        return 'This reservation has been cancelled';
-    }
+  void _showCancelDialog(BuildContext context, Reservation reservation) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancel Reservation'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Are you sure you want to cancel this reservation?'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Note: Cancellations may be subject to fees if made less than 24 hours before pickup.',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('No, Keep It'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _cancelReservation(reservation.id);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.error,
+            ),
+            child: const Text('Yes, Cancel'),
+          ),
+        ],
+      ),
+    );
   }
 
-  Color _getStatusColor(ReservationStatus status) {
-    switch (status) {
-      case ReservationStatus.pending:
-        return Colors.orange;
-      case ReservationStatus.confirmed:
-        return Colors.blue;
-      case ReservationStatus.active:
-        return Colors.green;
-      case ReservationStatus.completed:
-        return Colors.grey;
-      case ReservationStatus.cancelled:
-        return Colors.red;
-    }
-  }
+  Future<void> _cancelReservation(String reservationId) async {
+    setState(() {
+      _isCancelling = true;
+    });
 
-  IconData _getStatusIcon(ReservationStatus status) {
-    switch (status) {
-      case ReservationStatus.pending:
-        return Icons.pending_actions;
-      case ReservationStatus.confirmed:
-        return Icons.check_circle;
-      case ReservationStatus.active:
-        return Icons.play_circle_fill;
-      case ReservationStatus.completed:
-        return Icons.done_all;
-      case ReservationStatus.cancelled:
-        return Icons.cancel;
-    }
-  }
+    // Simulate API call
+    await Future.delayed(const Duration(seconds: 1));
 
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+    final reservationProvider = Provider.of<ReservationProvider>(context, listen: false);
+    reservationProvider.cancelReservation(reservationId);
+
+    setState(() {
+      _isCancelling = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Reservation cancelled successfully'),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+
+    // Navigate back after a delay
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (mounted) {
+      Navigator.pop(context);
+    }
   }
 }

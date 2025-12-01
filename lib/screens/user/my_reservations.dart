@@ -3,320 +3,526 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/reservation_model.dart';
 import '../../providers/reservation_provider.dart';
+import '../../utils/theme.dart';
+import '../../widgets/reservation_card.dart';
 import 'reservation_detail.dart';
 
 class MyReservationsScreen extends StatefulWidget {
-  const MyReservationsScreen({super.key});
+  const MyReservationsScreen({Key? key}) : super(key: key);
 
   @override
   State<MyReservationsScreen> createState() => _MyReservationsScreenState();
 }
 
 class _MyReservationsScreenState extends State<MyReservationsScreen> {
-  ReservationStatus _selectedFilter = ReservationStatus.pending;
+  int _selectedTab = 0;
+  bool _isLoading = false;
+  String _searchQuery = '';
+
+  final List<Map<String, dynamic>> _tabs = [
+    {'label': 'All', 'icon': Icons.list, 'filter': null},
+    {'label': 'Pending', 'icon': Icons.pending, 'filter': ReservationStatus.pending},
+    {'label': 'Approved', 'icon': Icons.check_circle, 'filter': ReservationStatus.approved},
+    {'label': 'Active', 'icon': Icons.inventory, 'filter': null}, // Special filter
+    {'label': 'Completed', 'icon': Icons.done_all, 'filter': null}, // Special filter
+  ];
 
   @override
   Widget build(BuildContext context) {
     final reservationProvider = Provider.of<ReservationProvider>(context);
+    final userReservations = reservationProvider.userReservations;
+    final stats = reservationProvider.getUserReservationStats();
+
+    // Filter reservations based on selected tab
+    List<Reservation> filteredReservations = _filterReservations(userReservations);
+    
+    // Apply search filter if query exists
+    if (_searchQuery.isNotEmpty) {
+      filteredReservations = filteredReservations.where((reservation) {
+        return reservation.equipmentName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+               reservation.id.toLowerCase().contains(_searchQuery.toLowerCase());
+      }).toList();
+    }
+
+    // Sort by date (newest first)
+    filteredReservations.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     return Scaffold(
-      body: Column(
-        children: [
-          _buildFilterTabs(),
-          Expanded(
-            child: _buildReservationsList(reservationProvider),
+      appBar: AppBar(
+        title: const Text('My Reservations'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _refreshData,
+            tooltip: 'Refresh',
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildFilterTabs() {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: ReservationStatus.values.map((status) {
-            return Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: FilterChip(
-                label: Text(_getStatusText(status)),
-                selected: _selectedFilter == status,
-                onSelected: (selected) {
-                  setState(() {
-                    _selectedFilter = status;
-                  });
-                },
+      body: Column(
+        children: [
+          // Search Bar
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Search reservations...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
+                ),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          setState(() {
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
               ),
-            );
-          }).toList(),
-        ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+            ),
+          ),
+
+          // Statistics Cards
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 5,
+              childAspectRatio: 0.8,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              children: [
+                _buildStatCard(
+                  context,
+                  'Total',
+                  stats['total'].toString(),
+                  Icons.list_alt,
+                  AppColors.primaryBlue,
+                ),
+                _buildStatCard(
+                  context,
+                  'Pending',
+                  stats['pending'].toString(),
+                  Icons.pending,
+                  Colors.orange,
+                ),
+                _buildStatCard(
+                  context,
+                  'Active',
+                  stats['active'].toString(),
+                  Icons.inventory,
+                  Colors.green,
+                ),
+                _buildStatCard(
+                  context,
+                  'Completed',
+                  stats['completed'].toString(),
+                  Icons.done_all,
+                  AppColors.success,
+                ),
+                _buildStatCard(
+                  context,
+                  'Cancelled',
+                  stats['cancelled'].toString(),
+                  Icons.cancel,
+                  AppColors.error,
+                ),
+              ],
+            ),
+          ),
+
+          // Tab Bar
+          SizedBox(
+            height: 50,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _tabs.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(left: 8.0, right: 8.0, top: 8.0),
+                  child: ChoiceChip(
+                    label: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(_tabs[index]['icon'], size: 16),
+                        const SizedBox(width: 4),
+                        Text(_tabs[index]['label']),
+                      ],
+                    ),
+                    selected: _selectedTab == index,
+                    selectedColor: AppColors.primaryBlue,
+                    labelStyle: TextStyle(
+                      color: _selectedTab == index ? Colors.white : AppColors.neutralGray,
+                    ),
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedTab = selected ? index : 0;
+                      });
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // Warnings
+          _buildWarnings(userReservations),
+
+          // Reservations List
+          Expanded(
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primaryBlue,
+                    ),
+                  )
+                : filteredReservations.isEmpty
+                    ? _buildEmptyState(_selectedTab, _searchQuery)
+                    : RefreshIndicator(
+                        onRefresh: _refreshData,
+                        color: AppColors.primaryBlue,
+                        child: ListView.separated(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: filteredReservations.length,
+                          separatorBuilder: (context, index) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final reservation = filteredReservations[index];
+                            return ReservationCard(
+                              reservation: reservation,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ReservationDetailScreen(
+                                      reservation: reservation,
+                                    ),
+                                  ),
+                                );
+                              },
+                              showActions: reservation.canCancel,
+                            );
+                          },
+                        ),
+                      ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Navigate to equipment list
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/equipment-list',
+            (route) => false,
+          );
+        },
+        backgroundColor: AppColors.primaryBlue,
+        foregroundColor: Colors.white,
+        child: const Icon(Icons.add),
+        tooltip: 'New Reservation',
       ),
     );
   }
 
-  Widget _buildReservationsList(ReservationProvider reservationProvider) {
-    final filteredReservations = reservationProvider.userReservations
-        .where((reservation) => reservation.status == _selectedFilter)
-        .toList();
-
-    if (reservationProvider.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+  List<Reservation> _filterReservations(List<Reservation> reservations) {
+    switch (_selectedTab) {
+      case 0: // All
+        return reservations;
+      case 1: // Pending
+        return reservations
+            .where((r) => r.status == ReservationStatus.pending)
+            .toList();
+      case 2: // Approved
+        return reservations
+            .where((r) => r.status == ReservationStatus.approved)
+            .toList();
+      case 3: // Active (Approved + Checked Out)
+        return reservations
+            .where((r) => r.status == ReservationStatus.approved || 
+                          r.status == ReservationStatus.checkedOut)
+            .toList();
+      case 4: // Completed (Returned + Cancelled)
+        return reservations
+            .where((r) => r.status == ReservationStatus.returned || 
+                          r.status == ReservationStatus.cancelled)
+            .toList();
+      default:
+        return reservations;
     }
+  }
 
-    if (filteredReservations.isEmpty) {
-      return Center(
+  Widget _buildStatCard(BuildContext context, String title, String value, IconData icon, Color color) {
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(8),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              _getStatusIcon(_selectedFilter),
-              size: 64,
-              color: Colors.grey,
-            ),
-            const SizedBox(height: 16),
+            Icon(icon, size: 20, color: color),
+            const SizedBox(height: 4),
             Text(
-              _getEmptyStateText(_selectedFilter),
-              style: const TextStyle(fontSize: 18, color: Colors.grey),
-              textAlign: TextAlign.center,
+              value,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 10,
+                color: AppColors.neutralGray,
+              ),
             ),
           ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
-      itemCount: filteredReservations.length,
-      itemBuilder: (context, index) {
-        final reservation = filteredReservations[index];
-        return _buildReservationCard(reservation);
-      },
-    );
-  }
-
-  Widget _buildReservationCard(Reservation reservation) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16.0),
-      elevation: 2,
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ReservationDetailScreen(
-                reservation: reservation,
-              ),
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      reservation.equipmentName,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(reservation.status),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      _getStatusText(reservation.status).toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _buildReservationDetailItem(
-                Icons.calendar_today,
-                '${_formatDate(reservation.startDate)} - ${_formatDate(reservation.endDate)}',
-              ),
-              const SizedBox(height: 6),
-              _buildReservationDetailItem(
-                Icons.access_time,
-                '${reservation.durationInDays} days',
-              ),
-              const SizedBox(height: 6),
-              _buildReservationDetailItem(
-                Icons.attach_money,
-                '\$${reservation.totalPrice.toStringAsFixed(2)}',
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Created: ${_formatDate(reservation.createdAt)}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  if (reservation.status == ReservationStatus.pending)
-                    TextButton(
-                      onPressed: () {
-                        _showCancelDialog(context, reservation.id);
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.red,
-                      ),
-                      child: const Text('Cancel'),
-                    ),
-                ],
-              ),
-            ],
-          ),
         ),
       ),
     );
   }
 
-  Widget _buildReservationDetailItem(IconData icon, String text) {
-    return Row(
+  Widget _buildWarnings(List<Reservation> reservations) {
+    final overdueReservations = reservations.where((r) => r.isOverdue).toList();
+    final pendingReservations = reservations.where((r) => r.status == ReservationStatus.pending).toList();
+    
+    return Column(
       children: [
-        Icon(icon, size: 16, color: Colors.grey[600]),
-        const SizedBox(width: 8),
-        Text(
-          text,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey[700],
+        // Overdue Warning
+        if (overdueReservations.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.error.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.error),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning, color: AppColors.error, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Overdue Equipment',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.error,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'You have ${overdueReservations.length} overdue item(s). Please return immediately to avoid penalties.',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.error,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
+
+        // Pending Approvals
+        if (pendingReservations.isNotEmpty && _selectedTab != 1)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.pending_actions, color: Colors.orange, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Pending Approvals',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.orange,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'You have ${pendingReservations.length} reservation(s) waiting for admin approval.',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.orange,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
       ],
     );
   }
 
-  void _showCancelDialog(BuildContext context, String reservationId) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Cancel Reservation'),
-          content: const Text('Are you sure you want to cancel this reservation?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('No'),
+  Widget _buildEmptyState(int tabIndex, String searchQuery) {
+    if (searchQuery.isNotEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.search_off,
+                size: 80,
+                color: AppColors.neutralGray.withOpacity(0.5),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'No matching reservations found',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Try a different search term or clear the search',
+                style: TextStyle(
+                  color: AppColors.neutralGray,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    String message = '';
+    String subtitle = '';
+    IconData icon = Icons.inventory_2_outlined;
+
+    switch (tabIndex) {
+      case 0:
+        message = 'No Reservations Yet';
+        subtitle = 'Browse equipment and make your first reservation';
+        icon = Icons.search;
+        break;
+      case 1:
+        message = 'No Pending Reservations';
+        subtitle = 'All your reservations have been processed';
+        icon = Icons.check_circle_outline;
+        break;
+      case 2:
+        message = 'No Approved Reservations';
+        subtitle = 'Your pending reservations are still under review';
+        icon = Icons.pending_actions;
+        break;
+      case 3:
+        message = 'No Active Reservations';
+        subtitle = 'You don\'t have any equipment checked out currently';
+        icon = Icons.inventory;
+        break;
+      case 4:
+        message = 'No Completed Reservations';
+        subtitle = 'Your rental history will appear here';
+        icon = Icons.history;
+        break;
+    }
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 80,
+              color: AppColors.neutralGray.withOpacity(0.5),
             ),
-            TextButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                try {
-                  await Provider.of<ReservationProvider>(context, listen: false)
-                      .cancelReservation(reservationId);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Reservation cancelled successfully'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Error: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-              child: const Text('Yes, Cancel'),
+            const SizedBox(height: 24),
+            Text(
+              message,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 12),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            if (tabIndex == 0)
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/equipment-list',
+                    (route) => false,
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryBlue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                ),
+                child: const Text('Browse Equipment'),
+              ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 
-  String _getStatusText(ReservationStatus status) {
-    switch (status) {
-      case ReservationStatus.pending:
-        return 'Pending';
-      case ReservationStatus.confirmed:
-        return 'Confirmed';
-      case ReservationStatus.active:
-        return 'Active';
-      case ReservationStatus.completed:
-        return 'Completed';
-      case ReservationStatus.cancelled:
-        return 'Cancelled';
-    }
-  }
+  Future<void> _refreshData() async {
+    setState(() {
+      _isLoading = true;
+    });
 
-  Color _getStatusColor(ReservationStatus status) {
-    switch (status) {
-      case ReservationStatus.pending:
-        return Colors.orange;
-      case ReservationStatus.confirmed:
-        return Colors.blue;
-      case ReservationStatus.active:
-        return Colors.green;
-      case ReservationStatus.completed:
-        return Colors.grey;
-      case ReservationStatus.cancelled:
-        return Colors.red;
-    }
-  }
+    // Simulate API call
+    await Future.delayed(const Duration(seconds: 1));
 
-  IconData _getStatusIcon(ReservationStatus status) {
-    switch (status) {
-      case ReservationStatus.pending:
-        return Icons.pending_actions;
-      case ReservationStatus.confirmed:
-        return Icons.check_circle_outline;
-      case ReservationStatus.active:
-        return Icons.play_circle_outline;
-      case ReservationStatus.completed:
-        return Icons.done_all;
-      case ReservationStatus.cancelled:
-        return Icons.cancel;
-    }
-  }
-
-  String _getEmptyStateText(ReservationStatus status) {
-    switch (status) {
-      case ReservationStatus.pending:
-        return 'No pending reservations';
-      case ReservationStatus.confirmed:
-        return 'No confirmed reservations';
-      case ReservationStatus.active:
-        return 'No active reservations';
-      case ReservationStatus.completed:
-        return 'No completed reservations';
-      case ReservationStatus.cancelled:
-        return 'No cancelled reservations';
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+    setState(() {
+      _isLoading = false;
+    });
   }
 }
