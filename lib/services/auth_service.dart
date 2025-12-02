@@ -10,6 +10,7 @@ class AuthService {
       FirebaseFirestore.instance.collection('users');
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
+<<<<<<< HEAD
   /// Upload profile image to Firebase Storage
   Future<String?> uploadProfileImage(File imageFile, String userId) async {
     try {
@@ -26,12 +27,20 @@ class AuthService {
 
   /// REGISTER USER (Auth + Firestore + Image)
   Future<AppUser?> registerUser(AppUser user, {File? profileImage}) async {
+=======
+  // ─────────────────────────────────────────────
+  // REGISTER USER
+  // ─────────────────────────────────────────────
+  Future<AppUser?> registerUser(AppUser user, String password) async {
+>>>>>>> 1af87b0e8dcab503301128a9e672f7ac5633563b
     try {
+      // Create account in FirebaseAuth
       UserCredential cred = await _auth.createUserWithEmailAndPassword(
         email: user.email,
-        password: user.password,
+        password: password,
       );
 
+<<<<<<< HEAD
       String? imageUrl;
       if (profileImage != null) {
         imageUrl = await uploadProfileImage(profileImage, cred.user!.uid);
@@ -54,12 +63,34 @@ class AuthService {
 
       await usersCollection.doc(cred.user!.uid).set(newUser.toMap());
       return newUser;
+=======
+      String uid = cred.user!.uid;
+
+      // Add user to Firestore
+      await usersCollection.doc(uid).set({
+        'CPR': user.cpr,
+        'email': user.email,
+        'firstName': user.firstName,
+        'lastName': user.lastName,
+        'phoneNumber': user.phoneNumber,
+        'role': user.role,
+        'contact_pref': user.contactPref,
+        'id': user.id,
+        'username': user.username,
+        'createdAt': DateTime.now(),
+      });
+
+      // return user with docId
+      return user.copyWith(docId: uid);
+
+>>>>>>> 1af87b0e8dcab503301128a9e672f7ac5633563b
     } catch (e) {
-      print("Register Error: $e");
+      print("❌ Registration error: $e");
       return null;
     }
   }
 
+<<<<<<< HEAD
   /// UPDATE PROFILE WITH IMAGE
   Future<String?> updateProfile(AppUser user, {File? profileImage}) async {
     try {
@@ -91,4 +122,72 @@ class AuthService {
   }
 
   // LOGIN and LOGOUT remain the same...
+=======
+  // ─────────────────────────────────────────────
+  // LOGIN USER
+  // ─────────────────────────────────────────────
+  Future<AppUser?> login(String email, String password) async {
+    try {
+      // Firebase authentication
+      UserCredential cred = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      String uid = cred.user!.uid;
+
+      // Fetch user data from Firestore
+      DocumentSnapshot snapshot = await usersCollection.doc(uid).get();
+
+      if (!snapshot.exists) return null;
+
+      return AppUser.fromFirestore(snapshot);
+
+    } catch (e) {
+      print("❌ Login error: $e");
+      return null;
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // LOGOUT USER
+  // ─────────────────────────────────────────────
+  Future<void> logout() async {
+    await _auth.signOut();
+  }
+
+  // ─────────────────────────────────────────────
+  // GET CURRENT USER DATA
+  // ─────────────────────────────────────────────
+  Future<AppUser?> fetchCurrentUser() async {
+    try {
+      User? user = _auth.currentUser;
+      if (user == null) return null;
+
+      DocumentSnapshot snapshot =
+          await usersCollection.doc(user.uid).get();
+
+      if (!snapshot.exists) return null;
+
+      return AppUser.fromFirestore(snapshot);
+
+    } catch (e) {
+      print("❌ Fetch user error: $e");
+      return null;
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // UPDATE USER DATA
+  // ─────────────────────────────────────────────
+  Future<bool> updateUser(AppUser updatedUser) async {
+    try {
+      await usersCollection.doc(updatedUser.docId).update(updatedUser.toMap());
+      return true;
+    } catch (e) {
+      print("❌ Update user error: $e");
+      return false;
+    }
+  }
+>>>>>>> 1af87b0e8dcab503301128a9e672f7ac5633563b
 }
