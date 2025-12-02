@@ -1,110 +1,86 @@
-//Current user + login state
-<<<<<<< HEAD
-// Manage current user state across the app
 // lib/providers/auth_provider.dart
-=======
->>>>>>> ad84b937b4b4d482bcedc774ccf75ecb50ff5a5b
 
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
 
-<<<<<<< HEAD
-  UserModel? _currentUser;
+  AppUser? _currentUser;
 
-  UserModel? get currentUser => _currentUser;
+  AppUser? get currentUser => _currentUser;
 
   bool get isLoggedIn => _currentUser != null;
-  bool get isAdmin => _currentUser?.role == 'admin';
-  bool get isRenter => _currentUser?.role == 'renter';
-  bool get isGuest => _currentUser?.role == 'guest';
+  bool get isAdmin => _currentUser?.role.toLowerCase() == 'admin';
+  bool get isRenter => _currentUser?.role.toLowerCase() == 'renter';
+  bool get isDonor => _currentUser?.role.toLowerCase() == 'donor';
+  bool get isGuest => _currentUser == null;
 
-  // Register user
-  Future<String?> registerUser(UserModel user, String password) async {
+  /// REGISTER USER
+  Future<String?> registerUser(AppUser user) async {
     try {
-      UserModel newUser = await _authService.registerUser(user, password);
-      _currentUser = newUser;
-      notifyListeners();
-      return null; // success
+      AppUser? newUser = await _authService.registerUser(user);
+      if (newUser != null) {
+        _currentUser = newUser;
+        notifyListeners();
+        return null; // success
+      } else {
+        return "Registration failed";
+      }
     } catch (e) {
-      return e.toString(); // return error message
+      return e.toString();
     }
   }
 
-  // Login user
+  /// LOGIN USER
   Future<String?> loginUser(String email, String password) async {
     try {
-      UserModel user = await _authService.loginUser(email, password);
-      _currentUser = user;
-      notifyListeners();
-      return null; // success
+      AppUser? user = await _authService.login(email, password);
+      if (user != null) {
+        _currentUser = user;
+        notifyListeners();
+        return null; // success
+      } else {
+        return "Login failed";
+      }
     } catch (e) {
-      return e.toString(); // return error message
+      return e.toString();
     }
   }
 
-  // Logout user
+  /// LOGOUT USER
   Future<void> logoutUser() async {
-    await _authService.logoutUser();
+    await _authService.logout();
     _currentUser = null;
     notifyListeners();
   }
 
-  // Update user profile
-  Future<String?> updateProfile(UserModel updatedUser) async {
+  /// UPDATE PROFILE
+  Future<String?> updateProfile(AppUser updatedUser) async {
     try {
-      await _authService.updateProfile(updatedUser);
+      // Update Firestore document
+      await _authService.usersCollection
+          .doc(updatedUser.docId)
+          .update(updatedUser.toMap());
+
       _currentUser = updatedUser;
       notifyListeners();
       return null; // success
     } catch (e) {
-      return e.toString(); // return error message
+      return e.toString();
     }
   }
 
-  // Reload current user from Firestore (optional)
+  /// RELOAD CURRENT USER
   Future<void> reloadUser() async {
-    if (_currentUser != null) {
-      UserModel user = await _authService.getUserById(_currentUser!.id);
-      _currentUser = user;
+    if (_currentUser != null && _currentUser!.docId != null) {
+      DocumentSnapshot snapshot = await _authService.usersCollection
+          .doc(_currentUser!.docId)
+          .get();
+      _currentUser = AppUser.fromFirestore(snapshot);
       notifyListeners();
     }
   }
-=======
-  AppUser? currentUser;
-  bool isLoading = false;
-
-  Future<bool> login(String email, String password) async {
-    isLoading = true;
-    notifyListeners();
-
-    currentUser = await _authService.login(email, password);
-
-    isLoading = false;
-    notifyListeners();
-
-    return currentUser != null;
-  }
-
-  Future<bool> register(AppUser user) async {
-    isLoading = true;
-    notifyListeners();
-
-    currentUser = await _authService.registerUser(user);
-
-    isLoading = false;
-    notifyListeners();
-
-    return currentUser != null;
-  }
-
-  Future<void> logout() async {
-    await _authService.logout();
-    currentUser = null;
-    notifyListeners();
-  }
->>>>>>> ad84b937b4b4d482bcedc774ccf75ecb50ff5a5b
 }
