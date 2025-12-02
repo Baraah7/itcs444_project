@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
+import 'providers/auth_provider.dart';
 
 void main() async {
-  // CRITICAL: Initialize Firebase BEFORE runApp
   WidgetsFlutterBinding.ensureInitialized();
-  
-  print('🚀 Starting Firebase initialization...');
-  try {
-    await Firebase.initializeApp();
-    print('✅✅✅ FIREBASE INITIALIZED SUCCESSFULLY! ✅✅✅');
-  } catch (e) {
-    print('❌❌❌ FIREBASE ERROR: $e ❌❌❌');
-    rethrow; // Show the actual error
-  }
-  
-  runApp(MyApp());
+  await Firebase.initializeApp();
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+      ],
+      child: MyApp(),
+    ),
+  );
 }
+
 
 
 
