@@ -10,7 +10,6 @@ class AuthService {
       FirebaseFirestore.instance.collection('users');
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
-<<<<<<< HEAD
   /// Upload profile image to Firebase Storage
   Future<String?> uploadProfileImage(File imageFile, String userId) async {
     try {
@@ -26,21 +25,13 @@ class AuthService {
   }
 
   /// REGISTER USER (Auth + Firestore + Image)
-  Future<AppUser?> registerUser(AppUser user, {File? profileImage}) async {
-=======
-  // ─────────────────────────────────────────────
-  // REGISTER USER
-  // ─────────────────────────────────────────────
-  Future<AppUser?> registerUser(AppUser user, String password) async {
->>>>>>> 1af87b0e8dcab503301128a9e672f7ac5633563b
+  Future<AppUser?> registerUser(AppUser user, String password, {File? profileImage}) async {
     try {
-      // Create account in FirebaseAuth
       UserCredential cred = await _auth.createUserWithEmailAndPassword(
         email: user.email,
         password: password,
       );
 
-<<<<<<< HEAD
       String? imageUrl;
       if (profileImage != null) {
         imageUrl = await uploadProfileImage(profileImage, cred.user!.uid);
@@ -56,41 +47,18 @@ class AuthService {
         role: user.role,
         contactPref: user.contactPref,
         id: user.id,
-        password: user.password,
         username: user.username,
         profileImageUrl: imageUrl,
       );
 
       await usersCollection.doc(cred.user!.uid).set(newUser.toMap());
       return newUser;
-=======
-      String uid = cred.user!.uid;
-
-      // Add user to Firestore
-      await usersCollection.doc(uid).set({
-        'CPR': user.cpr,
-        'email': user.email,
-        'firstName': user.firstName,
-        'lastName': user.lastName,
-        'phoneNumber': user.phoneNumber,
-        'role': user.role,
-        'contact_pref': user.contactPref,
-        'id': user.id,
-        'username': user.username,
-        'createdAt': DateTime.now(),
-      });
-
-      // return user with docId
-      return user.copyWith(docId: uid);
-
->>>>>>> 1af87b0e8dcab503301128a9e672f7ac5633563b
     } catch (e) {
-      print("❌ Registration error: $e");
+      print("Register Error: $e");
       return null;
     }
   }
 
-<<<<<<< HEAD
   /// UPDATE PROFILE WITH IMAGE
   Future<String?> updateProfile(AppUser user, {File? profileImage}) async {
     try {
@@ -109,7 +77,6 @@ class AuthService {
         role: user.role,
         contactPref: user.contactPref,
         id: user.id,
-        password: user.password,
         username: user.username,
         profileImageUrl: imageUrl,
       );
@@ -122,7 +89,6 @@ class AuthService {
   }
 
   // LOGIN and LOGOUT remain the same...
-=======
   // ─────────────────────────────────────────────
   // LOGIN USER
   // ─────────────────────────────────────────────
@@ -189,5 +155,4 @@ class AuthService {
       return false;
     }
   }
->>>>>>> 1af87b0e8dcab503301128a9e672f7ac5633563b
 }

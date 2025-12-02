@@ -2,11 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AppUser {
   final String? docId;
-<<<<<<< HEAD
-  final int cpr;
-=======
   final String cpr;
->>>>>>> 1af87b0e8dcab503301128a9e672f7ac5633563b
   final String email;
   final String firstName;
   final String lastName;
@@ -49,26 +45,7 @@ class AppUser {
     );
   }
 
-<<<<<<< HEAD
-  factory AppUser.fromMap(Map<String, dynamic> data, {String? docId}) {
-    return AppUser(
-      docId: docId,
-      cpr: data['CPR'] ?? 0,
-      email: data['Email'] ?? '',
-      firstName: data['First Name'] ?? '',
-      lastName: data['Last Name'] ?? '',
-      phoneNumber: data['Phone Number'] ?? 0,
-      role: data['Role'] ?? '',
-      contactPref: data['contact_pref'] ?? '',
-      id: data['id'] ?? 0,
-      password: data['password'] ?? '',
-      username: data['username'] ?? '',
-      profileImageUrl: data['profileImageUrl'],
-    );
-  }
 
-=======
->>>>>>> 1af87b0e8dcab503301128a9e672f7ac5633563b
   Map<String, dynamic> toMap() {
     return {
       'CPR': cpr,

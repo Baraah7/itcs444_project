@@ -24,7 +24,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     final user = context.read<AuthProvider>().currentUser;
     _nameController = TextEditingController(text: user?.username ?? '');
-    _contactController = TextEditingController(text: user?.phoneNumber.toString() ?? '');
+    _contactController = TextEditingController(text: user?.phoneNumber ?? '');
     _preferredContactController =
         TextEditingController(text: user?.contactPref ?? '');
   }
@@ -52,11 +52,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         email: currentUser.email,
         firstName: currentUser.firstName,
         lastName: currentUser.lastName,
-        phoneNumber: int.tryParse(_contactController.text.trim()) ?? currentUser.phoneNumber,
+        phoneNumber: _contactController.text.trim(),
         role: currentUser.role,
         contactPref: _preferredContactController.text.trim(),
         id: currentUser.id,
-        password: currentUser.password,
         username: _nameController.text.trim(),
         profileImageUrl: currentUser.profileImageUrl,
       );
