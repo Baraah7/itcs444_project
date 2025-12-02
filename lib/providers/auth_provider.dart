@@ -1,6 +1,9 @@
 //Current user + login state
+<<<<<<< HEAD
 // Manage current user state across the app
 // lib/providers/auth_provider.dart
+=======
+>>>>>>> ad84b937b4b4d482bcedc774ccf75ecb50ff5a5b
 
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
@@ -9,6 +12,7 @@ import '../services/auth_service.dart';
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
 
+<<<<<<< HEAD
   UserModel? _currentUser;
 
   UserModel? get currentUser => _currentUser;
@@ -69,4 +73,38 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+=======
+  AppUser? currentUser;
+  bool isLoading = false;
+
+  Future<bool> login(String email, String password) async {
+    isLoading = true;
+    notifyListeners();
+
+    currentUser = await _authService.login(email, password);
+
+    isLoading = false;
+    notifyListeners();
+
+    return currentUser != null;
+  }
+
+  Future<bool> register(AppUser user) async {
+    isLoading = true;
+    notifyListeners();
+
+    currentUser = await _authService.registerUser(user);
+
+    isLoading = false;
+    notifyListeners();
+
+    return currentUser != null;
+  }
+
+  Future<void> logout() async {
+    await _authService.logout();
+    currentUser = null;
+    notifyListeners();
+  }
+>>>>>>> ad84b937b4b4d482bcedc774ccf75ecb50ff5a5b
 }
