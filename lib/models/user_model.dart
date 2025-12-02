@@ -1,9 +1,7 @@
-// User data + roles (admin, renter, donor)
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AppUser {
-  final String? docId;          // Firestore document ID
+  final String? docId;
   final int cpr;
   final String email;
   final String firstName;
@@ -14,6 +12,7 @@ class AppUser {
   final int id;
   final String password;
   final String username;
+  final String? profileImageUrl; // New field
 
   AppUser({
     this.docId,
@@ -27,9 +26,9 @@ class AppUser {
     required this.id,
     required this.password,
     required this.username,
+    this.profileImageUrl,
   });
 
-  /// Convert Firestore DocumentSnapshot → AppUser model
   factory AppUser.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
 
@@ -45,10 +44,10 @@ class AppUser {
       id: data['id'] ?? 0,
       password: data['password'] ?? '',
       username: data['username'] ?? '',
+      profileImageUrl: data['profileImageUrl'], // Fetch URL
     );
   }
 
-  /// Convert Map → AppUser
   factory AppUser.fromMap(Map<String, dynamic> data, {String? docId}) {
     return AppUser(
       docId: docId,
@@ -62,10 +61,10 @@ class AppUser {
       id: data['id'] ?? 0,
       password: data['password'] ?? '',
       username: data['username'] ?? '',
+      profileImageUrl: data['profileImageUrl'],
     );
   }
 
-  /// Convert AppUser → Map<String, dynamic> for Firestore
   Map<String, dynamic> toMap() {
     return {
       'CPR': cpr,
@@ -78,6 +77,7 @@ class AppUser {
       'id': id,
       'password': password,
       'username': username,
+      'profileImageUrl': profileImageUrl, // Save URL
     };
   }
 }
