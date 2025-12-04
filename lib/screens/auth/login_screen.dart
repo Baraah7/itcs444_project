@@ -50,13 +50,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           fontWeight: FontWeight.w700,
                         ),
                   ),
-                  // const SizedBox(height: 8),
-                  // Text(
-                  //   "Enter your credentials to access your account",
-                  //   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  //         color: AppColors.neutralGray,
-                  //       ),
-                  // ),
                 ],
               ),
 
@@ -201,12 +194,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryDark,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
                         onPressed: authProvider.isLoading
                             ? null
                             : () async {
@@ -265,7 +252,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                 width: 24,
                                 child: CircularProgressIndicator(
                                   color: AppColors.primaryDark,
-                                  backgroundColor: AppColors.primaryDark,
                                   strokeWidth: 2.5,
                                 ),
                               )
@@ -274,13 +260,38 @@ class _LoginScreenState extends State<LoginScreen> {
                                 style: AppTextStyles.button.copyWith(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.backgroundLight
+                                  color: AppColors.primaryBlue
                                 ),
                               ),
                       ),
                     ),
 
                     const SizedBox(height: 32),
+
+                    // Register Link
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Don't have an account? ",
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.neutralGray,
+                              ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pushNamed(context, "/register");
+                          },
+                          child: Text(
+                            "Sign Up",
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: AppColors.primaryBlue,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
