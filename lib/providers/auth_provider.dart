@@ -8,9 +8,11 @@ class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
   AppUser? _currentUser;
   bool _isLoading = false;
-
-  AppUser? get currentUser => _currentUser;
+  String? _errorMessage;
+  
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+  AppUser? get currentUser => _currentUser;
   bool get isLoggedIn => _currentUser != null;
   bool get isAdmin => _currentUser?.role.toLowerCase() == 'admin';
   bool get isRenter => _currentUser?.role.toLowerCase() == 'renter';
@@ -41,7 +43,8 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> login(String email, String password) async {
+
+  Future<bool> login(String email, String password, {bool rememberMe = false}) async {
     try {
       _isLoading = true;
       notifyListeners();
