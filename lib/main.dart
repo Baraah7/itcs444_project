@@ -1,50 +1,84 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'providers/auth_provider.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/auth/register_screen.dart';
+import 'screens/user/user_dashboard.dart';
+import 'screens/admin/admin_dashboard.dart';
 
 void main() async {
-  // CRITICAL: Initialize Firebase BEFORE runApp
   WidgetsFlutterBinding.ensureInitialized();
-  
-  print('🚀 Starting Firebase initialization...');
-  try {
-    await Firebase.initializeApp();
-    print('✅✅✅ FIREBASE INITIALIZED SUCCESSFULLY! ✅✅✅');
-  } catch (e) {
-    print('❌❌❌ FIREBASE ERROR: $e ❌❌❌');
-    rethrow; // Show the actual error
-  }
-  
-  runApp(MyApp());
+  await Firebase.initializeApp();
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
-
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Care Center App',
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        appBar: AppBar(title: Text('Firebase Test')),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.check, color: Colors.green, size: 60),
-              SizedBox(height: 20),
-              Text(
-                'Firebase Test',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 10),
-              Text('If you see the green checkmark and no errors,\nFirebase is working!'),
-              SizedBox(height: 30),
-              Text('Check VS Code console for messages:'),
-              SizedBox(height: 10),
-              Text('✅ Should see: "FIREBASE INITIALIZED SUCCESSFULLY!"'),
-            ],
-          ),
-        ),
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: const RoleWrapper(),
+      routes: {
+        '/login': (_) => const LoginScreen(),
+        '/register': (_) => const RegisterScreen(),
+        '/user-dashboard': (_) => const UserDashboard(),
+        '/admin-dashboard': (_) => const AdminDashboard(),
+      },
     );
   }
 }
+
+
+
+
+class RoleWrapper extends StatelessWidget {
+  const RoleWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, auth, child) {
+        if (auth.isLoading) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        if (!auth.isLoggedIn) {
+          return const LoginScreen();
+        }
+
+        final user = auth.currentUser;
+        if (user == null) {
+          return const LoginScreen();
+        }
+
+        switch (user.role.toLowerCase()) {
+          case 'admin':
+            return const AdminDashboard();
+          case 'renter':
+          case 'donor':
+            return const UserDashboard();
+          default:
+            return const LoginScreen();
+        }
+      },
+    );
+  }
+}
+
+
