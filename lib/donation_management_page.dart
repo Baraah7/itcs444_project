@@ -258,16 +258,22 @@ class _DonationManagementPageState extends State<DonationManagementPage>
                       GestureDetector(
                         onTap: () async {
                           final picker = ImagePicker();
-                          final img =
-                              await picker.pickImage(source: ImageSource.gallery);
-                          if (img != null) {
-                            setModal(() => photos.add(img.path));
+                          final pickedFile = await picker.pickImage(
+                            source: ImageSource.gallery,
+                          );
+                          if (pickedFile != null) {
+                            setModal(() {
+                              photos.add(pickedFile.path);
+                            });
                           }
                         },
                         child: Container(
                           width: 70,
                           height: 70,
-                          color: Colors.grey[300],
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                           child: const Icon(Icons.add_a_photo),
                         ),
                       ),
@@ -283,24 +289,23 @@ class _DonationManagementPageState extends State<DonationManagementPage>
               ),
               ElevatedButton(
                 onPressed: () {
-                  setState(() {
-                    donations.add({
-                      "donor": donorController.text,
-                      "contact": contactController.text,
-                      "itemType": itemTypeController.text,
-                      "description": descController.text,
-                      "condition": conditionController.text,
-                      "photos": photos,
-                      "status": "Pending",
+                  if (donorController.text.isNotEmpty &&
+                      itemTypeController.text.isNotEmpty) {
+                    setState(() {
+                      donations.add({
+                        "donor": donorController.text,
+                        "contact": contactController.text,
+                        "itemType": itemTypeController.text,
+                        "description": descController.text,
+                        "condition": conditionController.text,
+                        "photos": photos,
+                        "status": "Pending"
+                      });
                     });
-                  });
-
-                  // TODO: Save to Firestore
-                  // FirebaseFirestore.instance.collection("donations").add({...});
-
-                  Navigator.pop(context);
+                    Navigator.pop(context);
+                  }
                 },
-                child: const Text("Submit"),
+                child: const Text("Add"),
               ),
             ],
           );
@@ -309,14 +314,12 @@ class _DonationManagementPageState extends State<DonationManagementPage>
     );
   }
 
-  // ====================================================
-  // Input Field Widget
-  // ====================================================
-  Widget _field(TextEditingController c, String label, {int maxLines = 1}) {
+  Widget _field(TextEditingController controller, String label,
+      {int maxLines = 1}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 10),
       child: TextField(
-        controller: c,
+        controller: controller,
         maxLines: maxLines,
         decoration: InputDecoration(
           labelText: label,

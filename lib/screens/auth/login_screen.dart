@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:itcs444_project/utils/theme.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../admin/admin_dashboard.dart';
 import '../user/user_dashboard.dart';
-<<<<<<< HEAD
-// optional
-=======
-import '../../utils/theme.dart';
->>>>>>> origin/Task1
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 

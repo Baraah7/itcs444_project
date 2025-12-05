@@ -274,59 +274,14 @@ class _UserDashboardState extends State<UserDashboard> {
             
             const SizedBox(height: 28),
 
-<<<<<<< HEAD
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _infoRow("Email", user?.email),
-                    _infoRow("Phone Number", user?.phoneNumber.toString()),
-                    _infoRow("Username", user?.username),
-                    _infoRow("Contact Preference", user?.contactPref),
-                    _infoRow("CPR", user?.cpr.toString()),
-                  ],
-                ),
-              ),
-            ),
-
-            SizedBox(height: 25),
-
-            // ROLE BASED ACTIONS
-            Text("Available Actions", 
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)
-            ),
-
-            SizedBox(height: 10),
-
-            if (auth.isAdmin || auth.isDonor)
-              _actionButton(
-                icon: Icons.add_business,
-                label: "Add Housing / Donation",
-                onPressed: () => print("Navigate to Add Housing Screen"),
-              ),
-
-            if (auth.isRenter)
-              _actionButton(
-                icon: Icons.home,
-                label: "Browse Available Housing",
-                onPressed: () => print("Navigate to Housing Listing Screen"),
-              ),
-
-            if (auth.isGuest)
-              _actionButton(
-                icon: Icons.info,
-                label: "View Public Listings",
-                onPressed: () => print("Guest Browse"),
-              ),
-=======
             // Featured Equipment
             _buildFeaturedEquipment(context),
             
             const SizedBox(height: 20),
->>>>>>> origin/Task1
           ],
         ),
       ),
-    )
+    );
   }
 
   Widget _buildWelcomeBanner(dynamic user) {
@@ -940,6 +895,54 @@ Widget _medicalEquipmentCard(BuildContext context, {
 
   void _openGuides() {
     // Implement guides
+  }
+
+  Widget _infoRow(String label, String? value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              '$label:',
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.neutralGray,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value ?? 'N/A',
+              style: const TextStyle(
+                color: AppColors.primaryDark,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon),
+        label: Text(label),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primaryBlue,
+          foregroundColor: Colors.white,
+        ),
+      ),
+    );
   }
 
 }
