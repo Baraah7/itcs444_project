@@ -34,7 +34,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _emailController = TextEditingController(text: user?.email ?? '');
     _phoneController = TextEditingController(text: user?.phoneNumber ?? '');
     _contactPrefController = TextEditingController(text: user?.contactPref ?? '');
-    _cprController = TextEditingController(text: user?.cpr?.toString() ?? '');
+    _cprController = TextEditingController(text: user?.cpr.toString() ?? '');
     _usernameController = TextEditingController(text: user?.username ?? '');
   }
 
@@ -106,7 +106,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _emailController.text = user?.email ?? '';
     _phoneController.text = user?.phoneNumber ?? '';
     _contactPrefController.text = user?.contactPref ?? '';
-    _cprController.text = user?.cpr?.toString() ?? '';
+    _cprController.text = user?.cpr.toString() ?? '';
     _usernameController.text = user?.username ?? '';
     
     setState(() => _isEditing = false);
@@ -195,7 +195,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    user?.role?.toUpperCase() ?? 'USER',
+                    user?.role.toUpperCase() ?? 'USER',
                     style: const TextStyle(
                       color: AppColors.primaryBlue,
                       fontWeight: FontWeight.w600,
@@ -221,10 +221,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _profileInfoRow("Username", user?.username ?? "Not provided"),
               _profileInfoRow("Email", user?.email ?? "Not provided"),
               _profileInfoRow("Phone", user?.phoneNumber ?? "Not provided"),
-              _profileInfoRow("CPR Number", user?.cpr?.toString() ?? "Not provided"),
+              _profileInfoRow("CPR Number", user?.cpr.toString() ?? "Not provided"),
               _profileInfoRow("Contact Preference", user?.contactPref ?? "Email"),
               _profileInfoRow("Member Since", "January 15, 2024"),
-              _profileInfoRow("User ID", user?.id?.toString() ?? "N/A"),
+              _profileInfoRow("User ID", user?.id.toString() ?? "N/A"),
             ],
           ),
           
