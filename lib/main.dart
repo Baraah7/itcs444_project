@@ -30,11 +30,6 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const RoleWrapper(),
-<<<<<<< HEAD
-      
-
-=======
->>>>>>> origin/Task1
       routes: {
         '/login': (_) => const LoginScreen(),
         '/register': (_) => const RegisterScreen(),
