@@ -72,10 +72,10 @@ class UserDashboard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _infoRow("Email", user?.email),
-                    _infoRow("Phone Number", user?.phoneNumber?.toString()),
+                    _infoRow("Phone Number", user?.phoneNumber.toString()),
                     _infoRow("Username", user?.username),
                     _infoRow("Contact Preference", user?.contactPref),
-                    _infoRow("CPR", user?.cpr?.toString()),
+                    _infoRow("CPR", user?.cpr.toString()),
                   ],
                 ),
               ),

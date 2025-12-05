@@ -141,8 +141,8 @@ class AdminDashboard extends StatelessWidget {
                   children: [
                     _infoRow("Email", admin?.email),
                     _infoRow("Username", admin?.username),
-                    _infoRow("Phone Number", admin?.phoneNumber?.toString()),
-                    _infoRow("CPR", admin?.cpr?.toString()),
+                    _infoRow("Phone Number", admin?.phoneNumber.toString()),
+                    _infoRow("CPR", admin?.cpr.toString()),
                     _infoRow("Contact Preference", admin?.contactPref),
                   ],
                 ),

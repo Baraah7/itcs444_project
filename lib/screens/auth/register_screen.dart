@@ -131,7 +131,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               // Role Dropdown
               DropdownButtonFormField(
-                value: selectedRole,
+                initialValue: selectedRole,
                 decoration: const InputDecoration(
                   labelText: "Role",
                   border: OutlineInputBorder(),
@@ -149,7 +149,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               // Contact Preference
               DropdownButtonFormField(
-                value: selectedContactPref,
+                initialValue: selectedContactPref,
                 decoration: const InputDecoration(
                   labelText: "Preferred Contact",
                   border: OutlineInputBorder(),

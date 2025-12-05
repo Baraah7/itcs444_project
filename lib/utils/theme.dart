@@ -23,11 +23,9 @@ class AppTheme {
     colorScheme: const ColorScheme.light(
       primary: AppColors.primaryBlue,
       secondary: AppColors.accentMauve,
-      background: AppColors.backgroundLight,
       surface: Colors.white,
       onPrimary: Colors.white,
       onSecondary: Colors.white,
-      onBackground: AppColors.primaryDark,
       onSurface: AppColors.primaryDark,
     ),
     

@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../admin/admin_dashboard.dart';
 import '../user/user_dashboard.dart';
-import '../shared/profile_screen.dart';  // optional
+// optional
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

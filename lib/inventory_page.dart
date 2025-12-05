@@ -244,7 +244,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
                 const SizedBox(height: 8),
                 DropdownButtonFormField(
-                  value: status,
+                  initialValue: status,
                   items: const [
                     DropdownMenuItem(value: "Available", child: Text("Available")),
                     DropdownMenuItem(value: "Rented", child: Text("Rented")),
