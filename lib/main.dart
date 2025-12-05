@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'providers/auth_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/user/user_dashboard.dart';
 import 'screens/admin/admin_dashboard.dart';
 
-// OPTIONAL: create a guest screen if needed
-// import 'screens/guest/guest_screen.dart';
-
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(
     MultiProvider(
       providers: [
@@ -19,7 +19,6 @@ void main() {
     ),
   );
 }
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -31,44 +30,60 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const RoleWrapper(),
+<<<<<<< HEAD
       
 
+=======
+>>>>>>> origin/Task1
       routes: {
         '/login': (_) => const LoginScreen(),
         '/register': (_) => const RegisterScreen(),
         '/user-dashboard': (_) => const UserDashboard(),
         '/admin-dashboard': (_) => const AdminDashboard(),
-        // '/guest': (_) => const GuestScreen(),
       },
     );
   }
 }
+
+
+
 
 class RoleWrapper extends StatelessWidget {
   const RoleWrapper({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context);
+    return Consumer<AuthProvider>(
+      builder: (context, auth, child) {
+        if (auth.isLoading) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
 
-    // ---------------------------------------------
-    // 1. Not logged in → Login Page
-    // ---------------------------------------------
-    if (!auth.isLoggedIn) {
-      return const LoginScreen();
-    }
+        if (!auth.isLoggedIn) {
+          return const LoginScreen();
+        }
 
-    // ---------------------------------------------
-    // 2. Logged in → choose dashboard by role
-    // ---------------------------------------------
-    if (auth.isAdmin) {
-      return const AdminDashboard();
-    } else if (auth.isRenter || auth.isDonor) {
-      return const UserDashboard();
-    } else {
-      // Default fallback for any other case
-      return const LoginScreen();
-    }
+        final user = auth.currentUser;
+        if (user == null) {
+          return const LoginScreen();
+        }
+
+        switch (user.role.toLowerCase()) {
+          case 'admin':
+            return const AdminDashboard();
+          case 'renter':
+          case 'donor':
+            return const UserDashboard();
+          default:
+            return const LoginScreen();
+        }
+      },
+    );
+
   }
 }
 
