@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.example.itcs444_project"
-    compileSdk = 34
+    compileSdk = 36
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
