@@ -53,18 +53,21 @@ class DonationFormState extends State<DonationForm> {
   IconData? _selectedIcon;
 
   Future<void> _pickIcon() async {
-    IconPickerIcon? icon = await showIconPicker(
+    final IconPickerIcon? icon = await showIconPicker(
       context,
       configuration: const SinglePickerConfiguration(
         title: Text('Pick an icon'),
         searchHintText: 'Search...',
         noResultsText: 'No results found',
+        iconPackModes: [IconPack.material, IconPack.cupertino],
       ),
     );
 
-    setState(() {
-      //_selectedIcon = icon?.iconData;
-    });
+    if (icon != null) {
+      setState(() {
+        _selectedIcon = icon.data;
+      });
+    }
   }
 
   final _picker = ImagePicker();
@@ -107,7 +110,7 @@ class DonationFormState extends State<DonationForm> {
             children: [
               const Text(
                 'Please fill out the following details.',
-                style: TextStyle(fontSize: 15),
+                style: TextStyle(fontSize: 18),
                 textAlign: TextAlign.left,
               ),
               Form(
@@ -202,26 +205,43 @@ class DonationFormState extends State<DonationForm> {
                     ListTile(
                       leading: const Text(
                         'Quantity:',
-                        style: TextStyle(fontSize: 15),
+                        style: TextStyle(fontSize: 18),
                       ),
-                      trailing: NumberPicker(
-                        value: quantity,
-                        minValue: 1,
-                        maxValue: 101,
-                        step: 1,
-                        itemWidth: 75,
-                        onChanged: (newValue) {
-                          setState(() {
-                            quantity = newValue;
-                            //print(quantity);
-                          });
-                        },
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black),
-                          borderRadius: BorderRadius.circular(5),
-                        ),
+                      trailing: Row(
+                        mainAxisSize:
+                            MainAxisSize.min, // 👈 THIS avoids layout errors
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.remove),
+                            onPressed: () {
+                              if (quantity > 1) {
+                                setState(() {
+                                  quantity--;
+                                });
+                              }
+                            },
+                          ),
+                          Text(
+                            '$quantity',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.add),
+                            onPressed: () {
+                              if (quantity < 101) {
+                                setState(() {
+                                  quantity++;
+                                });
+                              }
+                            },
+                          ),
+                        ],
                       ),
                     ),
+
                     TextFormField(
                       decoration: InputDecoration(
                         labelText: 'Description',
@@ -284,7 +304,10 @@ class DonationFormState extends State<DonationForm> {
 
                     // Icon picker
                     ListTile(
-                      leading: const Icon(Icons.article_sharp),
+                      leading: _selectedIcon != null
+                          ? Icon(_selectedIcon)
+                          : Icon(Icons.add),
+
                       title: const Text(
                         'You can choose icons describing the item here.',
                       ),
@@ -293,16 +316,12 @@ class DonationFormState extends State<DonationForm> {
                         child: const Text('Choose Icon'),
                       ),
                     ),
-                    if (_selectedIcon != null)
-                      Row(children: [Icon(_selectedIcon)]),
 
-                    // SUBMIT BUTTON
                     ElevatedButton(
                       onPressed: () async {
                         if (!formstate.currentState!.validate()) {
                           return;
                         }
-
                         // ensure dropdowns are selected
                         if (itemType.isEmpty || condition.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -316,13 +335,14 @@ class DonationFormState extends State<DonationForm> {
                         }
 
                         formstate.currentState!.save();
+                        List<String> imageUrls = [];
+                        if (images != null && images!.isNotEmpty) {
+                          imageUrls = await DonationService()
+                              .uploadDonationImages(images!);
+                        }
+                        int? iconCode = _selectedIcon?.codePoint;
 
                         try {
-                          List<String> imageUrls = [];
-                          if (images != null && images!.isNotEmpty) {
-                            imageUrls = await DonationService()
-                                .uploadDonationImages(images!);
-                          }
                           await DonationService().submitDonation(
                             itemName: itemName,
                             donorName: donorName,
@@ -334,6 +354,8 @@ class DonationFormState extends State<DonationForm> {
                             description: description,
                             quantity: quantity,
                             imagePaths: imageUrls,
+                            iconCode: iconCode,
+                            comments: comments,
                           );
 
                           ScaffoldMessenger.of(context).showSnackBar(

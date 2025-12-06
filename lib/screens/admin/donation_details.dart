@@ -42,6 +42,14 @@ class _DonationDetailsState extends State<DonationDetails> {
           }
 
           final d = snapshot.data!;
+          print('DEBUG imagePaths = ${d.imagePaths}');
+
+          final bool isPending = d.status == 'Pending';
+
+          final commentsText =
+              (d.comments == null || d.comments!.trim().isEmpty)
+              ? "N/A"
+              : d.comments!;
 
           return Padding(
             padding: const EdgeInsets.all(8),
@@ -61,12 +69,11 @@ class _DonationDetailsState extends State<DonationDetails> {
                         Text('Quantity: ${d.quantity ?? 1}'),
                         Text('Submitted on: ${d.submissionDate}'),
                         Text('Status: ${d.status}'),
-                        Text('Comments: ${d.comments ?? "N/A"}'),
+                        Text('Comments: $commentsText'),
                       ],
                     ),
                   ),
 
-                  // ⭐⭐⭐ ADDED IMAGE SECTION ⭐⭐⭐
                   if (d.imagePaths != null && d.imagePaths!.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -92,7 +99,6 @@ class _DonationDetailsState extends State<DonationDetails> {
                         ),
                       ),
                     ),
-                  // ⭐⭐⭐ END IMAGE SECTION ⭐⭐⭐
 
                   Row(
                     children: [
@@ -102,13 +108,23 @@ class _DonationDetailsState extends State<DonationDetails> {
                             Colors.greenAccent,
                           ),
                         ),
-                        onPressed: () async {
-                          await DonationService().approveDonation(d.id!);
-                          setState(() {
-                            _futureDonation =
-                                DonationService().fetchDonation(d.id!);
-                          });
-                        },
+                        onPressed: isPending
+                            ? () async {
+                                await DonationService().approveDonation(d.id!);
+                                setState(() {
+                                  _futureDonation = DonationService()
+                                      .fetchDonation(d.id!);
+                                });
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Donation approved successfully.',
+                                    ),
+                                  ),
+                                );
+                              }
+                            : null,
+
                         child: const Text('Approve'),
                       ),
                       ElevatedButton(
@@ -117,13 +133,23 @@ class _DonationDetailsState extends State<DonationDetails> {
                             Colors.redAccent,
                           ),
                         ),
-                        onPressed: () async {
-                          await DonationService().rejectDonation(d.id!);
-                          setState(() {
-                            _futureDonation =
-                                DonationService().fetchDonation(d.id!);
-                          });
-                        },
+                        onPressed: isPending
+                            ? () async {
+                                await DonationService().rejectDonation(d.id!);
+                                setState(() {
+                                  _futureDonation = DonationService()
+                                      .fetchDonation(d.id!);
+                                });
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Donation rejected successfully.',
+                                    ),
+                                  ),
+                                );
+                              }
+                            : null,
+
                         child: const Text('Reject'),
                       ),
                     ],

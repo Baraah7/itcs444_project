@@ -17,7 +17,6 @@ class _DonationListState extends State<DonationList> {
   List<String> filterOps = ['Pending', 'Approved', 'Rejected'];
   String? filterVal;
 
-  
   DateTime todaysDate = DateTime.now();
 
   @override
@@ -59,7 +58,10 @@ class _DonationListState extends State<DonationList> {
 
             Align(
               alignment: Alignment.topLeft,
-              child: Text('$filterVal Donations:', style: const TextStyle(fontSize: 20)),
+              child: Text(
+                filterVal == null ? 'All Donations:' : '$filterVal Donations:',
+                style: const TextStyle(fontSize: 20),
+              ),
             ),
 
             //donations
@@ -80,9 +82,6 @@ class _DonationListState extends State<DonationList> {
                   }
 
                   final allDonations = snapshot.data!;
-                  print(
-                    '✅ Fetched ${allDonations.length} donations from Firestore',
-                  );
 
                   // Optional: filter by status if you want only pending
                   final donations = allDonations
@@ -108,7 +107,15 @@ class _DonationListState extends State<DonationList> {
 
                       return Card(
                         child: ListTile(
-                          leading: const Icon(Icons.add),
+                          leading: Icon(
+                            IconData(
+                              d.iconCode ??
+                                  defaultIconCodes[d.itemType] ??
+                                  Icons.help_outline.codePoint,
+                              fontFamily: 'MaterialIcons',
+                            ),
+                          ),
+
                           title: Text('${d.itemType} Donation'),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,

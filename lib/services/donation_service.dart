@@ -7,6 +7,32 @@ class DonationService {
   final FirebaseFirestore db = FirebaseFirestore.instance;
   final FirebaseStorage storage = FirebaseStorage.instance;
 
+  Future<List<String>> uploadDonationImages(List<File> files) async {
+    final List<String> downloadUrls = [];
+
+    for (final file in files) {
+      try {
+        final millis = DateTime.now().millisecondsSinceEpoch;
+        final ref = storage.ref().child(
+          'donation_images/$millis-${file.path.split('/').last}',
+        );
+
+        final uploadTask = await ref.putFile(file);
+
+        if (uploadTask.state != TaskState.success) {
+          throw Exception('Upload failed for ${file.path}');
+        }
+
+        final url = await ref.getDownloadURL();
+        downloadUrls.add(url);
+      } on FirebaseException catch (e) {
+        print('❌ Error uploading image ${file.path}: $e');
+      }
+    }
+
+    return downloadUrls;
+  }
+
   // Submit donation with ALL fields including image paths
   Future<String> submitDonation({
     required String itemName,
@@ -22,6 +48,7 @@ class DonationService {
     DateTime? approvalDate,
     DateTime? rejectionDate,
     String? comments,
+    int? iconCode,
   }) async {
     try {
       // Create Donation object with ALL fields
@@ -39,6 +66,7 @@ class DonationService {
         approvalDate: approvalDate,
         rejectionDate: rejectionDate,
         comments: comments,
+        iconCode: iconCode,
       );
 
       // Save to Firestore
@@ -80,28 +108,63 @@ class DonationService {
 
   //approve donation
   Future<void> approveDonation(String donationID) async {
+    // 1) Update donation status
     final donationRef = db.collection('donations').doc(donationID);
     await donationRef.update({
       'status': 'Approved',
       'approvalDate': DateTime.now(),
     });
 
+    // 2) Read donation data
     final snapshot = await donationRef.get();
     if (!snapshot.exists) return;
 
     final donation = snapshot.data() as Map<String, dynamic>;
 
-    await db.collection('equipment').add({
+    final String itemType = (donation['itemType'] ?? '').toString();
+    if (itemType.isEmpty) {
+      print('❌ Cannot approve donation: itemType is empty');
+      return;
+    }
+
+    // Quantity: fall back to 1 if null / weird
+    int quantity = 1;
+    final rawQty = donation['quantity'];
+    if (rawQty is int) {
+      quantity = rawQty;
+    } else if (rawQty != null) {
+      quantity = int.tryParse(rawQty.toString()) ?? 1;
+    }
+
+    // 3) Reference: equipment/{itemType}/Items
+    final itemsCollection = db
+        .collection('equipment')
+        .doc(itemType)
+        .collection('Items');
+
+    // Data for each physical item
+    final baseData = {
       'name': donation['itemName'],
-      'type': donation['itemType'],
+      'type': itemType,
       'description': donation['description'],
       'condition': donation['condition'],
-      'quantity': donation['quantity'] ?? 1,
-      'status': 'Available', // Default equipment status
-      //'donatedBy': donation['donorName'], // Optional: track donor
+      'availability': true, // ✅ important
       'donatedOn': donation['submissionDate'],
-      'images': donation['imagePaths'] ?? [],
-    });
+      'imagePaths': donation['imagePaths'] ?? [],
+      'donationId': donationRef.id, // optional but useful
+    };
+
+    // 4) Create one document per physical item
+    final batch = db.batch();
+    for (var i = 0; i < quantity; i++) {
+      final itemDoc = itemsCollection.doc();
+      batch.set(itemDoc, baseData);
+    }
+    await batch.commit();
+
+    print(
+      '✅ Approved donation $donationID and added $quantity items under equipment/$itemType/Items',
+    );
   }
 
   //reject donation
@@ -111,24 +174,5 @@ class DonationService {
       'status': 'Rejected',
       'rejectionDate': DateTime.now(),
     });
-  }
-
-  //store images
-  Future<List<String>> uploadDonationImages(List<File> files) async {
-    final List<String> downloadUrls = [];
-
-    for (final file in files) {
-      final fileName = DateTime.now().millisecondsSinceEpoch.toString();
-      final ref = storage.ref().child('donation_images/$fileName.jpg');
-
-      // Upload file
-      await ref.putFile(file);
-
-      // Get public URL
-      final url = await ref.getDownloadURL();
-      downloadUrls.add(url);
-    }
-
-    return downloadUrls;
   }
 }
