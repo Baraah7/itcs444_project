@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_iconpicker/Models/configuration.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:itcs444_project/screens/admin/donation_management.dart';
 import 'package:itcs444_project/services/donation_service.dart';
 import 'package:flutter_iconpicker/flutter_iconpicker.dart';
 
@@ -372,7 +371,7 @@ class DonationFormState extends State<DonationForm> {
                       },
                       child: const Text('Submit Donation'),
                     ),
-                    ElevatedButton(
+                    /*ElevatedButton(
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -382,7 +381,7 @@ class DonationFormState extends State<DonationForm> {
                         );
                       },
                       child: Text('donation list'),
-                    ),
+                    ),*/
                   ],
                 ),
               ),

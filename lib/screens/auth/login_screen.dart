@@ -279,7 +279,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const DonationForm(),
+                              builder: (_) => const DonationForm(title: ''),
                             ),
                           );
                         },

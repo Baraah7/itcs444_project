@@ -6,7 +6,6 @@ import '../../utils/theme.dart';
 import '../shared/profile_screen.dart';
 import 'equipment_management.dart';
 import 'add_edit_equipment.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
