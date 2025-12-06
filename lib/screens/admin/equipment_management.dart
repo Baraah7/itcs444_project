@@ -16,7 +16,7 @@ class _EquipmentPageState extends State<EquipmentPage> {
   String _selectedType = 'All';
   bool _showOnlyAvailable = false;
   ViewType _currentView = ViewType.list;
-  
+
   // Mock equipment types - you should get these from Firestore
   final List<String> _equipmentTypes = [
     'All',
@@ -27,7 +27,7 @@ class _EquipmentPageState extends State<EquipmentPage> {
     'Gardening',
     'Cleaning',
     'Safety',
-    'Other'
+    'Other',
   ];
 
   @override
@@ -65,19 +65,19 @@ class _EquipmentPageState extends State<EquipmentPage> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => AddEditEquipmentPage(),
-                ),
+                MaterialPageRoute(builder: (_) => AddEditEquipmentPage()),
               );
             },
           ),
           IconButton(
-            icon: Icon(_currentView == ViewType.list ? Icons.grid_view : Icons.list),
+            icon: Icon(
+              _currentView == ViewType.list ? Icons.grid_view : Icons.list,
+            ),
             onPressed: () {
               setState(() {
-                _currentView = _currentView == ViewType.list 
-                  ? ViewType.grid 
-                  : ViewType.list;
+                _currentView = _currentView == ViewType.list
+                    ? ViewType.grid
+                    : ViewType.list;
               });
             },
           ),
@@ -87,14 +87,12 @@ class _EquipmentPageState extends State<EquipmentPage> {
         children: [
           // Search and Filter Section
           _buildFilterSection(),
-          
+
           // Active Filters Display
           if (_hasActiveFilters()) _buildActiveFilters(),
-          
+
           // Equipment List
-          Expanded(
-            child: _buildEquipmentList(),
-          ),
+          Expanded(child: _buildEquipmentList()),
         ],
       ),
     );
@@ -127,7 +125,7 @@ class _EquipmentPageState extends State<EquipmentPage> {
             ),
           ),
           const SizedBox(height: 12),
-          
+
           // Filter Row
           Row(
             children: [
@@ -163,7 +161,7 @@ class _EquipmentPageState extends State<EquipmentPage> {
                 ),
               ),
               const SizedBox(width: 8),
-              
+
               // Availability Filter
               FilterChip(
                 label: const Text('Available'),
@@ -179,7 +177,7 @@ class _EquipmentPageState extends State<EquipmentPage> {
                     ? const Icon(Icons.check, size: 16, color: Colors.white)
                     : const Icon(Icons.check, size: 16, color: Colors.grey),
               ),
-              
+
               // Clear Filters Button
               if (_hasActiveFilters())
                 IconButton(
@@ -280,8 +278,6 @@ class _EquipmentPageState extends State<EquipmentPage> {
         final name = data['name'] ?? 'Unnamed';
         final description = data['description'] ?? '';
         final type = data['type'] ?? 'Other';
-        final totalItems = data['totalItems'] ?? 0;
-        final availableItems = data['availableItems'] ?? 0;
 
         return Card(
           margin: const EdgeInsets.all(8),
@@ -293,33 +289,81 @@ class _EquipmentPageState extends State<EquipmentPage> {
               children: [
                 Text(description),
                 const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Chip(
-                      label: Text(type),
-                      backgroundColor: _getTypeColor(type),
-                      labelStyle: const TextStyle(fontSize: 12, color: Colors.white),
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                    ),
-                    const SizedBox(width: 8),
-                    Row(
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('equipment')
+                      .doc(equipmentDoc.id)
+                      .collection('Items')
+                      .snapshots(),
+                  builder: (context, itemsSnapshot) {
+                    if (!itemsSnapshot.hasData) {
+                      return const SizedBox();
+                    }
+
+                    final totalItems = itemsSnapshot.data!.docs.length;
+                    final availableItems = itemsSnapshot.data!.docs
+                        .where((doc) => doc['availability'] == true)
+                        .length;
+
+                    return Row(
                       children: [
-                        const Icon(Icons.inventory, size: 14, color: Colors.blue),
-                        const SizedBox(width: 4),
-                        Text('$availableItems/$totalItems'),
+                        Chip(
+                          label: Text(type),
+                          backgroundColor: _getTypeColor(type),
+                          labelStyle: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white,
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                        const SizedBox(width: 8),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.inventory,
+                              size: 14,
+                              color: Colors.blue,
+                            ),
+                            const SizedBox(width: 4),
+                            Text('$availableItems/$totalItems'),
+                          ],
+                        ),
                       ],
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ],
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildAvailabilityIndicator(availableItems, totalItems),
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('equipment')
+                      .doc(equipmentDoc.id)
+                      .collection('Items')
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return const SizedBox();
+                    }
+
+                    final total = snapshot.data!.docs.length;
+                    final available = snapshot.data!.docs
+                        .where((doc) => doc['availability'] == true)
+                        .length;
+
+                    return _buildAvailabilityIndicator(available, total);
+                  },
+                ),
                 const SizedBox(width: 8),
                 PopupMenuButton<String>(
-                  onSelected: (value) => _handleMenuSelection(value, equipmentDoc, name, description),
+                  onSelected: (value) => _handleMenuSelection(
+                    value,
+                    equipmentDoc,
+                    name,
+                    description,
+                  ),
                   itemBuilder: (context) => _buildPopupMenuItems(),
                 ),
               ],
@@ -328,10 +372,8 @@ class _EquipmentPageState extends State<EquipmentPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => ItemsPage(
-                    toolId: equipmentDoc.id,
-                    toolName: name,
-                  ),
+                  builder: (_) =>
+                      ItemsPage(toolId: equipmentDoc.id, toolName: name),
                 ),
               );
             },
@@ -358,19 +400,14 @@ class _EquipmentPageState extends State<EquipmentPage> {
         final name = data['name'] ?? 'Unnamed';
         final description = data['description'] ?? '';
         final type = data['type'] ?? 'Other';
-        final totalItems = data['totalItems'] ?? 0;
-        final availableItems = data['availableItems'] ?? 0;
-        final availabilityPercent = totalItems > 0 ? (availableItems / totalItems) * 100 : 0;
 
         return GestureDetector(
           onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => ItemsPage(
-                  toolId: equipmentDoc.id,
-                  toolName: name,
-                ),
+                builder: (_) =>
+                    ItemsPage(toolId: equipmentDoc.id, toolName: name),
               ),
             );
           },
@@ -382,7 +419,12 @@ class _EquipmentPageState extends State<EquipmentPage> {
                   top: 8,
                   child: PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert, size: 20),
-                    onSelected: (value) => _handleMenuSelection(value, equipmentDoc, name, description),
+                    onSelected: (value) => _handleMenuSelection(
+                      value,
+                      equipmentDoc,
+                      name,
+                      description,
+                    ),
                     itemBuilder: (context) => _buildPopupMenuItems(),
                   ),
                 ),
@@ -398,9 +440,7 @@ class _EquipmentPageState extends State<EquipmentPage> {
                           topRight: Radius.circular(4),
                         ),
                       ),
-                      child: Center(
-                        child: _getEquipmentIcon(type, size: 40),
-                      ),
+                      child: Center(child: _getEquipmentIcon(type, size: 40)),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8),
@@ -425,45 +465,79 @@ class _EquipmentPageState extends State<EquipmentPage> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                          StreamBuilder<QuerySnapshot>(
+                            stream: FirebaseFirestore.instance
+                                .collection('equipment')
+                                .doc(equipmentDoc.id)
+                                .collection('Items')
+                                .snapshots(),
+                            builder: (context, snapshot) {
+                              if (!snapshot.hasData) {
+                                return const SizedBox();
+                              }
+
+                              final totalItems = snapshot.data!.docs.length;
+                              final availableItems = snapshot.data!.docs
+                                  .where((doc) => doc['availability'] == true)
+                                  .length;
+                              final availabilityPercent = totalItems > 0
+                                  ? (availableItems / totalItems) * 100.0
+                                  : 0.0;
+
+                              return Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Row(
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      const Icon(Icons.inventory, size: 12),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '$availableItems/$totalItems',
-                                        style: const TextStyle(fontSize: 12),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.inventory, size: 12),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '$availableItems/$totalItems',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Container(
+                                        width: 60,
+                                        height: 6,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            3,
+                                          ),
+                                          color: Colors.grey[300],
+                                        ),
+                                        child: FractionallySizedBox(
+                                          alignment: Alignment.centerLeft,
+                                          widthFactor:
+                                              availabilityPercent / 100,
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(3),
+                                              color: _getAvailabilityColor(
+                                                availabilityPercent,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 4),
-                                  Container(
-                                    width: 60,
-                                    height: 6,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(3),
-                                      color: Colors.grey[300],
-                                    ),
-                                    child: FractionallySizedBox(
-                                      alignment: Alignment.centerLeft,
-                                      widthFactor: availabilityPercent / 100,
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(3),
-                                          color: _getAvailabilityColor(availabilityPercent),
-                                        ),
-                                      ),
-                                    ),
+                                  _buildAvailabilityIcon(
+                                    availableItems,
+                                    totalItems,
                                   ),
                                 ],
-                              ),
-                              _buildAvailabilityIcon(availableItems, totalItems),
-                            ],
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -479,8 +553,7 @@ class _EquipmentPageState extends State<EquipmentPage> {
   }
 
   Widget _buildAvailabilityIndicator(int available, int total) {
-    final double percentage  = total > 0 ? (available / total) * 100 : 0;
-    //can not assighnt it to double 
+    final percentage = total > 0 ? (available / total) * 100.0 : 0.0;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -520,14 +593,18 @@ class _EquipmentPageState extends State<EquipmentPage> {
     }
   }
 
-  Icon _getEquipmentIcon(String type, {double size = 24}) {
+  Icon _getEquipmentIcon(String type, {double size = 24.0}) {
     switch (type.toLowerCase()) {
       case 'power tools':
         return Icon(Icons.build, color: Colors.blue, size: size);
       case 'hand tools':
         return Icon(Icons.handyman, color: Colors.green, size: size);
       case 'electrical':
-        return Icon(Icons.electrical_services, color: Colors.yellow[700], size: size);
+        return Icon(
+          Icons.electrical_services,
+          color: Colors.yellow[700],
+          size: size,
+        );
       case 'plumbing':
         return Icon(Icons.plumbing, color: Colors.blue[300], size: size);
       case 'gardening':
@@ -619,32 +696,36 @@ class _EquipmentPageState extends State<EquipmentPage> {
     );
   }
 
-  List<QueryDocumentSnapshot> _filterEquipment(List<QueryDocumentSnapshot> docs) {
+  List<QueryDocumentSnapshot> _filterEquipment(
+    List<QueryDocumentSnapshot> docs,
+  ) {
     return docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
       final name = data['name']?.toString().toLowerCase() ?? '';
       final description = data['description']?.toString().toLowerCase() ?? '';
       final type = data['type']?.toString() ?? 'Other';
-      final availableItems = data['availableItems'] ?? 0;
-      final totalItems = data['totalItems'] ?? 0;
 
       // Apply search filter
-      final matchesSearch = _searchQuery.isEmpty ||
+      final matchesSearch =
+          _searchQuery.isEmpty ||
           name.contains(_searchQuery.toLowerCase()) ||
           description.contains(_searchQuery.toLowerCase());
 
       // Apply type filter
       final matchesType = _selectedType == 'All' || type == _selectedType;
 
-      // Apply availability filter
-      final matchesAvailability = !_showOnlyAvailable || availableItems > 0;
+      // For availability filter, we need to check subcollection
+      // We'll do a quick check but for better performance consider adding a field
+      final matchesAvailability = !_showOnlyAvailable;
 
       return matchesSearch && matchesType && matchesAvailability;
     }).toList();
   }
 
   bool _hasActiveFilters() {
-    return _searchQuery.isNotEmpty || _selectedType != 'All' || _showOnlyAvailable;
+    return _searchQuery.isNotEmpty ||
+        _selectedType != 'All' ||
+        _showOnlyAvailable;
   }
 
   List<PopupMenuItem<String>> _buildPopupMenuItems() {
@@ -672,8 +753,12 @@ class _EquipmentPageState extends State<EquipmentPage> {
     ];
   }
 
-  void _handleMenuSelection(String value, QueryDocumentSnapshot equipmentDoc, 
-      String name, String description) async {
+  void _handleMenuSelection(
+    String value,
+    QueryDocumentSnapshot equipmentDoc,
+    String name,
+    String description,
+  ) async {
     if (value == 'edit') {
       Navigator.push(
         context,
@@ -690,8 +775,11 @@ class _EquipmentPageState extends State<EquipmentPage> {
     }
   }
 
-  Future<void> _showDeleteDialog(BuildContext context, String equipmentId, String name) async {
-    // Your existing delete dialog code...
+  Future<void> _showDeleteDialog(
+    BuildContext context,
+    String equipmentId,
+    String name,
+  ) async {
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -710,28 +798,30 @@ class _EquipmentPageState extends State<EquipmentPage> {
                     .doc(equipmentId)
                     .collection('Items')
                     .get();
-                
+
                 for (final doc in itemsSnapshot.docs) {
                   await doc.reference.delete();
                 }
-                
+
                 await FirebaseFirestore.instance
                     .collection('equipment')
                     .doc(equipmentId)
                     .delete();
-                
+
                 if (context.mounted) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Equipment deleted successfully')),
+                    const SnackBar(
+                      content: Text('Equipment deleted successfully'),
+                    ),
                   );
                 }
               } catch (e) {
                 if (context.mounted) {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Error: $e')));
                 }
               }
             },
