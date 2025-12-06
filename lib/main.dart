@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
+import 'screens/shared/donation_form.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,14 +19,14 @@ void main() async {
 }
 
 
-
-
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
+      home: DonationForm(title: '',)
+      
+      /*Scaffold(
         appBar: AppBar(title: Text('Firebase Test')),
         body: Center(
           child: Column(
@@ -46,7 +47,7 @@ class MyApp extends StatelessWidget {
             ],
           ),
         ),
-      ),
+      )*/,
     );
   }
 }
