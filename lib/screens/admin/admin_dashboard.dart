@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/theme.dart';
 import '../shared/profile_screen.dart';
+import 'equipment_management.dart';
+
+  
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -895,6 +898,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   void _navigateToAddEquipment() {
     // Implement add equipment navigation
+   Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const EquipmentPage(),
+      ),
+    );
+    
   }
 
   void _navigateToAddUser() {

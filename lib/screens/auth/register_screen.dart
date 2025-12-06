@@ -161,7 +161,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         
                 // Role Dropdown
                 DropdownButtonFormField(
-                  value: selectedRole,
+                  initialValue: selectedRole,
                   decoration: _inputStyle("Select Role", Icons.work),
                   items: const [
                     DropdownMenuItem(value: "Renter", child: Text("Renter")),
@@ -175,7 +175,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         
                 // Contact Preference
                 DropdownButtonFormField(
-                  value: selectedContactPref,
+                  initialValue: selectedContactPref,
                   decoration:
                       _inputStyle("Preferred Contact", Icons.settings_phone),
                   items: const [

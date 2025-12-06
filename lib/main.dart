@@ -6,6 +6,7 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/user/user_dashboard.dart';
 import 'screens/admin/admin_dashboard.dart';
+import 'screens/admin/equipment_management.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,12 +30,14 @@ class MyApp extends StatelessWidget {
       title: 'Care Center App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: const RoleWrapper(),
+      //home: const RoleWrapper(),
+      home: const EquipmentPage(),
       routes: {
         '/login': (_) => const LoginScreen(),
         '/register': (_) => const RegisterScreen(),
         '/user-dashboard': (_) => const UserDashboard(),
         '/admin-dashboard': (_) => const AdminDashboard(),
+        '/equipment-management': (_) => const EquipmentPage(),
       },
     );
   }
