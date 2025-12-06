@@ -1,4 +1,4 @@
 {
     "java.configuration.updateBuildConfiguration": "interactive",
-    "cmake.ignoreCMakeListsMissing": true
+    "cmake.sourceDirectory": "C:/Users/User/Documents/Code/itcs444_project/windows/flutter"
 }
