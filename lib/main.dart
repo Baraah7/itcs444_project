@@ -7,16 +7,35 @@ import 'screens/auth/register_screen.dart';
 import 'screens/user/user_dashboard.dart';
 import 'screens/admin/admin_dashboard.dart';
 import 'screens/admin/equipment_management.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  //await Firebase.initializeApp();
+
+  //new web stuff
+  if (kIsWeb) {
+    // Web initialization with YOUR FIREBASE CONFIG
+    await Firebase.initializeApp(
+      options: const FirebaseOptions(
+        apiKey: "AIzaSyB7ckqv8rC21nfbY9i3eq1J5WHWW4HHdqI",
+        authDomain: "project-8094b.firebaseapp.com",
+        projectId: "project-8094b",
+        storageBucket: "project-8094b.firebasestorage.app",
+        messagingSenderId: "612721487222",
+        appId: "1:612721487222:web:a6a5ecfefcd728e7355e57",
+        measurementId: "G-NZ0ZBGLNJP",
+      ),
+    );
+  } else {
+    // Android initialization (uses google-services.json)
+    await Firebase.initializeApp();
+  }
+
   runApp(
     MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-      ],
-      child: const MyApp(),
+      providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
+      child: MyApp(),
     ),
   );
 }
@@ -30,8 +49,8 @@ class MyApp extends StatelessWidget {
       title: 'Care Center App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
-      //home: const RoleWrapper(),
-      home: const EquipmentPage(),
+      home: const RoleWrapper(),
+      // home: const AdminDashboard(),
       routes: {
         '/login': (_) => const LoginScreen(),
         '/register': (_) => const RegisterScreen(),

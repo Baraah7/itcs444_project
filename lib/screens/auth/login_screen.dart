@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../admin/admin_dashboard.dart';
 import '../user/user_dashboard.dart';
+import '../shared/donation_form.dart';   // <-- Change path if needed
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -25,8 +27,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Welcome Back"),
+        title: const Text("Care Center Login" , style: TextStyle(color: Colors.white),),
         centerTitle: true,
+        backgroundColor: AppColors.primaryBlue,
         automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
@@ -39,17 +42,12 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Welcome Header
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Sign In",
-                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                ],
+              Text(
+                "Sign In",
+                style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
 
               const SizedBox(height: 40),
@@ -63,20 +61,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          "Email Address",
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
+                        Text("Email Address",
+                            style: Theme.of(context).textTheme.titleMedium),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
                             hintText: "you@example.com",
-                            prefixIcon: Icon(
-                              Icons.email_outlined,
-                              color: AppColors.neutralGray,
-                            ),
+                            prefixIcon: Icon(Icons.email_outlined,
+                                color: AppColors.neutralGray),
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
@@ -101,42 +95,33 @@ class _LoginScreenState extends State<LoginScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              "Password",
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
+                            Text("Password",
+                                style:
+                                    Theme.of(context).textTheme.titleMedium),
                             TextButton(
                               onPressed: () {
-                                Navigator.pushNamed(context, "/forgot-password");
+                                Navigator.pushNamed(
+                                    context, "/forgot-password");
                               },
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
                               child: Text(
                                 "Forgot Password?",
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodySmall
                                     ?.copyWith(
-                                      color: AppColors.primaryBlue,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                        color: AppColors.primaryBlue,
+                                        fontWeight: FontWeight.w500),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
                         TextFormField(
                           controller: _passwordController,
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             hintText: "Enter your password",
-                            prefixIcon: Icon(
-                              Icons.lock_outline,
-                              color: AppColors.neutralGray,
-                            ),
+                            prefixIcon: Icon(Icons.lock_outline,
+                                color: AppColors.neutralGray),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword
@@ -145,7 +130,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: AppColors.neutralGray,
                               ),
                               onPressed: () {
-                                setState(() => _obscurePassword = !_obscurePassword);
+                                setState(() =>
+                                    _obscurePassword = !_obscurePassword);
                               },
                             ),
                           ),
@@ -164,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 20),
 
-                    // Remember Me Checkbox
+                    // Remember Me
                     Row(
                       children: [
                         Checkbox(
@@ -173,16 +159,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             setState(() => _rememberMe = value ?? false);
                           },
                           activeColor: AppColors.primaryBlue,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(4),
-                          ),
                         ),
-                        Text(
-                          "Remember me",
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.primaryDark,
-                              ),
-                        ),
+                        Text("Remember me",
+                            style:
+                                Theme.of(context).textTheme.bodyMedium),
                       ],
                     ),
 
@@ -211,46 +191,41 @@ class _LoginScreenState extends State<LoginScreen> {
                                           authProvider.errorMessage ??
                                               "Invalid login credentials",
                                           style: const TextStyle(
-                                            color: Colors.white,
-                                          ),
+                                              color: Colors.white),
                                         ),
                                         backgroundColor: AppColors.error,
-                                        behavior: SnackBarBehavior.floating,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
                                       ),
                                     );
                                   } else {
                                     if (authProvider.currentUser == null) return;
 
-                                    String role = authProvider.currentUser!.role;
+                                    String role =
+                                        authProvider.currentUser!.role;
 
-                                    // Navigation based on Role
+                                    // Role-based navigation
                                     if (role == "Admin") {
                                       Navigator.pushReplacement(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (_) => const AdminDashboard(),
-                                        ),
+                                            builder: (_) =>
+                                                const AdminDashboard()),
                                       );
                                     } else {
                                       Navigator.pushReplacement(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (_) => const UserDashboard(),
-                                        ),
+                                            builder: (_) =>
+                                                const UserDashboard()),
                                       );
                                     }
                                   }
                                 }
                               },
                         child: authProvider.isLoading
-                            ? SizedBox(
+                            ? const SizedBox(
                                 height: 24,
                                 width: 24,
                                 child: CircularProgressIndicator(
-                                  color: AppColors.primaryDark,
                                   strokeWidth: 2.5,
                                 ),
                               )
@@ -259,7 +234,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 style: AppTextStyles.button.copyWith(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.primaryBlue
+                                  color: AppColors.primaryBlue,
                                 ),
                               ),
                       ),
@@ -267,15 +242,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 32),
 
-                    // Register Link
+                    // Register
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
                           "Don't have an account? ",
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.neutralGray,
-                              ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: AppColors.neutralGray),
                         ),
                         GestureDetector(
                           onTap: () {
@@ -283,14 +259,41 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                           child: Text(
                             "Sign Up",
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.primaryBlue,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                    color: AppColors.primaryBlue,
+                                    fontWeight: FontWeight.w600),
                           ),
                         ),
                       ],
                     ),
+
+                    const SizedBox(height: 20),
+
+                    // CONTINUE AS GUEST BUTTON
+                    Center(
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const DonationForm(),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          "Continue as Guest",
+                          style: TextStyle(
+                            color: AppColors.primaryBlue,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+
                   ],
                 ),
               ),

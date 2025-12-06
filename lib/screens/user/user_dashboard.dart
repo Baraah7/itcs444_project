@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:itcs444_project/screens/user/equipment_detail.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/theme.dart';
@@ -19,9 +21,10 @@ class _UserDashboardState extends State<UserDashboard> {
     SidebarItem(icon: Icons.dashboard, label: 'Dashboard', index: 0),
     SidebarItem(icon: Icons.shopping_cart, label: 'View Cart', index: 1),
     SidebarItem(icon: Icons.history, label: 'Rental History', index: 2),
-    SidebarItem(icon: Icons.help, label: 'Help & Support', index: 3),
-    SidebarItem(icon: Icons.person, label: 'My Profile', index: 4),
-    SidebarItem(icon: Icons.settings, label: 'Settings', index: 5),
+    SidebarItem(icon: Icons.favorite_border, label: 'Donation History', index: 3),
+    SidebarItem(icon: Icons.help, label: 'Help & Support', index: 4),
+    SidebarItem(icon: Icons.person, label: 'My Profile', index: 5),
+    SidebarItem(icon: Icons.settings, label: 'Settings', index: 6),
   ];
 
   @override
@@ -66,9 +69,10 @@ class _UserDashboardState extends State<UserDashboard> {
       case 0: return 'Care Center';
       case 1: return 'My Cart';
       case 2: return 'Rental History';
-      case 3: return 'Help & Support';
-      case 4: return 'My Profile';
-      case 5: return 'Settings';
+      case 3: return 'Donation History';
+      case 4: return 'Help & Support';
+      case 5: return 'My Profile';
+      case 6: return 'Settings';
       default: return 'Dashboard';
     }
   }
@@ -78,9 +82,10 @@ class _UserDashboardState extends State<UserDashboard> {
       case 0: return _buildDashboardBody(context, auth, user);
       case 1: return _buildCartBody(context);
       case 2: return _buildHistoryBody(context);
-      case 3: return _buildHelpBody(context);
-      case 4: return ProfileScreen();
-      case 5: return _buildSettingsBody(context);
+      case 3: return _buildDonationHistoryBody(context);
+      case 4: return _buildHelpBody(context);
+      case 5: return ProfileScreen();
+      case 6: return _buildSettingsBody(context);
       default: return _buildDashboardBody(context, auth, user);
     }
   }
@@ -490,15 +495,17 @@ class _UserDashboardState extends State<UserDashboard> {
     );
   }
 
-  Widget _medicalCategoryCard(BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String sublabel,
-    required Color color,
-  }) {
-    return GestureDetector(
-      onTap: () => _navigateToCategory(label),
-      child: Container(
+Widget _medicalCategoryCard(BuildContext context, {
+  required IconData icon,
+  required String label,
+  required String sublabel,
+  required Color color,
+}) {
+  return GestureDetector(
+    onTap: () {
+      _navigateToCategory(label);
+    },
+    child: Container(
         width: 140,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -553,155 +560,265 @@ class _UserDashboardState extends State<UserDashboard> {
   }
 
   Widget _buildFeaturedEquipment(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Featured Equipment",
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 16),
-        
-        // Featured Medical Equipment
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.8,
-          children: [
-            _medicalEquipmentCard(
-              context,
-              name: "Electric Wheelchair",
-              category: "Mobility Aid",
-              price: " BD 85/week",
-              imageColor: Color.fromARGB(255, 255, 67, 117).withOpacity(0.1),
-            ),
-            _medicalEquipmentCard(
-              context,
-              name: "Hospital Bed",
-              category: "Home Care",
-              price: " BD 120/week",
-              imageColor: Color.fromARGB(255, 0, 200, 183).withOpacity(0.1),
-            ),
-            _medicalEquipmentCard(
-              context,
-              name: "Hearing Aid Set",
-              category: "Sensory Aid",
-              price: " BD 45/week",
-              imageColor: AppColors.warning.withOpacity(0.1),
-            ),
-            _medicalEquipmentCard(
-              context,
-              name: "BP Monitor",
-              category: "Monitoring",
-              price: " BD 25/week",
-              imageColor: Color.fromARGB(255, 0, 200, 183).withOpacity(0.1),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+  return StreamBuilder(
+    stream: FirebaseFirestore.instance
+        .collection('equipment')
+        .limit(4) // Load only 4 featured items
+        .snapshots(),
+    builder: (context, snapshot) {
+      if (!snapshot.hasData) {
+        return const Center(
+          child: CircularProgressIndicator(),
+        );
+      }
 
-Widget _medicalEquipmentCard(BuildContext context, {
+      final docs = snapshot.data!.docs;
+
+      if (docs.isEmpty) {
+        return const Center(
+          child: Text("No equipment found"),
+        );
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Featured Equipment",
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: docs.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 0.78,
+            ),
+            itemBuilder: (context, index) {
+  final doc = docs[index];
+  final item = doc.data() as Map<String, dynamic>;
+
+  // Simple boolean check - true = available, false = not available
+  final bool isAvailable = item['availability'] ?? false;
+
+  return _medicalEquipmentCard(
+    context,
+    id: doc.id,
+    name: item['name'] ?? "Unknown",
+    category: item['category'] ?? "n/a",
+    isAvailable: isAvailable,
+    imageColor: AppColors.primaryBlue.withOpacity(0.1),
+  );
+},
+          )
+        ],
+      );
+    },
+  );
+}
+
+
+Widget _medicalEquipmentCard(
+  BuildContext context, {
+  required String id,
   required String name,
   required String category,
-  required String price,
+  required bool isAvailable, // Changed to boolean
   required Color imageColor,
 }) {
-  return Card(
-    elevation: 2,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(16),
-    ),
-    child: ConstrainedBox(
-      constraints: const BoxConstraints(
-        maxHeight: 200, // Fixed maximum height
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EquipmentDetailPage(equipmentId: id),
+        ),
+      );
+    },
+    child: Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+            spreadRadius: 0,
+          ),
+        ],
+        border: Border.all(
+          color: Colors.grey.shade100,
+          width: 1,
+        ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            // Image placeholder - Fixed height
-            Container(
-              height: 100, // Reduced from 100
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: imageColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.medical_services,
-                size: 30,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 10), // Reduced
-            
-            // Name - with flexible text
-            Flexible(
-              child: Text(
-                name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12, // Smaller
+            // IMAGE/CONTAINER SECTION
+            Stack(
+              children: [
+                Container(
+                  height: 110,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        imageColor.withOpacity(0.7),
+                        imageColor.withOpacity(0.9),
+                      ],
+                    ),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.medical_services,
+                      size: 42,
+                      color: Colors.white.withOpacity(0.95),
+                    ),
+                  ),
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
+                
+                // AVAILABILITY BADGE - SIMPLE VERSION
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isAvailable 
+                          ? AppColors.success.withOpacity(0.95)
+                          : AppColors.error.withOpacity(0.95),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      isAvailable ? "Available" : "Not Available",
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            
-            const SizedBox(height: 2), // Reduced
-            
-            // Category
+
+            const SizedBox(height: 16),
+
+            // NAME
             Text(
-              category,
-              style: TextStyle(
-                fontSize: 10, // Smaller
-                color: AppColors.neutralGray,
+              name,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryDark,
+                height: 1.3,
               ),
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            
+
+            const SizedBox(height: 8),
+
+            // CATEGORY WITH ICON
+            Row(
+              children: [
+                Icon(
+                  Icons.category_outlined,
+                  size: 14,
+                  color: AppColors.neutralGray,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    category,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.neutralGray,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+
             const Spacer(),
-            
-            // Bottom row
-            SizedBox(
-              height: 20, // Fixed height
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    price,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
-                      color: AppColors.primaryBlue,
+
+            // ADD TO CART BUTTON - SIMPLE VERSION
+            GestureDetector(
+              onTap: isAvailable 
+                  ? () => _addToCart(name)
+                  : null,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: isAvailable
+                      ? AppColors.primaryBlue
+                      : AppColors.neutralGray.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: isAvailable
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primaryBlue.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.add_shopping_cart,
+                      size: 16,
+                      color: isAvailable
+                          ? Colors.white
+                          : Colors.grey[600],
                     ),
-                  ),
-                  GestureDetector(
-                    onTap: () => _addToCart(name),
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryBlue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.add_shopping_cart,
-                        size: 14,
-                        color: AppColors.primaryBlue,
+                    const SizedBox(width: 8),
+                    Text(
+                      isAvailable ? "Add to Cart" : "Not Available",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isAvailable
+                            ? Colors.white
+                            : Colors.grey[600],
+                        letterSpacing: 0.5,
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
@@ -710,6 +827,7 @@ Widget _medicalEquipmentCard(BuildContext context, {
     ),
   );
 }
+
 
   // ============ CART BODY ============
   Widget _buildCartBody(BuildContext context) {
@@ -782,6 +900,38 @@ Widget _medicalEquipmentCard(BuildContext context, {
   }
 
 
+  // ============ DONATION HISTORY BODY ============
+  Widget _buildDonationHistoryBody(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.favorite_border,
+            size: 80,
+            color: AppColors.neutralGray.withOpacity(0.3),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            "No donation history",
+            style: TextStyle(
+              fontSize: 18,
+              color: AppColors.neutralGray,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            "Your past donations will appear here",
+            style: TextStyle(
+              color: AppColors.neutralGray,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
   // ============ HELP BODY ============
   Widget _buildHelpBody(BuildContext context) {
     return SingleChildScrollView(

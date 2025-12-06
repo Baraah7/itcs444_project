@@ -1,11 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/theme.dart';
 import '../shared/profile_screen.dart';
 import 'equipment_management.dart';
-
-  
+import 'add_edit_equipment.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -16,6 +17,24 @@ class AdminDashboard extends StatefulWidget {
 
 class _AdminDashboardState extends State<AdminDashboard> {
   int _selectedIndex = 0;
+
+  Future<int> getTotalItemsCount() async {
+  int total = 0;
+
+  final equipmentSnapshot =
+      await FirebaseFirestore.instance.collection('equipment').get();
+
+  for (var equipmentDoc in equipmentSnapshot.docs) {
+    final itemsSnapshot = await equipmentDoc.reference
+        .collection('Items') // ✅ اسم السبكوليكشن الصحيح
+        .get();
+
+    total += itemsSnapshot.docs.length;
+  }
+
+    return total;
+  }
+
   
   // Sidebar menu items
   final List<SidebarItem> _sidebarItems = [
@@ -52,23 +71,23 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ),
       drawer: _buildSidebarDrawer(context, admin, auth),
       body: _getBodyForIndex(_selectedIndex, context, auth, admin),
-      floatingActionButton: _selectedIndex == 0 
-          ? FloatingActionButton(
-              onPressed: () => _navigateToAddEquipment(),
-              backgroundColor: AppColors.primaryDark,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(Icons.add),
-            )
-          : null,
+      // floatingActionButton: _selectedIndex == 0 
+      //     ? FloatingActionButton(
+      //         onPressed: () => _navigateToAddEquipment(),
+      //         backgroundColor: AppColors.primaryDark,
+      //         foregroundColor: Colors.white,
+      //         shape: RoundedRectangleBorder(
+      //           borderRadius: BorderRadius.circular(16),
+      //         ),
+      //         child: const Icon(Icons.add),
+      //       )
+      //     : null,
     );
   }
 
   String _getTitleForIndex(int index) {
     switch (index) {
-      case 0: return 'Admin Panel';
+      case 0: return 'Admin Dashboard';
       case 1: return 'Equipment Management';
       case 2: return 'Reservations';
       case 3: return 'Donations';
@@ -76,7 +95,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       case 5: return 'Reports';
       case 6: return 'User Management';
       case 7: return 'Settings';
-      default: return 'Admin Panel';
+      default: return 'Admin Dashboard';
     }
   }
 
@@ -426,20 +445,37 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ),
     );
   }
-
+  
   Widget _buildAdminStats(BuildContext context) {
     return Row(
       children: [
         Expanded(
-          child: _statCard(
-            context,
-            icon: Icons.inventory,
-            value: "142",
-            label: "Total Items",
-            color: const Color.fromARGB(255, 0, 200, 183),
-          ),
+          child: FutureBuilder<int>(
+            future: getTotalItemsCount(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return _statCard(
+                  context,
+                  icon: Icons.inventory,
+                  value: "...",
+                  label: "Total Items",
+                  color: const Color.fromARGB(255, 0, 200, 183),
+                );
+             }
+
+           return _statCard(
+              context,
+              icon: Icons.inventory,
+              value: snapshot.data.toString(),
+              label: "Total Items",
+              color: const Color.fromARGB(255, 0, 200, 183),
+            );
+          },
         ),
-        const SizedBox(width: 12),
+      ),
+
+      const SizedBox(width: 12),
+
         Expanded(
           child: _statCard(
             context,
@@ -449,7 +485,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
             color: AppColors.success,
           ),
         ),
+
         const SizedBox(width: 12),
+
         Expanded(
           child: _statCard(
             context,
@@ -584,6 +622,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return GestureDetector(
       onTap: onTap,
       child: Card(
+        color: Colors.white,
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -741,34 +780,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   // ============ OTHER SECTION BODIES ============
   Widget _buildEquipmentBody(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.inventory,
-            size: 80,
-            color: AppColors.neutralGray.withOpacity(0.3),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            "Equipment Management",
-            style: TextStyle(
-              fontSize: 24,
-              color: AppColors.neutralGray,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            "Manage all medical equipment",
-            style: TextStyle(
-              color: AppColors.neutralGray,
-            ),
-          ),
-        ],
-      ),
-    );
+    return EquipmentPage();
   }
 
   Widget _buildReservationsBody(BuildContext context) {
@@ -901,7 +913,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
    Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const EquipmentPage(),
+        builder: (context) => const AddEditEquipmentPage(),
       ),
     );
     
@@ -1009,4 +1021,21 @@ class SidebarItem {
   final int index;
 
   SidebarItem({required this.icon, required this.label, required this.index});
+}
+
+Future<int> getTotalItemsCount() async {
+  int total = 0;
+
+  final equipmentSnapshot =
+      await FirebaseFirestore.instance.collection('equipment').get();
+
+  for (var equipmentDoc in equipmentSnapshot.docs) {
+    final itemsSnapshot = await equipmentDoc.reference
+        .collection('Items')
+        .get();
+
+    total += itemsSnapshot.docs.length;
+  }
+
+  return total;
 }
