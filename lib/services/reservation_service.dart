@@ -1,20 +1,18 @@
-//Reservation booking + tracking
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/rental_model.dart';
-import '../models/user_model.dart';
-import 'auth_service.dart';
+import '../models/equipment_model.dart';
 
 class ReservationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final AuthService _authService = AuthService();
   
   // Collection references
   CollectionReference get rentalsCollection => _firestore.collection('rentals');
+  CollectionReference get equipmentCollection => _firestore.collection('equipment');
   CollectionReference get usersCollection => _firestore.collection('users');
   
-  // Create a new rental reservation
+  // 1. CREATE A NEW RENTAL (FIXED VERSION)
   Future<String> createRental({
     required String equipmentId,
     required String equipmentName,
@@ -25,77 +23,190 @@ class ReservationService {
     double dailyRate = 0,
   }) async {
     try {
-      // Get current user
-      final user = _auth.currentUser;
-      if (user == null) throw Exception('User not logged in');
+      // Get current Firebase user
+      final firebaseUser = _auth.currentUser;
+      if (firebaseUser == null) {
+        throw Exception('Please login to make a reservation');
+      }
       
-      // Get user details
-      final userDoc = await usersCollection.doc(user.uid).get();
-      
-      if (!userDoc.exists) throw Exception('User not found');
+      // Get user details from Firestore
+      final userDoc = await usersCollection.doc(firebaseUser.uid).get();
+      if (!userDoc.exists) {
+        throw Exception('User profile not found. Please complete your profile.');
+      }
       
       final userData = userDoc.data() as Map<String, dynamic>;
-      final userFullName = '${userData['firstName']} ${userData['lastName']}';
+      var userFullName = '${userData['firstName'] ?? ''} ${userData['lastName'] ?? ''}'.trim();
+      if (userFullName.isEmpty) {
+        userFullName = userData['email'] ?? 'User';
+      }
       
-      // Check equipment availability in subcollection
-      final itemsSnapshot = await _firestore
-          .collection('equipment')
-          .doc(equipmentId)
-          .collection('Items')
-          .where('availability', isEqualTo: true)
-          .get();
+      // Calculate duration and validate
+      final int duration = endDate.difference(startDate).inDays;
+      if (duration < 1) {
+        throw Exception('Rental must be at least 1 day');
+      }
       
-      if (itemsSnapshot.docs.length < quantity) {
-        throw Exception('Not enough items available. Only ${itemsSnapshot.docs.length} available');
+      // Get maximum rental days for this equipment type
+      final maxDays = _getMaxRentalDays(itemType);
+      if (duration > maxDays) {
+        throw Exception('Maximum rental period is $maxDays days for $itemType');
       }
       
       // Calculate total cost
-      final int duration = endDate.difference(startDate).inDays;
       final double totalCost = dailyRate * duration * quantity;
       
-      // Create rental ID
-      final rentalId = rentalsCollection.doc().id;
-      
-      // Create rental object
-      final rental = Rental(
-        id: rentalId,
-        userId: user.uid,
-        userFullName: userFullName,
-        equipmentId: equipmentId,
-        equipmentName: equipmentName,
-        itemType: itemType,
-        startDate: startDate,
-        endDate: endDate,
-        totalCost: totalCost,
-        status: 'pending',
-        createdAt: DateTime.now(),
-        quantity: quantity,
-      );
-      
-      // Save to Firestore
-      await rentalsCollection.doc(rentalId).set(rental.toMap());
-      
-      // Mark items as reserved (temporarily unavailable)
-      final itemsToReserve = itemsSnapshot.docs.take(quantity);
-      for (final itemDoc in itemsToReserve) {
-        await itemDoc.reference.update({
-          'availability': false,
-          'reservedFor': rentalId,
-          'reservedUntil': endDate.toIso8601String(),
-          'lastUpdated': FieldValue.serverTimestamp(),
+      // Use Firestore transaction to ensure data consistency
+      final String rentalId = await _firestore.runTransaction<String>((transaction) async {
+        // 1. Get equipment document
+        final equipmentRef = equipmentCollection.doc(equipmentId);
+        final equipmentDoc = await transaction.get(equipmentRef);
+        
+        if (!equipmentDoc.exists) {
+          throw Exception('Equipment not found');
+        }
+        
+        final equipmentData = equipmentDoc.data() as Map<String, dynamic>;
+        
+        // 2. Check if equipment is available
+        final availability = equipmentData['availability'] ?? false;
+        if (!availability) {
+          throw Exception('This equipment is currently unavailable');
+        }
+        
+        // 3. Check quantity
+        final totalQuantity = (equipmentData['quantity'] ?? 1) as int;
+        final availableQuantity = (equipmentData['availableQuantity'] ?? totalQuantity) as int;
+        
+        if (availableQuantity < quantity) {
+          throw Exception('Not enough equipment available. Only $availableQuantity available');
+        }
+        
+        // 4. Check for overlapping reservations
+        final overlappingQuery = await _firestore
+            .collection('rentals')
+            .where('equipmentId', isEqualTo: equipmentId)
+            .where('status', whereIn: ['pending', 'approved', 'checked_out'])
+            .get();
+        
+        int reservedCount = 0;
+        for (final rentalDoc in overlappingQuery.docs) {
+          final rentalData = rentalDoc.data() as Map<String, dynamic>;
+          final rentalStart = DateTime.parse(rentalData['startDate']);
+          final rentalEnd = DateTime.parse(rentalData['endDate']);
+          
+          // Check for date overlap
+          if (startDate.isBefore(rentalEnd) && endDate.isAfter(rentalStart)) {
+            reservedCount += (rentalData['quantity'] ?? 1) as int;
+          }
+        }
+        
+        final actuallyAvailable = availableQuantity - reservedCount;
+        if (actuallyAvailable < quantity) {
+          throw Exception('Not available for selected dates. Try different dates.');
+        }
+        
+        // 5. Create rental document
+        final rentalRef = rentalsCollection.doc();
+        final rentalId = rentalRef.id;
+        
+        final rental = Rental(
+          id: rentalId,
+          userId: firebaseUser.uid,
+          userFullName: userFullName,
+          equipmentId: equipmentId,
+          equipmentName: equipmentName,
+          itemType: itemType,
+          startDate: startDate,
+          endDate: endDate,
+          totalCost: totalCost,
+          status: 'pending',
+          createdAt: DateTime.now(),
+          quantity: quantity,
+        );
+        
+        // 6. Update equipment's available quantity
+        final newAvailableQuantity = availableQuantity - quantity;
+        transaction.update(equipmentRef, {
+          'availableQuantity': newAvailableQuantity,
+          'updatedAt': FieldValue.serverTimestamp(),
         });
-      }
+        
+        // 7. Save rental
+        transaction.set(rentalRef, rental.toMap());
+        
+        return rentalId;
+      });
       
-      // Send notification (you can implement Firebase Cloud Messaging here)
-      _sendNewReservationNotification(rental);
+      // Send notification (you can implement this later)
+      print('Rental created successfully: $rentalId');
       
       return rentalId;
     } catch (e) {
-      throw Exception('Failed to create rental: $e');
+      throw Exception('Failed to create rental: ${e.toString()}');
     }
   }
   
-  // Get rentals for current user
+  // 2. CHECK AVAILABILITY (FIXED VERSION)
+  Future<bool> checkAvailability({
+    required String equipmentId,
+    required DateTime startDate,
+    required DateTime endDate,
+    int quantity = 1,
+  }) async {
+    try {
+      // Get equipment document
+      final equipmentDoc = await equipmentCollection.doc(equipmentId).get();
+      
+      if (!equipmentDoc.exists) {
+        return false;
+      }
+      
+      final equipmentData = equipmentDoc.data() as Map<String, dynamic>;
+      
+      // Check basic availability
+      final availability = equipmentData['availability'] ?? false;
+      if (!availability) {
+        return false;
+      }
+      
+      // Check quantity
+      final totalQuantity = (equipmentData['quantity'] ?? 1) as int;
+      final availableQuantity = (equipmentData['availableQuantity'] ?? totalQuantity) as int;
+      
+      if (availableQuantity < quantity) {
+        return false;
+      }
+      
+      // Check for overlapping reservations
+      final overlappingQuery = await _firestore
+          .collection('rentals')
+          .where('equipmentId', isEqualTo: equipmentId)
+          .where('status', whereIn: ['pending', 'approved', 'checked_out'])
+          .get();
+      
+      int reservedCount = 0;
+      for (final rentalDoc in overlappingQuery.docs) {
+        final rentalData = rentalDoc.data() as Map<String, dynamic>;
+        final rentalStart = DateTime.parse(rentalData['startDate']);
+        final rentalEnd = DateTime.parse(rentalData['endDate']);
+        
+        // Check for date overlap
+        if (startDate.isBefore(rentalEnd) && endDate.isAfter(rentalStart)) {
+          reservedCount += (rentalData['quantity'] ?? 1) as int;
+        }
+      }
+      
+      final actuallyAvailable = availableQuantity - reservedCount;
+      return actuallyAvailable >= quantity;
+      
+    } catch (e) {
+      print('Error checking availability: $e');
+      return false;
+    }
+  }
+  
+  // 3. GET USER'S RENTALS
   Stream<List<Rental>> getUserRentals() {
     final user = _auth.currentUser;
     if (user == null) return Stream.value([]);
@@ -106,167 +217,124 @@ class ReservationService {
         .snapshots()
         .map((snapshot) {
           return snapshot.docs
-              .map((doc) => Rental.fromMap(doc.data() as Map<String, dynamic>))
+              .map((doc) {
+                try {
+                  return Rental.fromMap(doc.data() as Map<String, dynamic>);
+                } catch (e) {
+                  print('Error parsing rental: $e');
+                  return Rental.fromMap({}); // Return empty rental on error
+                }
+              })
+              .where((rental) => rental.id.isNotEmpty) // Filter out empty rentals
               .toList();
         });
   }
   
-  // Get all rentals (for admin)
+  // 4. GET ALL RENTALS (FOR ADMIN)
   Stream<List<Rental>> getAllRentals() {
     return rentalsCollection
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
           return snapshot.docs
-              .map((doc) => Rental.fromMap(doc.data() as Map<String, dynamic>))
+              .map((doc) {
+                try {
+                  return Rental.fromMap(doc.data() as Map<String, dynamic>);
+                } catch (e) {
+                  print('Error parsing rental: $e');
+                  return Rental.fromMap({});
+                }
+              })
+              .where((rental) => rental.id.isNotEmpty)
               .toList();
         });
   }
   
-  // Get rentals by status
-  Stream<List<Rental>> getRentalsByStatus(String status) {
-    return rentalsCollection
-        .where('status', isEqualTo: status)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs
-              .map((doc) => Rental.fromMap(doc.data() as Map<String, dynamic>))
-              .toList();
-        });
-  }
-  
-  // Get single rental by ID
-  Future<Rental> getRentalById(String rentalId) async {
-    final rentalDoc = await rentalsCollection.doc(rentalId).get();
-    
-    if (!rentalDoc.exists) throw Exception('Rental not found');
-    
-    return Rental.fromMap(rentalDoc.data() as Map<String, dynamic>);
-  }
-  
-  // Get rental stream for real-time updates
-  Stream<Rental> getRentalStream(String rentalId) {
-    return rentalsCollection
-        .doc(rentalId)
-        .snapshots()
-        .map((snapshot) {
-          if (!snapshot.exists) throw Exception('Rental not found');
-          return Rental.fromMap(snapshot.data() as Map<String, dynamic>);
-        });
-  }
-  
-  // Update rental status (admin only)
+  // 5. UPDATE RENTAL STATUS (ADMIN)
   Future<void> updateRentalStatus({
     required String rentalId,
     required String status,
     String? adminNotes,
   }) async {
     try {
-      final rentalDoc = await rentalsCollection.doc(rentalId).get();
-      if (!rentalDoc.exists) throw Exception('Rental not found');
-      
-      final rental = Rental.fromMap(rentalDoc.data() as Map<String, dynamic>);
       final updateData = <String, dynamic>{
         'status': status,
         'updatedAt': DateTime.now().toIso8601String(),
       };
       
-      if (adminNotes != null) {
+      if (adminNotes != null && adminNotes.isNotEmpty) {
         updateData['adminNotes'] = adminNotes;
       }
       
-      // Update rental document
-      await rentalsCollection.doc(rentalId).update(updateData);
-      
-      // Handle different status transitions
-      switch (status) {
-        case 'approved':
-          await _handleApproval(rental);
-          break;
-        case 'checked_out':
-          await _handleCheckout(rental);
-          break;
-        case 'returned':
-          await _handleReturn(rental);
-          break;
-        case 'cancelled':
-          await _handleCancellation(rental);
-          break;
-        case 'maintenance':
-          await _handleMaintenance(rental);
-          break;
+      // If marking as returned, release the equipment quantity
+      if (status == 'returned') {
+        final rentalDoc = await rentalsCollection.doc(rentalId).get();
+        if (rentalDoc.exists) {
+          final rentalData = rentalDoc.data() as Map<String, dynamic>;
+          final equipmentId = rentalData['equipmentId'] as String;
+          final quantity = (rentalData['quantity'] ?? 1) as int;
+          
+          // Get current available quantity
+          final equipmentDoc = await equipmentCollection.doc(equipmentId).get();
+          if (equipmentDoc.exists) {
+            final equipmentData = equipmentDoc.data() as Map<String, dynamic>;
+            final currentAvailable = (equipmentData['availableQuantity'] ?? 0) as int;
+            
+            // Add back the returned quantity
+            await equipmentCollection.doc(equipmentId).update({
+              'availableQuantity': currentAvailable + quantity,
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
+          }
+          
+          // Add return date
+          updateData['actualReturnDate'] = DateTime.now().toIso8601String();
+        }
       }
       
-      // Send notification
-      _sendStatusUpdateNotification(rentalId, status, rental.userId);
+      await rentalsCollection.doc(rentalId).update(updateData);
       
     } catch (e) {
       throw Exception('Failed to update rental status: $e');
     }
   }
   
-  // Check equipment availability for date range
-  Future<bool> checkAvailability({
-    required String equipmentId,
-    required DateTime startDate,
-    required DateTime endDate,
-    int quantity = 1,
-  }) async {
-    try {
-      // Check for available items
-      final availableItems = await _firestore
-          .collection('equipment')
-          .doc(equipmentId)
-          .collection('Items')
-          .where('availability', isEqualTo: true)
-          .get();
-      
-      if (availableItems.docs.length < quantity) return false;
-      
-      // Check for overlapping rentals
-      final overlappingQuery = await rentalsCollection
-          .where('equipmentId', isEqualTo: equipmentId)
-          .where('status', whereIn: ['pending', 'approved', 'checked_out'])
-          .get();
-      
-      int reservedCount = 0;
-      for (final rentalDoc in overlappingQuery.docs) {
-        final rental = Rental.fromMap(rentalDoc.data() as Map<String, dynamic>);
-        
-        // Check for date overlap
-        if (startDate.isBefore(rental.endDate) && 
-            endDate.isAfter(rental.startDate)) {
-          reservedCount += rental.quantity;
-        }
-      }
-      
-      // Total available minus reserved
-      final totalAvailable = availableItems.docs.length;
-      return (totalAvailable - reservedCount) >= quantity;
-    } catch (e) {
-      throw Exception('Failed to check availability: $e');
-    }
-  }
-  
-  // Cancel rental (user only)
+  // 6. CANCEL RENTAL (USER)
   Future<void> cancelRental(String rentalId) async {
     try {
       final rentalDoc = await rentalsCollection.doc(rentalId).get();
+      if (!rentalDoc.exists) {
+        throw Exception('Rental not found');
+      }
       
-      if (!rentalDoc.exists) throw Exception('Rental not found');
-      
-      final rental = Rental.fromMap(rentalDoc.data() as Map<String, dynamic>);
+      final rentalData = rentalDoc.data() as Map<String, dynamic>;
+      final status = rentalData['status'] as String;
+      final userId = rentalData['userId'] as String;
       final user = _auth.currentUser;
       
       // Check ownership
-      if (user?.uid != rental.userId) {
+      if (user?.uid != userId) {
         throw Exception('Not authorized to cancel this rental');
       }
       
       // Only allow cancellation if status is pending
-      if (!rental.canBeCancelled) {
-        throw Exception('Cannot cancel rental with status: ${rental.status}');
+      if (status != 'pending') {
+        throw Exception('Cannot cancel rental with status: $status');
+      }
+      
+      // Release equipment quantity
+      final equipmentId = rentalData['equipmentId'] as String;
+      final quantity = (rentalData['quantity'] ?? 1) as int;
+      
+      final equipmentDoc = await equipmentCollection.doc(equipmentId).get();
+      if (equipmentDoc.exists) {
+        final equipmentData = equipmentDoc.data() as Map<String, dynamic>;
+        final currentAvailable = (equipmentData['availableQuantity'] ?? 0) as int;
+        
+        await equipmentCollection.doc(equipmentId).update({
+          'availableQuantity': currentAvailable + quantity,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
       }
       
       // Update rental status
@@ -275,67 +343,75 @@ class ReservationService {
         'updatedAt': DateTime.now().toIso8601String(),
       });
       
-      // Free up reserved items
-      await _freeUpReservedItems(rentalId);
-      
-      // Send notification
-      _sendStatusUpdateNotification(rentalId, 'cancelled', rental.userId);
-      
     } catch (e) {
       throw Exception('Failed to cancel rental: $e');
     }
   }
   
-  // Extend rental duration
+  // 7. EXTEND RENTAL
   Future<void> extendRental({
     required String rentalId,
     required DateTime newEndDate,
-    double? additionalCost,
   }) async {
     try {
       final rentalDoc = await rentalsCollection.doc(rentalId).get();
-      if (!rentalDoc.exists) throw Exception('Rental not found');
+      if (!rentalDoc.exists) {
+        throw Exception('Rental not found');
+      }
       
-      final rental = Rental.fromMap(rentalDoc.data() as Map<String, dynamic>);
+      final rentalData = rentalDoc.data() as Map<String, dynamic>;
+      final currentEndDate = DateTime.parse(rentalData['endDate']);
       
-      // Only allow extension for active rentals
-      if (!rental.isActive) {
-        throw Exception('Cannot extend rental with status: ${rental.status}');
+      if (newEndDate.isBefore(currentEndDate)) {
+        throw Exception('New end date must be after current end date');
       }
       
       // Check availability for extended period
+      final equipmentId = rentalData['equipmentId'] as String;
+      final quantity = (rentalData['quantity'] ?? 1) as int;
+      final startDate = DateTime.parse(rentalData['startDate']);
+      
       final isAvailable = await checkAvailability(
-        equipmentId: rental.equipmentId,
-        startDate: rental.startDate,
+        equipmentId: equipmentId,
+        startDate: startDate,
         endDate: newEndDate,
-        quantity: rental.quantity,
+        quantity: quantity,
       );
       
       if (!isAvailable) {
         throw Exception('Not available for extended period');
       }
       
-      // Calculate additional cost if not provided
-      final calculatedCost = additionalCost ?? 
-          (rental.totalCost / rental.durationInDays) * 
-          (newEndDate.difference(rental.endDate).inDays);
+      // Calculate additional cost
+      final extraDays = newEndDate.difference(currentEndDate).inDays;
+      final dailyRate = (rentalData['totalCost'] as double) / 
+          (currentEndDate.difference(startDate).inDays);
+      final additionalCost = extraDays * dailyRate * quantity;
       
       // Update rental
       await rentalsCollection.doc(rentalId).update({
         'endDate': newEndDate.toIso8601String(),
-        'totalCost': rental.totalCost + calculatedCost,
+        'totalCost': (rentalData['totalCost'] as double) + additionalCost,
         'updatedAt': DateTime.now().toIso8601String(),
       });
-      
-      // Update reserved items
-      await _updateReservedItems(rentalId, newEndDate);
       
     } catch (e) {
       throw Exception('Failed to extend rental: $e');
     }
   }
   
-  // Get overdue rentals
+  // 8. GET RENTAL BY ID
+  Future<Rental> getRentalById(String rentalId) async {
+    final rentalDoc = await rentalsCollection.doc(rentalId).get();
+    
+    if (!rentalDoc.exists) {
+      throw Exception('Rental not found');
+    }
+    
+    return Rental.fromMap(rentalDoc.data() as Map<String, dynamic>);
+  }
+  
+  // 9. GET OVERDUE RENTALS
   Stream<List<Rental>> getOverdueRentals() {
     final now = DateTime.now().toIso8601String();
     
@@ -350,339 +426,71 @@ class ReservationService {
         });
   }
   
-  // Get rentals needing action (pending, overdue, etc.)
-  Stream<List<Rental>> getRentalsNeedingAction() {
-    return rentalsCollection
-        .where('status', whereIn: ['pending', 'checked_out'])
-        .snapshots()
-        .map((snapshot) {
-          final allRentals = snapshot.docs
-              .map((doc) => Rental.fromMap(doc.data() as Map<String, dynamic>))
-              .toList();
-          
-          // Filter checked_out rentals for overdue ones
-          return allRentals.where((rental) {
-            if (rental.status == 'pending') return true;
-            if (rental.status == 'checked_out' && rental.isOverdue) return true;
-            return false;
-          }).toList();
-        });
-  }
-  
-  // Get rental statistics
-  Future<Map<String, dynamic>> getRentalStatistics() async {
-    final allRentals = await rentalsCollection.get();
-    final rentals = allRentals.docs
-        .map((doc) => Rental.fromMap(doc.data() as Map<String, dynamic>))
-        .toList();
-    
-    int pending = 0;
-    int approved = 0;
-    int checkedOut = 0;
-    int returned = 0;
-    int cancelled = 0;
-    int maintenance = 0;
-    double totalRevenue = 0;
-    int overdue = 0;
-    
-    for (final rental in rentals) {
-      switch (rental.status) {
-        case 'pending':
-          pending++;
-          break;
-        case 'approved':
-          approved++;
-          break;
-        case 'checked_out':
-          checkedOut++;
-          if (rental.isOverdue) overdue++;
-          break;
-        case 'returned':
-          returned++;
-          totalRevenue += rental.totalCost;
-          break;
-        case 'cancelled':
-          cancelled++;
-          break;
-        case 'maintenance':
-          maintenance++;
-          break;
-      }
-    }
-    
-    return {
-      'total': rentals.length,
-      'pending': pending,
-      'approved': approved,
-      'checkedOut': checkedOut,
-      'returned': returned,
-      'cancelled': cancelled,
-      'maintenance': maintenance,
-      'overdue': overdue,
-      'totalRevenue': totalRevenue,
-      'active': pending + approved + checkedOut,
-    };
-  }
-  
-  // Get user rental history
-  Future<List<Rental>> getUserRentalHistory(String userId) async {
-    final snapshot = await rentalsCollection
-        .where('userId', isEqualTo: userId)
-        .orderBy('createdAt', descending: true)
-        .get();
-    
-    return snapshot.docs
-        .map((doc) => Rental.fromMap(doc.data() as Map<String, dynamic>))
-        .toList();
-  }
-  
-  // Get equipment rental history
-  Future<List<Rental>> getEquipmentRentalHistory(String equipmentId) async {
-    final snapshot = await rentalsCollection
-        .where('equipmentId', isEqualTo: equipmentId)
-        .orderBy('createdAt', descending: true)
-        .get();
-    
-    return snapshot.docs
-        .map((doc) => Rental.fromMap(doc.data() as Map<String, dynamic>))
-        .toList();
-  }
-  
-  // PRIVATE HELPER METHODS
-  
-  // Handle approval process
-  Future<void> _handleApproval(Rental rental) async {
-    // Update reserved items to approved status
-    final itemsSnapshot = await _firestore
-        .collectionGroup('Items')
-        .where('reservedFor', isEqualTo: rental.id)
-        .get();
-    
-    for (final itemDoc in itemsSnapshot.docs) {
-      await itemDoc.reference.update({
-        'rentalStatus': 'approved',
-        'rentedTo': rental.id,
-        'lastUpdated': FieldValue.serverTimestamp(),
-      });
+  // HELPER METHODS
+  int _getMaxRentalDays(String itemType) {
+    switch (itemType.toLowerCase()) {
+      case 'wheelchair':
+      case 'walker':
+        return 30;
+      case 'hospital bed':
+      case 'oxygen machine':
+        return 60;
+      case 'crutches':
+      case 'cane':
+      case 'walking stick':
+        return 14;
+      case 'shower chair':
+      case 'commode':
+        return 21;
+      default:
+        return 30;
     }
   }
   
-  // Handle checkout process
-  Future<void> _handleCheckout(Rental rental) async {
-    // Update items to checked out status
-    final itemsSnapshot = await _firestore
-        .collectionGroup('Items')
-        .where('rentedTo', isEqualTo: rental.id)
-        .get();
-    
-    for (final itemDoc in itemsSnapshot.docs) {
-      await itemDoc.reference.update({
-        'checkedOutAt': DateTime.now().toIso8601String(),
-        'lastUpdated': FieldValue.serverTimestamp(),
-      });
-    }
-  }
-  
-  // Handle return process
-  Future<void> _handleReturn(Rental rental) async {
-    // Free up items and mark as available
-    final itemsSnapshot = await _firestore
-        .collectionGroup('Items')
-        .where('rentedTo', isEqualTo: rental.id)
-        .get();
-    
-    for (final itemDoc in itemsSnapshot.docs) {
-      await itemDoc.reference.update({
-        'availability': true,
-        'returnedAt': DateTime.now().toIso8601String(),
-        'reservedFor': FieldValue.delete(),
-        'reservedUntil': FieldValue.delete(),
-        'rentedTo': FieldValue.delete(),
-        'rentalStatus': FieldValue.delete(),
-        'checkedOutAt': FieldValue.delete(),
-        'lastUpdated': FieldValue.serverTimestamp(),
-      });
-    }
-    
-    // Update rental with actual return date
-    await rentalsCollection.doc(rental.id).update({
-      'actualReturnDate': DateTime.now().toIso8601String(),
-    });
-  }
-  
-  // Handle cancellation process
-  Future<void> _handleCancellation(Rental rental) async {
-    await _freeUpReservedItems(rental.id);
-  }
-  
-  // Handle maintenance process
-  Future<void> _handleMaintenance(Rental rental) async {
-    // Mark items as needing maintenance
-    final itemsSnapshot = await _firestore
-        .collectionGroup('Items')
-        .where('rentedTo', isEqualTo: rental.id)
-        .get();
-    
-    for (final itemDoc in itemsSnapshot.docs) {
-      await itemDoc.reference.update({
-        'needsMaintenance': true,
-        'maintenanceRequestedAt': DateTime.now().toIso8601String(),
-        'lastUpdated': FieldValue.serverTimestamp(),
-      });
-    }
-  }
-  
-  // Free up reserved items
-  Future<void> _freeUpReservedItems(String rentalId) async {
-    final itemsSnapshot = await _firestore
-        .collectionGroup('Items')
-        .where('reservedFor', isEqualTo: rentalId)
-        .get();
-    
-    for (final itemDoc in itemsSnapshot.docs) {
-      await itemDoc.reference.update({
-        'availability': true,
-        'reservedFor': FieldValue.delete(),
-        'reservedUntil': FieldValue.delete(),
-        'lastUpdated': FieldValue.serverTimestamp(),
-      });
-    }
-  }
-  
-  // Update reserved items end date
-  Future<void> _updateReservedItems(String rentalId, DateTime newEndDate) async {
-    final itemsSnapshot = await _firestore
-        .collectionGroup('Items')
-        .where('reservedFor', isEqualTo: rentalId)
-        .get();
-    
-    for (final itemDoc in itemsSnapshot.docs) {
-      await itemDoc.reference.update({
-        'reservedUntil': newEndDate.toIso8601String(),
-        'lastUpdated': FieldValue.serverTimestamp(),
-      });
-    }
-  }
-  
-  // Send notification for new reservation
-  void _sendNewReservationNotification(Rental rental) {
-    // Implement Firebase Cloud Messaging here
-    print('New reservation created: ${rental.id} by ${rental.userFullName}');
-    
-    // Example FCM implementation:
-    /*
-    await FirebaseMessaging.instance.send(
-      data: {
-        'type': 'new_reservation',
-        'rentalId': rental.id,
-        'userId': rental.userId,
-        'equipmentName': rental.equipmentName,
-      },
-    );
-    */
-  }
-  
-  // Send notification for status update
-  void _sendStatusUpdateNotification(String rentalId, String status, String userId) {
-    print('Rental $rentalId status updated to: $status');
-    
-    // Example FCM implementation:
-    /*
-    await FirebaseMessaging.instance.send(
-      data: {
-        'type': 'status_update',
-        'rentalId': rentalId,
-        'status': status,
-        'userId': userId,
-      },
-    );
-    */
-  }
-  
-  // Check if user has overdue rentals
-  Future<bool> userHasOverdueRentals(String userId) async {
-    final snapshot = await rentalsCollection
-        .where('userId', isEqualTo: userId)
-        .where('status', isEqualTo: 'checked_out')
-        .get();
-    
-    for (final doc in snapshot.docs) {
-      final rental = Rental.fromMap(doc.data() as Map<String, dynamic>);
-      if (rental.isOverdue) return true;
-    }
-    
-    return false;
-  }
-  
-  // Calculate user trust score based on rental history
+  // CALCULATE USER TRUST SCORE
   Future<int> calculateUserTrustScore(String userId) async {
-    final history = await getUserRentalHistory(userId);
-    
-    if (history.isEmpty) return 0;
-    
-    int returnedCount = 0;
-    int overdueCount = 0;
-    int cancelledCount = 0;
-    
-    for (final rental in history) {
-      if (rental.status == 'returned') returnedCount++;
-      if (rental.status == 'checked_out' && rental.isOverdue) overdueCount++;
-      if (rental.status == 'cancelled') cancelledCount++;
+    try {
+      final userRentals = await rentalsCollection
+          .where('userId', isEqualTo: userId)
+          .get();
+      
+      if (userRentals.docs.isEmpty) return 0;
+      
+      int returnedCount = 0;
+      int overdueCount = 0;
+      int cancelledCount = 0;
+      
+      for (final doc in userRentals.docs) {
+        final rentalData = doc.data() as Map<String, dynamic>;
+        final status = rentalData['status'] as String;
+        
+        if (status == 'returned') returnedCount++;
+        if (status == 'cancelled') cancelledCount++;
+        
+        // Check if overdue
+        if (status == 'checked_out') {
+          final endDate = DateTime.parse(rentalData['endDate']);
+          if (endDate.isBefore(DateTime.now())) {
+            overdueCount++;
+          }
+        }
+      }
+      
+      // Simple trust score calculation
+      int score = returnedCount * 10;
+      score -= overdueCount * 20;
+      score -= cancelledCount * 5;
+      
+      return score.clamp(0, 100);
+    } catch (e) {
+      print('Error calculating trust score: $e');
+      return 0;
     }
-    
-    // Calculate score (simplified)
-    int score = returnedCount * 10;
-    score -= overdueCount * 20;
-    score -= cancelledCount * 5;
-    
-    // Ensure score is between 0 and 100
-    return score.clamp(0, 100);
   }
   
-  // Get equipment availability calendar
-  Future<Map<DateTime, int>> getEquipmentAvailabilityCalendar(
-    String equipmentId,
-    DateTime startDate,
-    DateTime endDate,
-  ) async {
-    final availabilityMap = <DateTime, int>{};
-    
-    // Get total available items
-    final availableItems = await _firestore
-        .collection('equipment')
-        .doc(equipmentId)
-        .collection('Items')
-        .where('availability', isEqualTo: true)
-        .get();
-    
-    final totalAvailable = availableItems.docs.length;
-    
-    // Get all rentals for this equipment in date range
-    final rentalsSnapshot = await rentalsCollection
-        .where('equipmentId', isEqualTo: equipmentId)
-        .where('status', whereIn: ['pending', 'approved', 'checked_out'])
-        .get();
-    
-    // Initialize all dates with full availability
-    DateTime currentDate = startDate;
-    while (currentDate.isBefore(endDate) || currentDate.isAtSameMomentAs(endDate)) {
-      availabilityMap[currentDate] = totalAvailable;
-      currentDate = currentDate.add(const Duration(days: 1));
-    }
-    
-    // Subtract reserved quantities for each date
-    for (final rentalDoc in rentalsSnapshot.docs) {
-      final rental = Rental.fromMap(rentalDoc.data() as Map<String, dynamic>);
-      
-      DateTime rentalDate = rental.startDate;
-      while (rentalDate.isBefore(rental.endDate) || rentalDate.isAtSameMomentAs(rental.endDate)) {
-        if (availabilityMap.containsKey(rentalDate)) {
-          availabilityMap[rentalDate] = (availabilityMap[rentalDate]! - rental.quantity).clamp(0, totalAvailable);
-        }
-        rentalDate = rentalDate.add(const Duration(days: 1));
-      }
-    }
-    
-    return availabilityMap;
+  // SEND NOTIFICATION (PLACEHOLDER)
+  void _sendNewReservationNotification(String rentalId) {
+    print('New reservation created: $rentalId');
+    // Implement Firebase Cloud Messaging here
   }
 }

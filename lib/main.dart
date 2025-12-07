@@ -8,6 +8,7 @@ import 'screens/user/user_dashboard.dart';
 import 'screens/admin/admin_dashboard.dart';
 import 'screens/admin/equipment_management.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+// import 'utils/initialize_equipment.dart'; // ADD THIS
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

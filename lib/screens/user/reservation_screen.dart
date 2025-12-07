@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../services/reservation_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/theme.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 
 class ReservationScreen extends StatefulWidget {
   final Map<String, dynamic> equipment;
@@ -174,39 +175,40 @@ class _ReservationScreenState extends State<ReservationScreen> {
     }
   }
   
-  Future<void> _checkAvailability() async {
-    if (_startDate == null || _endDate == null) return;
+ Future<void> _checkAvailability() async {
+  if (_startDate == null || _endDate == null) return;
+  
+  setState(() {
+    _checkingAvailability = true;
+    _availabilityMessage = 'Checking availability...';
+  });
+  
+  try {
+    final isAvailable = await _reservationService.checkAvailability(
+      equipmentId: widget.equipment['id'] ?? '',
+      startDate: _startDate!,
+      endDate: _endDate!,
+      quantity: _quantity,
+    );
     
     setState(() {
-      _checkingAvailability = true;
-      _availabilityMessage = 'Checking availability...';
+      _isAvailable = isAvailable;
+      _availabilityMessage = isAvailable 
+          ? 'Equipment is available for your selected dates'
+          : 'Not enough equipment available for selected dates';
+      _checkingAvailability = false;
     });
     
-    try {
-      final isAvailable = await _reservationService.checkAvailability(
-        equipmentId: widget.equipment['id'] ?? '',
-        startDate: _startDate!,
-        endDate: _endDate!,
-        quantity: _quantity,
-      );
-      
-      setState(() {
-        _isAvailable = isAvailable;
-        _availabilityMessage = isAvailable 
-            ? 'Equipment is available for your selected dates'
-            : 'Not enough equipment available for selected dates';
-        _checkingAvailability = false;
-      });
-      
-      _calculateCost();
-    } catch (e) {
-      setState(() {
-        _checkingAvailability = false;
-        _availabilityMessage = 'Error checking availability: ${e.toString().replaceAll("Exception: ", "")}';
-        _isAvailable = false;
-      });
-    }
+    _calculateCost();
+  } catch (e) {
+    setState(() {
+      _checkingAvailability = false;
+      _availabilityMessage = 'Error checking availability. Please try again.';
+      _isAvailable = false;
+    });
+    print('Availability check error: $e');
   }
+}
   
   void _calculateCost() {
     if (_startDate == null || _endDate == null) return;
@@ -299,106 +301,98 @@ class _ReservationScreenState extends State<ReservationScreen> {
     }
   }
   
-  Future<void> _submitReservation() async {
-    if (_startDate == null || _endDate == null) return;
-    
-    final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
-    if (user == null) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please login to make a reservation'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-      return;
-    }
-    
-    // Validate date range
-    final maxDays = _getMaxRentalDays();
-    final duration = _endDate!.difference(_startDate!).inDays;
-    if (duration > maxDays) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Maximum rental period is $maxDays days for this item'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-      return;
-    }
-    
-    if (duration < 1) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Rental duration must be at least 1 day'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-      return;
-    }
-    
-    setState(() {
-      _isLoading = true;
-    });
-    
-    try {
-      final rentalId = await _reservationService.createRental(
-        equipmentId: widget.equipment['id'] ?? '',
-        equipmentName: widget.equipment['name'] ?? 'Equipment',
-        itemType: widget.equipment['type'] ?? 'General',
-        startDate: _startDate!,
-        endDate: _endDate!,
-        quantity: _quantity,
-        dailyRate: (widget.equipment['rentalPrice'] ?? 0).toDouble(),
-      );
-      
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Reservation submitted successfully!'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            action: SnackBarAction(
-              label: 'View',
-              textColor: Colors.white,
-              onPressed: () {
-                // Navigate to my reservations
-                Navigator.pushNamed(context, '/my-reservations');
-              },
-            ),
-          ),
-        );
-        
-        // Navigate back
-        Navigator.pop(context, rentalId);
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString().replaceAll("Exception: ", "")}'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+ Future<void> _submitReservation() async {
+  if (_startDate == null || _endDate == null) return;
+  
+  // Check if user is logged in
+  final auth = FirebaseAuth.instance;
+  if (auth.currentUser == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please login to make a reservation'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    Navigator.pushReplacementNamed(context, '/login');
+    return;
   }
   
+  // Validate date range
+  final duration = _endDate!.difference(_startDate!).inDays;
+  if (duration < 1) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Rental duration must be at least 1 day'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+  
+  // Get maximum rental days
+  final maxDays = _getMaxRentalDays();
+  if (duration > maxDays) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Maximum rental period is $maxDays days for this equipment'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+  
+  setState(() {
+    _isLoading = true;
+  });
+  
+  try {
+    final rentalId = await _reservationService.createRental(
+      equipmentId: widget.equipment['id'] ?? '',
+      equipmentName: widget.equipment['name'] ?? 'Equipment',
+      itemType: widget.equipment['type'] ?? 'General',
+      startDate: _startDate!,
+      endDate: _endDate!,
+      quantity: _quantity,
+      dailyRate: (widget.equipment['rentalPrice'] ?? 0).toDouble(),
+    );
+    
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Reservation submitted successfully!'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          action: SnackBarAction(
+            label: 'View',
+            textColor: Colors.white,
+            onPressed: () {
+              Navigator.pushNamed(context, '/my-reservations');
+            },
+          ),
+        ),
+      );
+      
+      // Navigate back
+      Navigator.pop(context, rentalId);
+    }
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString().replaceAll("Exception: ", "")}'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  } finally {
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+}
   Widget _buildImmediatePickupCard() {
     final now = DateTime.now();
     final duration = _endDate != null && _startDate != null 
