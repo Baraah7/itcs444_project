@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_iconpicker/Models/configuration.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:itcs444_project/screens/user/donation_page.dart';
 import 'package:itcs444_project/services/donation_service.dart';
 import 'package:flutter_iconpicker/flutter_iconpicker.dart';
 
@@ -339,24 +340,32 @@ class DonationFormState extends State<DonationForm> {
                         int? iconCode = _selectedIcon?.codePoint;
 
                         try {
-                          await DonationService().submitDonation(
-                            itemName: itemName,
-                            donorName: donorName,
-                            donorContact: donorContact,
-                            itemType: itemType,
-                            condition: condition,
-                            status: 'Pending',
-                            submissionDate: DateTime.now(),
-                            description: description,
-                            quantity: quantity,
-                            imagePaths: imageUrls,
-                            iconCode: iconCode,
-                            comments: comments,
-                          );
+                          final donationID = await DonationService()
+                              .submitDonation(
+                                itemName: itemName,
+                                donorName: donorName,
+                                donorContact: donorContact,
+                                itemType: itemType,
+                                condition: condition,
+                                status: 'Pending',
+                                submissionDate: DateTime.now(),
+                                description: description,
+                                quantity: quantity,
+                                imagePaths: imageUrls,
+                                iconCode: iconCode,
+                                comments: comments,
+                              );
 
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Donation submitted successfully!'),
+                            ),
+                          );
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  UserDonationDetails(donationID: donationID),
                             ),
                           );
                         } catch (e) {
@@ -369,17 +378,6 @@ class DonationFormState extends State<DonationForm> {
                       },
                       child: const Text('Submit Donation'),
                     ),
-                    /*ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => DonationList(donations: []),
-                          ),
-                        );
-                      },
-                      child: Text('donation list'),
-                    ),*/
                   ],
                 ),
               ),
