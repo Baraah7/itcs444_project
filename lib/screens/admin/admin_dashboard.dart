@@ -6,7 +6,8 @@ import '../../utils/theme.dart';
 import '../shared/profile_screen.dart';
 import 'equipment_management.dart';
 import 'add_edit_equipment.dart';
-import 'donation_management.dart';
+import '../admin/reservation_management.dart'; //NEW added by Wadeeah (task3)
+
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -326,7 +327,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   icon: Icons.event_available,
                   color: Colors.green,
                   label: "Reservations",
-                  onTap: () => Navigator.pushNamed(context, '/reservation-management'),
+                  // onTap: () => Navigator.pushNamed(context, '/reservation-management'),
+                  onTap: () {
+                    Navigator.push(
+                      context, 
+                      MaterialPageRoute(builder: (_)=> const ReservationManagementScreen()));
+                  },
                 ),
 
                 _dashboardTile(

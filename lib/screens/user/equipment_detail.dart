@@ -2,6 +2,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../utils/theme.dart';
+import '../user/reservation_screen.dart';
 
 class EquipmentDetailPage extends StatelessWidget {
   final String equipmentId;
@@ -194,53 +195,115 @@ class EquipmentDetailPage extends StatelessWidget {
                 const SizedBox(height: 30),
 
                 // ACTION BUTTONS
+                // Row(
+                //   children: [
+                //     Expanded(
+                //       child: ElevatedButton.icon(
+                //         onPressed: isAvailable 
+                //             ? () {
+                //                 _addToCart(context, data['name']);
+                //               }
+                //             : null,
+                //         icon: const Icon(Icons.add_shopping_cart),
+                //         label: const Text("Add to Cart"),
+                //         style: ElevatedButton.styleFrom(
+                //           backgroundColor: isAvailable 
+                //               ? AppColors.primaryBlue 
+                //               : AppColors.neutralGray.withOpacity(0.5),
+                //           foregroundColor: isAvailable ? Colors.white : Colors.grey[600],
+                //           padding: const EdgeInsets.symmetric(vertical: 14),
+                //           shape: RoundedRectangleBorder(
+                //             borderRadius: BorderRadius.circular(12),
+                //           ),
+                //         ),
+                //       ),
+                //     ),
+                //     const SizedBox(width: 12),
+                //     Expanded(
+                //       child: ElevatedButton.icon(
+                //         onPressed: isAvailable 
+                //             ? () {
+                //                 _rentNow(context, data['name']);
+                //               }
+                //             : null,
+                //         icon: const Icon(Icons.handshake),
+                //         label: const Text("Rent Now"),
+                //         style: ElevatedButton.styleFrom(
+                //           backgroundColor: isAvailable 
+                //               ? AppColors.success 
+                //               : AppColors.neutralGray.withOpacity(0.5),
+                //           foregroundColor: isAvailable ? Colors.white : Colors.grey[600],
+                //           padding: const EdgeInsets.symmetric(vertical: 14),
+                //           shape: RoundedRectangleBorder(
+                //             borderRadius: BorderRadius.circular(12),
+                //           ),
+                //         ),
+                //       ),
+                //     ),
+                //   ],
+                // ),
+
+                //added by Wadeeah
                 Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: isAvailable 
-                            ? () {
-                                _addToCart(context, data['name']);
-                              }
-                            : null,
-                        icon: const Icon(Icons.add_shopping_cart),
-                        label: const Text("Add to Cart"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isAvailable 
-                              ? AppColors.primaryBlue 
-                              : AppColors.neutralGray.withOpacity(0.5),
-                          foregroundColor: isAvailable ? Colors.white : Colors.grey[600],
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
+  children: [
+    Expanded(
+      child: ElevatedButton.icon(
+        onPressed: isAvailable 
+            ? () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ReservationScreen(
+                      equipment: {
+                        'id': equipmentId,
+                        'name': data['name'] ?? 'Equipment',
+                        'type': data['category'] ?? 'Unknown',
+                        'rentalPrice': data['rentalPrice'] ?? 0,
+                        // Add other necessary fields
+                      },
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: isAvailable 
-                            ? () {
-                                _rentNow(context, data['name']);
-                              }
-                            : null,
-                        icon: const Icon(Icons.handshake),
-                        label: const Text("Rent Now"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isAvailable 
-                              ? AppColors.success 
-                              : AppColors.neutralGray.withOpacity(0.5),
-                          foregroundColor: isAvailable ? Colors.white : Colors.grey[600],
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                );
+              }
+            : null,
+        icon: const Icon(Icons.handshake),
+        label: const Text("Rent Now"),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isAvailable 
+              ? AppColors.success 
+              : AppColors.neutralGray.withOpacity(0.5),
+          foregroundColor: isAvailable ? Colors.white : Colors.grey[600],
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    ),
+    const SizedBox(width: 12),
+    Expanded(
+      child: ElevatedButton.icon(
+        onPressed: isAvailable 
+            ? () {
+                _addToCart(context, data['name']);
+              }
+            : null,
+        icon: const Icon(Icons.add_shopping_cart),
+        label: const Text("Add to Cart"),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isAvailable 
+              ? AppColors.primaryBlue 
+              : AppColors.neutralGray.withOpacity(0.5),
+          foregroundColor: isAvailable ? Colors.white : Colors.grey[600],
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    ),
+  ],
+), 
 
                 const SizedBox(height: 30),
               ],
