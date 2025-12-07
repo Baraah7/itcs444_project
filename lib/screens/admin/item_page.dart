@@ -34,7 +34,7 @@ class ItemsPage extends StatelessWidget {
 
           // حساب القطع المتوفرة بناءً على الحقل 'availability'
           final availableCount =
-              items.where((item) => item['availability '] == true).length;
+              items.where((item) => item['availability'] == true).length;
 
           return Column(
             children: [
