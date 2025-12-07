@@ -336,7 +336,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => DonationList(donations: []),
+                      builder: (context) => DonationList(),
                     ),
                   ),
                 ),
@@ -813,7 +813,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Widget _buildDonationsBody(BuildContext context) {
-    return DonationList(donations: [],);
+    return DonationList();
   }
 
   Widget _buildMaintenanceBody(BuildContext context) {
