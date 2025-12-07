@@ -6,11 +6,16 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/user/user_dashboard.dart';
 import 'screens/admin/admin_dashboard.dart';
+import 'screens/admin/equipment_management.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  //await Firebase.initializeApp();
 
+  //new web stuff
   if (kIsWeb) {
+    // Web initialization with YOUR FIREBASE CONFIG
     await Firebase.initializeApp(
       options: const FirebaseOptions(
         apiKey: "AIzaSyB7ckqv8rC21nfbY9i3eq1J5WHWW4HHdqI",
@@ -23,6 +28,7 @@ void main() async {
       ),
     );
   } else {
+    // Android initialization (uses google-services.json)
     await Firebase.initializeApp();
   }
 
@@ -44,11 +50,13 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const RoleWrapper(),
+      // home: const AdminDashboard(),
       routes: {
         '/login': (_) => const LoginScreen(),
         '/register': (_) => const RegisterScreen(),
         '/user-dashboard': (_) => const UserDashboard(),
         '/admin-dashboard': (_) => const AdminDashboard(),
+        '/equipment-management': (_) => const EquipmentPage(),
       },
     );
   }
@@ -92,6 +100,7 @@ class RoleWrapper extends StatelessWidget {
         }
       },
     );
+
   }
 }
 
