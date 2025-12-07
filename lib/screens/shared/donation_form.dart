@@ -7,9 +7,7 @@ import 'package:itcs444_project/services/donation_service.dart';
 import 'package:flutter_iconpicker/flutter_iconpicker.dart';
 
 class DonationForm extends StatefulWidget {
-  const DonationForm({super.key, required this.title});
-
-  final String title;
+  const DonationForm({super.key});
 
   @override
   State<DonationForm> createState() => DonationFormState();
@@ -98,7 +96,7 @@ class DonationFormState extends State<DonationForm> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
+        title: Text('Donation Form'),
       ),
       body: SingleChildScrollView(
         child: Padding(
