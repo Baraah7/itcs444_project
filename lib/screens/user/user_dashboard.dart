@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:itcs444_project/screens/shared/donation_form.dart';
 import 'package:itcs444_project/screens/user/equipment_detail.dart';
+import 'package:itcs444_project/screens/user/my_reservations.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/theme.dart';
@@ -20,12 +20,13 @@ class _UserDashboardState extends State<UserDashboard> {
   // Sidebar menu items
   final List<SidebarItem> _sidebarItems = [
     SidebarItem(icon: Icons.dashboard, label: 'Dashboard', index: 0),
-    SidebarItem(icon: Icons.shopping_cart, label: 'View Cart', index: 1),
-    SidebarItem(icon: Icons.history, label: 'Rental History', index: 2),
-    SidebarItem(icon: Icons.favorite_border, label: 'Donations', index: 3),
-    SidebarItem(icon: Icons.help, label: 'Help & Support', index: 4),
-    SidebarItem(icon: Icons.person, label: 'My Profile', index: 5),
-    SidebarItem(icon: Icons.settings, label: 'Settings', index: 6),
+    SidebarItem(icon: Icons.event_available, label: 'My Reservations', index: 1), // NEW added for task3 by Wadeeah
+    SidebarItem(icon: Icons.shopping_cart, label: 'View Cart', index: 2),
+    SidebarItem(icon: Icons.history, label: 'Rental History', index: 3),
+    SidebarItem(icon: Icons.favorite_border, label: 'Donation History', index: 4),
+    SidebarItem(icon: Icons.help, label: 'Help & Support', index: 5),
+    SidebarItem(icon: Icons.person, label: 'My Profile', index: 6),
+    SidebarItem(icon: Icons.settings, label: 'Settings', index: 7),
   ];
 
   @override
@@ -70,7 +71,7 @@ class _UserDashboardState extends State<UserDashboard> {
       case 0: return 'Care Center';
       case 1: return 'My Cart';
       case 2: return 'Rental History';
-      case 3: return 'Donations';
+      case 3: return 'Donation History';
       case 4: return 'Help & Support';
       case 5: return 'My Profile';
       case 6: return 'Settings';
@@ -81,12 +82,13 @@ class _UserDashboardState extends State<UserDashboard> {
   Widget _getBodyForIndex(int index, BuildContext context, AuthProvider auth, dynamic user) {
     switch (index) {
       case 0: return _buildDashboardBody(context, auth, user);
-      case 1: return _buildCartBody(context);
-      case 2: return _buildHistoryBody(context);
-      case 3: return DonationForm();
-      case 4: return _buildHelpBody(context);
-      case 5: return ProfileScreen();
-      case 6: return _buildSettingsBody(context);
+      case 1: return const MyReservationsScreen(); // NEW added for task3 by Wadeeah
+      case 2: return _buildCartBody(context);
+      case 3: return _buildHistoryBody(context);
+      case 4: return _buildDonationHistoryBody(context);
+      case 5: return _buildHelpBody(context);
+      case 6: return ProfileScreen();
+      case 7: return _buildSettingsBody(context);
       default: return _buildDashboardBody(context, auth, user);
     }
   }
@@ -891,6 +893,39 @@ Widget _medicalEquipmentCard(
           const SizedBox(height: 10),
           Text(
             "Your past rentals will appear here",
+            style: TextStyle(
+              color: AppColors.neutralGray,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  // ============ DONATION HISTORY BODY ============
+  Widget _buildDonationHistoryBody(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.favorite_border,
+            size: 80,
+            color: AppColors.neutralGray.withOpacity(0.3),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            "No donation history",
+            style: TextStyle(
+              fontSize: 18,
+              color: AppColors.neutralGray,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            "Your past donations will appear here",
             style: TextStyle(
               color: AppColors.neutralGray,
             ),

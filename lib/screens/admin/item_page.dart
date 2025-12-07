@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -8,13 +7,6 @@ class ItemsPage extends StatelessWidget {
 
   const ItemsPage({super.key, required this.toolId, required this.toolName});
 
-  /// ✅ Generates random serial like: SN-483920
-  String _generateRandomSerial() {
-    final random = Random();
-    final number = 100000 + random.nextInt(900000);
-    return "SN-$number";
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,7 +15,7 @@ class ItemsPage extends StatelessWidget {
         stream: FirebaseFirestore.instance
             .collection('equipment')
             .doc(toolId)
-            .collection('Items')
+            .collection('Items') // Subcollection name
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
@@ -40,11 +32,9 @@ class ItemsPage extends StatelessWidget {
             return const Center(child: Text('لا توجد قطع متاحة'));
           }
 
-          /// ✅ Safe available count
-          final availableCount = items.where((item) {
-            final data = item.data() as Map<String, dynamic>;
-            return data['availability'] == true;
-          }).length;
+          // حساب القطع المتوفرة بناءً على الحقل 'availability'
+          final availableCount =
+              items.where((item) => item['availability'] == true).length;
 
           return Column(
             children: [
@@ -52,8 +42,7 @@ class ItemsPage extends StatelessWidget {
                 padding: const EdgeInsets.all(8.0),
                 child: Text(
                   'القطع المتوفرة: $availableCount / ${items.length}',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
               Expanded(
@@ -61,35 +50,15 @@ class ItemsPage extends StatelessWidget {
                   itemCount: items.length,
                   itemBuilder: (context, index) {
                     final item = items[index];
-                    final data = item.data() as Map<String, dynamic>;
 
-                    /// ✅ Safe fields
-                    final availability = data['availability'] ?? false;
-                    final condition = data['condition']?.toString() ?? 'Unknown';
-                    final donor = data['donor']?.toString() ?? 'Unknown';
-
-                    /// ✅ SERIAL FIX (handles int, string, and null)
-                    String serial;
-
-                    if (data.containsKey('serial') && data['serial'] != null) {
-                      serial = data['serial'].toString(); // ✅ INT -> STRING FIX
-                    } else {
-                      serial = _generateRandomSerial();
-
-                      /// ✅ Auto save to Firestore
-                      item.reference.update({
-                        'serial': serial,
-                      });
-                    }
+                    final availability = item['availability'] ?? false;
 
                     return Card(
-                      margin: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       child: ListTile(
-                        title: Text("Serial: $serial"),
+                        title: Text("Serial: ${item['serial']}"),
                         subtitle: Text(
-                          "Condition: $condition\nDonor: $donor",
-                        ),
+                            "Condition: ${item['condition']}\nDonor: ${item['donor']}"),
                         trailing: availability
                             ? const Icon(Icons.check, color: Colors.green)
                             : const Icon(Icons.close, color: Colors.red),
