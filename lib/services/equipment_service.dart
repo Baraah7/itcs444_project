@@ -61,13 +61,16 @@ class EquipmentService {
   // Update individual items in subcollection (batch for speed)
   Future<void> _updateItemsAvailability(String equipmentId, int quantity, bool available) async {
     final itemsRef = _firestore.collection('equipment').doc(equipmentId).collection('Items');
-    final items = await itemsRef.where('availability', isEqualTo: !available).limit(quantity).get();
+    final items = await itemsRef.where('availability', isEqualTo: !available).get();
     
     if (items.docs.isEmpty) return;
     
     final batch = _firestore.batch();
+    int count = 0;
     for (var item in items.docs) {
+      if (count >= quantity) break;
       batch.update(item.reference, {'availability': available});
+      count++;
     }
     await batch.commit();
   }

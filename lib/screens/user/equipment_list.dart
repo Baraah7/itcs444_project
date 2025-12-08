@@ -356,7 +356,8 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
                 return const SizedBox();
               }
 
-              final available = snapshot.data!.docs.isNotEmpty;
+              final availableCount = snapshot.data!.docs.length;
+              final available = availableCount > 0;
 
               return Container(
                 padding:
@@ -365,9 +366,6 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
                   borderRadius: BorderRadius.circular(12),
                   color:
                       available ? Colors.green.shade50 : Colors.red.shade50,
-                  // border: Border.all(
-                  //   color: available ? Colors.green : Colors.red,
-                  // ),
                 ),
                 child: Row(
                   children: [
@@ -378,7 +376,7 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      available ? 'Available' : 'Unavailable',
+                      available ? '$availableCount' : 'Unavailable',
                       style: TextStyle(
                         fontSize: 12,
                         color: available ? Colors.green : Colors.red,
@@ -494,7 +492,8 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
                   builder: (context, snapshot) {
                     if (!snapshot.hasData) return const SizedBox();
 
-                    final available = snapshot.data!.docs.isNotEmpty;
+                    final availableCount = snapshot.data!.docs.length;
+                    final available = availableCount > 0;
 
                     return Container(
                       padding:
@@ -503,13 +502,10 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
                         color: available
                             ? Colors.green.shade50
                             : Colors.red.shade50,
-                        // border: Border.all(
-                        //   color: available ? Colors.green : Colors.red,
-                        // ),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        available ? 'Available' : 'Unavailable',
+                        available ? '$availableCount available' : 'Unavailable',
                         style: TextStyle(
                           fontSize: 10,
                           color: available ? Colors.green : Colors.red,
