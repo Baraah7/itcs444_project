@@ -56,24 +56,6 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Browse Equipment"),
-        centerTitle: true,
-        actions: [
-          // Removed add button for users
-          IconButton(
-            icon: Icon(_currentView == ViewType.list ? Icons.grid_view : Icons.list),
-            onPressed: () {
-              setState(() {
-                _currentView = _currentView == ViewType.list
-                    ? ViewType.grid
-                    : ViewType.list;
-              });
-            },
-            tooltip: 'Change view',
-          ),
-        ],
-      ),
       body: Column(
         children: [
           // Search and Filter Section
@@ -180,7 +162,18 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
               IconButton(
                 icon: const Icon(Icons.filter_alt_off_rounded),
                 onPressed: _clearFilters,
-              )
+              ),
+              IconButton(
+            icon: Icon(_currentView == ViewType.list ? Icons.grid_view : Icons.list),
+            onPressed: () {
+              setState(() {
+                _currentView = _currentView == ViewType.list
+                    ? ViewType.grid
+                    : ViewType.list;
+              });
+            },
+            tooltip: 'Change view',
+          ),
           ],
         )
       ],
