@@ -20,6 +20,11 @@ class _DonationHistoryState extends State<DonationHistory> {
   late final uid = user?.uid;
 
   DateTime todaysDate = DateTime.now();
+  late final day = todaysDate.day;
+  late final month = todaysDate.month;
+  late final year = todaysDate.year;
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +131,7 @@ class _DonationHistoryState extends State<DonationHistory> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('Donor Name: ${d.donorName}'),
-                              Text('Submitted on: ${d.submissionDate}'),
+                              Text('Submitted on: $day-$month-$year'),
                               Text('Status: ${d.status}'),
                             ],
                           ),
