@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../services/reservation_service.dart';
 import '../../models/rental_model.dart';
-import '../../providers/auth_provider.dart';
 import '../../utils/theme.dart';
 
 class ReservationManagementScreen extends StatefulWidget {
-  const ReservationManagementScreen({Key? key}) : super(key: key);
+  const ReservationManagementScreen({super.key});
   
   @override
   State<ReservationManagementScreen> createState() => _ReservationManagementScreenState();
@@ -45,7 +43,9 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
   void dispose() {
     _searchController.dispose();
     // Dispose all notes controllers
-    _notesControllers.values.forEach((controller) => controller.dispose());
+    for (var controller in _notesControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
   
@@ -160,22 +160,18 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _detailRow('ID', reservation['id'].substring(0, 12) + '...'),
-              _detailRow('User', reservation['userName'] ?? 'Unknown'),
-              _detailRow('Email', reservation['userEmail'] ?? 'Unknown'),
-              _detailRow('Equipment', reservation['equipmentName'] ?? 'Unknown'),
-              _detailRow('Item', reservation['itemName'] ?? 'Unknown'),
-              _detailRow('Status', _getStatusText(reservation['status'])),
-              _detailRow('Start Date', format.format(reservation['startDate'])),
-              _detailRow('End Date', format.format(reservation['endDate'])),
-              _detailRow('Total Days', reservation['totalDays'].toString()),
-              _detailRow('Total Cost', '\$${reservation['totalPrice']?.toStringAsFixed(2) ?? '0.00'}'),
-              if (reservation['notes'] != null && reservation['notes'].toString().isNotEmpty) ...[
-                const SizedBox(height: 8),
-                const Text('User Notes:', style: TextStyle(fontWeight: FontWeight.bold)),
-                Text(reservation['notes'].toString()),
-              ],
-              if (reservation['adminNotes'] != null && reservation['adminNotes'].toString().isNotEmpty) ...[
+              _detailRow('ID', '${rental.id.substring(0, 12)}...'),
+              _detailRow('User', rental.userFullName),
+              _detailRow('Equipment', rental.equipmentName),
+              _detailRow('Type', rental.itemType),
+              _detailRow('Status', rental.statusText),
+              _detailRow('Quantity', rental.quantity.toString()),
+              _detailRow('Start Date', format.format(rental.startDate)),
+              _detailRow('End Date', format.format(rental.endDate)),
+              if (rental.actualReturnDate != null)
+                _detailRow('Returned Date', format.format(rental.actualReturnDate!)),
+              _detailRow('Total Cost', rental.formattedCost),
+              if (rental.adminNotes != null && rental.adminNotes!.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 const Text('Admin Notes:', style: TextStyle(fontWeight: FontWeight.bold)),
                 Text(reservation['adminNotes'].toString()),
@@ -789,6 +785,7 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
   
   @override
   Widget build(BuildContext context) {
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reservation Management'),

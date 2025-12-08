@@ -150,7 +150,7 @@ class Equipment {
       
       num reservedCount = 0;
       for (final rentalDoc in rentalsSnapshot.docs) {
-        final rentalData = rentalDoc.data() as Map<String, dynamic>;
+        final rentalData = rentalDoc.data();
         final rentalStart = DateTime.parse(rentalData['startDate']);
         final rentalEnd = DateTime.parse(rentalData['endDate']);
         

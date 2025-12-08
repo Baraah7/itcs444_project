@@ -1,5 +1,5 @@
 import 'package:intl/intl.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' hide Settings;
 import 'package:flutter/material.dart';
 import 'package:itcs444_project/screens/user/equipment_list.dart';
 import 'package:itcs444_project/screens/user/my_reservations.dart';
@@ -9,6 +9,8 @@ import '../../providers/auth_provider.dart';
 import '../../utils/theme.dart';
 import '../shared/profile_screen.dart';
 import '../test_notification_screen.dart';
+import 'settings.dart';
+import 'help&support.dart';
 
 class UserDashboard extends StatefulWidget {
   const UserDashboard({super.key});
@@ -48,24 +50,16 @@ class _UserDashboardState extends State<UserDashboard> {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => _navigateToNotifications(),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => TestNotificationScreen()),
+            ),
           ),
           _buildProfileButton(context, user),
         ],
       ),
       drawer: _buildSidebarDrawer(context, user, auth),
       body: _getBodyForIndex(_selectedIndex, context, auth, user),
-      floatingActionButton: _selectedIndex == 0 
-          ? FloatingActionButton(
-              onPressed: () => _navigateToAddEquipment(),
-              backgroundColor: AppColors.primaryDark,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(Icons.search),
-            )
-          : null,
     );
   }
 
@@ -87,12 +81,12 @@ class _UserDashboardState extends State<UserDashboard> {
     switch (index) {
       case 0: return _buildDashboardBody(context, auth, user);
       // case 1: return EquipmentListScreen();
-      case 2: return MyReservationsScreen(); // NEW added for task3 by Wadeeah
-      case 3: return UserDonationDetails(donationID: '',);
+      case 2: return MyReservationsScreen();
+      case 3: return UserDonationDetails(donationID: '1',);
       case 4: return _buildHistoryBody(context);
-      case 5: return _buildHelpBody(context);
+      case 5: return HelpAndSupport();
       case 6: return ProfileScreen();
-      case 7: return _buildSettingsBody(context);
+      case 7: return Settings();
       default: return _buildDashboardBody(context, auth, user);
     }
   }
@@ -285,7 +279,7 @@ class _UserDashboardState extends State<UserDashboard> {
             const SizedBox(height: 24),
 
             // Quick Stats
-            _buildMedicalStats(context),
+            // _buildMedicalStats(context),
             
             const SizedBox(height: 28),
 
@@ -347,94 +341,94 @@ class _UserDashboardState extends State<UserDashboard> {
     );
   }
 
-  Widget _buildMedicalStats(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _statCard(
-            context,
-            icon: Icons.wheelchair_pickup,
-            value: "42",
-            label: "Mobility Aids",
-            color: const Color.fromARGB(255, 255, 67, 117),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _statCard(
-            context,
-            icon: Icons.monitor_heart,
-            value: "18",
-            label: "Monitoring",
-            color: const Color.fromARGB(255, 0, 200, 183),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _statCard(
-            context,
-            icon: Icons.medical_services,
-            value: "7",
-            label: "In Your Cart",
-            color: AppColors.warning,
-          ),
-        ),
-      ],
-    );
-  }
+//   Widget _buildMedicalStats(BuildContext context) {
+//     return Row(
+//       children: [
+//         Expanded(
+//           child: _statCard(
+//             context,
+//             icon: Icons.wheelchair_pickup,
+//             value: "42",
+//             label: "Mobility Aids",
+//             color: const Color.fromARGB(255, 255, 67, 117),
+//           ),
+//         ),
+//         const SizedBox(width: 12),
+//         Expanded(
+//           child: _statCard(
+//             context,
+//             icon: Icons.monitor_heart,
+//             value: "18",
+//             label: "Monitoring",
+//             color: const Color.fromARGB(255, 0, 200, 183),
+//           ),
+//         ),
+//         const SizedBox(width: 12),
+//         Expanded(
+//           child: _statCard(
+//             context,
+//             icon: Icons.medical_services,
+//             value: "7",
+//             label: "In Your Cart",
+//             color: AppColors.warning,
+//           ),
+//         ),
+//       ],
+//     );
+//   }
 
-  Widget _statCard(BuildContext context, {
-    required IconData icon,
-    required String value,
-    required String label,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 20,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: AppColors.primaryDark,
-            ),
-          ),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.neutralGray,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+//   Widget _statCard(BuildContext context, {
+//     required IconData icon,
+//     required String value,
+//     required String label,
+//     required Color color,
+//   }) {
+//     return Container(
+//       padding: const EdgeInsets.all(16),
+//       decoration: BoxDecoration(
+//         color: Colors.white,
+//         borderRadius: BorderRadius.circular(16),
+//         boxShadow: [
+//           BoxShadow(
+//             color: Colors.black.withOpacity(0.05),
+//             blurRadius: 10,
+//             offset: const Offset(0, 4),
+//           ),
+//         ],
+//       ),
+//       child: Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           Container(
+//             padding: const EdgeInsets.all(8),
+//             decoration: BoxDecoration(
+//               color: color.withOpacity(0.1),
+//               borderRadius: BorderRadius.circular(12),
+//             ),
+//             child: Icon(
+//               icon,
+//               color: color,
+//               size: 20,
+//             ),
+//           ),
+//           const SizedBox(height: 12),
+//           Text(
+//             value,
+//             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+//               fontWeight: FontWeight.w700,
+//               color: AppColors.primaryDark,
+//             ),
+//           ),
+//           Text(
+//             label,
+//             style: Theme.of(context).textTheme.bodySmall?.copyWith(
+//               color: AppColors.neutralGray,
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
 
   Widget _buildMedicalCategories(BuildContext context) {
     return Column(
@@ -579,6 +573,7 @@ Widget _buildFeaturedEquipment(BuildContext context) {
   return StreamBuilder(
     stream: FirebaseFirestore.instance
         .collection('equipment')
+        .limit(4)
         .snapshots(),
     builder: (context, snapshot) {
       if (!snapshot.hasData) {
@@ -598,12 +593,41 @@ Widget _buildFeaturedEquipment(BuildContext context) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "Featured Equipment",
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w600,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Equipment",
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              TextButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const EquipmentListScreen()),
+              ),
+              child: const Row(
+                children: [
+                  Text(
+                    "View All",
+                    style: TextStyle(
+                      color: AppColors.primaryBlue,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 14,
+                    color: AppColors.primaryBlue,
+                  ),
+                ],
+              ),
             ),
+            ],
           ),
+
           const SizedBox(height: 16),
 
           // We'll show equipment types, but availability will be determined differently
@@ -619,7 +643,7 @@ Widget _buildFeaturedEquipment(BuildContext context) {
             ),
             itemBuilder: (context, index) {
               final doc = equipmentDocs[index];
-              final equipment = doc.data() as Map<String, dynamic>;
+              final equipment = doc.data();
 
               return _medicalEquipmentCard(
                 context,
@@ -859,44 +883,6 @@ Widget _medicalEquipmentCard(
   );
 }
 
-  // ============ CART BODY ============
-  Widget _buildCartBody(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.shopping_cart_outlined,
-            size: 80,
-            color: AppColors.neutralGray.withOpacity(0.3),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            "Your cart is empty",
-            style: TextStyle(
-              fontSize: 18,
-              color: AppColors.neutralGray,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            "Browse medical equipment and add items to cart",
-            style: TextStyle(
-              color: AppColors.neutralGray,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 30),
-          ElevatedButton(
-            onPressed: () => setState(() => _selectedIndex = 0),
-            child: const Text("Browse Equipment"),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ============ HISTORY BODY ============
   Widget _buildHistoryBody(BuildContext context) {
     return Center(
@@ -929,124 +915,7 @@ Widget _medicalEquipmentCard(
     );
   }
 
-
-  // ============ DONATION HISTORY BODY ============
-  Widget _buildDonationHistoryBody(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.favorite_border,
-            size: 80,
-            color: AppColors.neutralGray.withOpacity(0.3),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            "No donation history",
-            style: TextStyle(
-              fontSize: 18,
-              color: AppColors.neutralGray,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            "Your past donations will appear here",
-            style: TextStyle(
-              color: AppColors.neutralGray,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  // ============ HELP BODY ============
-  Widget _buildHelpBody(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Help & Support",
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 20),
-          
-          _helpSection(
-            icon: Icons.phone,
-            title: "24/7 Support Line",
-            subtitle: "Call us anytime at 1-800-MED-HELP",
-            onTap: () => _callSupport(),
-          ),
-          _helpSection(
-            icon: Icons.email,
-            title: "Email Support",
-            subtitle: "support@medequipment.com",
-            onTap: () => _emailSupport(),
-          ),
-          _helpSection(
-            icon: Icons.question_answer,
-            title: "FAQ",
-            subtitle: "Frequently asked questions",
-            onTap: () => _openFAQ(),
-          ),
-          _helpSection(
-            icon: Icons.book,
-            title: "User Guides",
-            subtitle: "Equipment usage instructions",
-            onTap: () => _openGuides(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _helpSection({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: Icon(icon, color: AppColors.primaryBlue),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
-      ),
-    );
-  }
-
-
-  // ============ SETTINGS BODY ============
-  Widget _buildSettingsBody(BuildContext context) {
-    return Center(
-      child: Text(
-        "Settings",
-        style: Theme.of(context).textTheme.headlineSmall,
-      ),
-    );
-  }
-
   // ============ NAVIGATION METHODS ============
-  void _navigateToNotifications() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => TestNotificationScreen()),
-    );
-  }
-
-  void _navigateToAddEquipment() {
-    // Implement add equipment navigation
-  }
-
   void _navigateToAllCategories() {
     // Implement categories navigation
   }
@@ -1054,80 +923,6 @@ Widget _medicalEquipmentCard(
   void _navigateToCategory(String category) {
     // Implement category navigation
   }
-
-  void _addToCart(String itemName) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Added $itemName to cart'),
-        backgroundColor: AppColors.success,
-      ),
-    );
-  }
-
-  void _callSupport() {
-    // Implement call support
-  }
-
-  void _emailSupport() {
-    // Implement email support
-  }
-
-  void _openFAQ() {
-    // Implement FAQ
-  }
-
-  void _openGuides() {
-    // Implement guides
-  }
-
-  Widget _infoRow(String label, String? value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: AppColors.neutralGray,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value ?? 'N/A',
-              style: const TextStyle(
-                color: AppColors.primaryDark,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _actionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onPressed,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon),
-        label: Text(label),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryBlue,
-          foregroundColor: Colors.white,
-        ),
-      ),
-    );
-  }
-
 }
 
 class SidebarItem {
