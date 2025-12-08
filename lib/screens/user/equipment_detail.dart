@@ -249,10 +249,10 @@ class EquipmentDetailPage extends StatelessWidget {
                         ? AppColors.success.withOpacity(0.1)
                         : AppColors.error.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isAvailable ? AppColors.success : AppColors.error,
-                      width: 1,
-                    ),
+                    // border: Border.all(
+                    //   color: isAvailable ? AppColors.success : AppColors.error,
+                    //   width: 1,
+                    // ),
                   ),
                   child: Text(
                     isAvailable ? "Available" : "Unavailable",
@@ -317,7 +317,6 @@ class EquipmentDetailPage extends StatelessWidget {
                                 'type': equipmentData['type'] ?? equipmentData['category'] ?? 'Unknown',
                                 'serial': itemData['serial'] ?? 'N/A',
                                 'condition': itemData['condition'] ?? 'N/A',
-                                // Add other necessary fields
                               },
                             ),
                           ),
@@ -336,27 +335,6 @@ class EquipmentDetailPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        _addItemToCart(
-                          context, 
-                          equipmentData['name'] ?? 'Equipment',
-                          itemData['name'] ?? 'Item'
-                        );
-                      },
-                      icon: const Icon(Icons.add_shopping_cart, size: 18),
-                      label: const Text("Add to Cart"),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primaryBlue,
-                        side: BorderSide(color: AppColors.primaryBlue),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               )
             else
@@ -406,16 +384,6 @@ class EquipmentDetailPage extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _addItemToCart(BuildContext context, String equipmentName, String itemName) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Added $itemName ($equipmentName) to cart'),
-        backgroundColor: AppColors.primaryBlue,
-        duration: const Duration(seconds: 2),
       ),
     );
   }

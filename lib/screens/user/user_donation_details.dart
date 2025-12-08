@@ -1,5 +1,7 @@
+// 
 import 'package:flutter/material.dart';
 import 'package:itcs444_project/models/donation_model.dart';
+import 'package:itcs444_project/screens/shared/donation_form.dart';
 import 'package:itcs444_project/services/donation_service.dart';
 
 class UserDonationDetails extends StatefulWidget {
@@ -18,6 +20,11 @@ class _UserDonationDetailsState extends State<UserDonationDetails> {
     super.initState();
     _futureDonation = DonationService().fetchDonation(widget.donationID);
   }
+
+    DateTime todaysDate = DateTime.now();
+    late final day = todaysDate.day;
+    late final month = todaysDate.month;
+    late final year = todaysDate.year;
 
   @override
   Widget build(BuildContext context) {
@@ -42,8 +49,18 @@ class _UserDonationDetailsState extends State<UserDonationDetails> {
           }
 
           final d = snapshot.data!;
-          print('DEBUG imagePaths = ${d.imagePaths}');
 
+            String? approvalText;
+          if (d.approvalDate != null) {
+            final a = d.approvalDate!;
+            approvalText = "Approved on: ${a.day}-${a.month}-${a.year}";
+          }
+
+          String? rejectionText;
+          if (d.rejectionDate != null) {
+            final r = d.rejectionDate!;
+            rejectionText = "Rejected on: ${r.day}-${r.month}-${r.year}";
+          }
 
           final commentsText =
               (d.comments == null || d.comments!.trim().isEmpty)
@@ -66,8 +83,10 @@ class _UserDonationDetailsState extends State<UserDonationDetails> {
                         Text('Condition: ${d.condition}'),
                         Text('Description: ${d.description ?? "N/A"}'),
                         Text('Quantity: ${d.quantity ?? 1}'),
-                        Text('Submitted on: ${d.submissionDate}'),
+                        Text('Submitted on: $day-$month-$year'),
                         Text('Status: ${d.status}'),
+                        if(approvalText!=null) Text(approvalText),
+                        if(rejectionText!=null) Text(rejectionText),
                         Text('Comments: $commentsText'),
                       ],
                     ),
@@ -99,8 +118,14 @@ class _UserDonationDetailsState extends State<UserDonationDetails> {
                       ),
                     ),
                     ElevatedButton(onPressed: () {
-                      Navigator.pop(context);
-                    }, child: Text('Go Back to Donation Form'))
+                      Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      DonationForm(),
+                                ),
+                              );
+                    }, child: Text('Submit Another Donation'))
                 ],
               ),
             ),

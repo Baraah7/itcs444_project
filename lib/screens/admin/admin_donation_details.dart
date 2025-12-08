@@ -19,6 +19,11 @@ class _DonationDetailsState extends State<DonationDetails> {
     _futureDonation = DonationService().fetchDonation(widget.donationID);
   }
 
+  DateTime todaysDate = DateTime.now();
+  late final day = todaysDate.day;
+  late final month = todaysDate.month;
+  late final year = todaysDate.year;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -42,7 +47,19 @@ class _DonationDetailsState extends State<DonationDetails> {
           }
 
           final d = snapshot.data!;
-          print('DEBUG imagePaths = ${d.imagePaths}');
+          //print('DEBUG imagePaths = ${d.imagePaths}');
+
+          String? approvalText;
+          if (d.approvalDate != null) {
+            final a = d.approvalDate!;
+            approvalText = "Approved on: ${a.day}-${a.month}-${a.year}";
+          }
+
+          String? rejectionText;
+          if (d.rejectionDate != null) {
+            final r = d.rejectionDate!;
+            rejectionText = "Rejected on: ${r.day}-${r.month}-${r.year}";
+          }
 
           final bool isPending = d.status == 'Pending';
 
@@ -67,8 +84,10 @@ class _DonationDetailsState extends State<DonationDetails> {
                         Text('Condition: ${d.condition}'),
                         Text('Description: ${d.description ?? "N/A"}'),
                         Text('Quantity: ${d.quantity ?? 1}'),
-                        Text('Submitted on: ${d.submissionDate}'),
+                        Text('Submitted on: $day-$month-$year'),
                         Text('Status: ${d.status}'),
+                        if(approvalText!=null) Text(approvalText),
+                        if(rejectionText!=null) Text(rejectionText),
                         Text('Comments: $commentsText'),
                       ],
                     ),
