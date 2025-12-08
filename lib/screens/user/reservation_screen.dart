@@ -24,6 +24,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
   DateTime? _startDate;
   DateTime? _endDate;
   int _quantity = 1;
+  int _maxAvailableQuantity = 1;
   bool _isLoading = false;
   bool _checkingAvailability = false;
   double _calculatedCost = 0.0;
@@ -38,10 +39,32 @@ class _ReservationScreenState extends State<ReservationScreen> {
   void initState() {
     super.initState();
     _initializeDates();
-    _loadUserTrustScore(); 
+    _loadUserTrustScore();
+    _loadAvailableQuantity();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAvailability();
     });
+  }
+  
+  Future<void> _loadAvailableQuantity() async {
+    final itemsSnapshot = await _firestore
+        .collection('equipment')
+        .doc(widget.equipment['id'])
+        .collection('Items')
+        .where('availability', isEqualTo: true)
+        .get();
+    
+    setState(() {
+      _maxAvailableQuantity = itemsSnapshot.docs.length;
+      if (_maxAvailableQuantity == 0) {
+        _maxAvailableQuantity = 1; // Prevent division by zero
+      }
+      if (_quantity > _maxAvailableQuantity) {
+        _quantity = _maxAvailableQuantity;
+      }
+    });
+    
+    _checkAvailability();
   }
   
   void _initializeDates() {
@@ -183,7 +206,17 @@ class _ReservationScreenState extends State<ReservationScreen> {
     _availabilityMessage = 'Checking availability...';
   });
   
-  // Simplified - always allow submission, admin will verify
+  // Check if quantity exceeds available
+  if (_quantity > _maxAvailableQuantity) {
+    setState(() {
+      _isAvailable = false;
+      _availabilityMessage = 'Only $_maxAvailableQuantity item(s) available. You selected $_quantity.';
+      _checkingAvailability = false;
+    });
+    _calculateCost();
+    return;
+  }
+  
   setState(() {
     _isAvailable = true;
     _availabilityMessage = 'Equipment available - pending admin approval';
@@ -915,14 +948,12 @@ class _ReservationScreenState extends State<ReservationScreen> {
                                 ),
                                 child: const Icon(Icons.remove, size: 20),
                               ),
-                              onPressed: () {
-                                if (_quantity > 1) {
-                                  setState(() {
-                                    _quantity--;
-                                  });
-                                  _checkAvailability();
-                                }
-                              },
+                              onPressed: _quantity > 1 ? () {
+                                setState(() {
+                                  _quantity--;
+                                });
+                                _checkAvailability();
+                              } : null,
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -944,19 +975,53 @@ class _ReservationScreenState extends State<ReservationScreen> {
                               icon: Container(
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppColors.primaryBlue,
+                                  color: _quantity < _maxAvailableQuantity ? AppColors.primaryBlue : Colors.grey,
                                 ),
                                 child: const Icon(Icons.add, size: 20, color: Colors.white),
                               ),
-                              onPressed: () {
+                              onPressed: _quantity < _maxAvailableQuantity ? () {
                                 setState(() {
                                   _quantity++;
                                 });
                                 _checkAvailability();
-                              },
+                              } : null,
                             ),
                           ],
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Available: $_maxAvailableQuantity',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _quantity > _maxAvailableQuantity ? Colors.red : Colors.grey[600],
+                            fontWeight: _quantity > _maxAvailableQuantity ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                        if (_quantity > _maxAvailableQuantity)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Colors.red),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.error, size: 14, color: Colors.red),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Exceeds available',
+                                  style: TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
                       ],
                     ),
                   ],
@@ -1141,7 +1206,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
-                onPressed: (_isLoading || !_isAvailable || duration < 1 || duration > _getMaxRentalDays()) 
+                onPressed: (_isLoading || !_isAvailable || duration < 1 || duration > _getMaxRentalDays() || _quantity > _maxAvailableQuantity) 
                     ? null 
                     : _submitReservation,
                 style: ElevatedButton.styleFrom(
