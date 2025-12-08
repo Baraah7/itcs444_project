@@ -75,17 +75,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ),
       drawer: _buildSidebarDrawer(context, admin, auth),
       body: _getBodyForIndex(_selectedIndex, context, auth, admin),
-      // floatingActionButton: _selectedIndex == 0 
-      //     ? FloatingActionButton(
-      //         onPressed: () => _navigateToAddEquipment(),
-      //         backgroundColor: AppColors.primaryDark,
-      //         foregroundColor: Colors.white,
-      //         shape: RoundedRectangleBorder(
-      //           borderRadius: BorderRadius.circular(16),
-      //         ),
-      //         child: const Icon(Icons.add),
-      //       )
-      //     : null,
     );
   }
 
@@ -106,9 +95,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget _getBodyForIndex(int index, BuildContext context, AuthProvider auth, dynamic admin) {
     switch (index) {
       case 0: return _buildDashboardBody(context, auth, admin);
-      case 1: return _buildEquipmentBody(context);
-      case 2: return _buildReservationsBody(context);
-      case 3: return _buildDonationsBody(context);
+      case 1: return EquipmentPage();
+      case 2: return ReservationManagementScreen();
+      case 3: return DonationList();
       case 4: return _buildMaintenanceBody(context);
       case 5: return _buildReportsBody(context);
       case 6: return _buildUsersBody(context);
@@ -120,22 +109,30 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget _buildProfileButton(BuildContext context, dynamic admin) {
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),
-      child: CircleAvatar(
-        radius: 18,
-        backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
-        child: admin?.firstName != null
-            ? Text(
-                admin.firstName[0].toUpperCase(),
-                style: const TextStyle(
-                  color: AppColors.primaryBlue,
-                  fontWeight: FontWeight.w600,
-                ),
-              )
-            : const Icon(
-                Icons.admin_panel_settings,
-                size: 18,
-                color: AppColors.primaryBlue,
-              ),
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedIndex = 7),
+        child: CircleAvatar(
+          radius: 18,
+          backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
+          backgroundImage: admin?.profileImageUrl != null 
+              ? NetworkImage(admin.profileImageUrl) 
+              : null,
+          child: admin?.profileImageUrl == null
+              ? (admin?.firstName != null
+                  ? Text(
+                      admin.firstName[0].toUpperCase(),
+                      style: const TextStyle(
+                        color: AppColors.primaryBlue,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    )
+                  : const Icon(
+                      Icons.admin_panel_settings,
+                      size: 18,
+                      color: AppColors.primaryBlue,
+                    ))
+              : null,
+        ),
       ),
     );
   }
@@ -800,39 +797,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ),
       contentPadding: EdgeInsets.zero,
     );
-  }
-
-  // ============ OTHER SECTION BODIES ============
-  Widget _buildEquipmentBody(BuildContext context) {
-    return EquipmentPage();
-  }
-
-  Widget _buildReservationsBody(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.event_available,
-            size: 80,
-            color: AppColors.neutralGray.withOpacity(0.3),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            "Reservation Management",
-            style: TextStyle(
-              fontSize: 24,
-              color: AppColors.neutralGray,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDonationsBody(BuildContext context) {
-    return DonationList();
   }
 
   Widget _buildMaintenanceBody(BuildContext context) {

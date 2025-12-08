@@ -1,7 +1,9 @@
+import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:itcs444_project/screens/user/equipment_detail.dart';
+import 'package:itcs444_project/screens/user/equipment_list.dart';
 import 'package:itcs444_project/screens/user/my_reservations.dart';
+import 'package:itcs444_project/screens/user/donation_page.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/theme.dart';
@@ -21,10 +23,10 @@ class _UserDashboardState extends State<UserDashboard> {
   // Sidebar menu items
   final List<SidebarItem> _sidebarItems = [
     SidebarItem(icon: Icons.dashboard, label: 'Dashboard', index: 0),
-    SidebarItem(icon: Icons.event_available, label: 'My Reservations', index: 1), // NEW added for task3 by Wadeeah
-    SidebarItem(icon: Icons.shopping_cart, label: 'View Cart', index: 2),
-    SidebarItem(icon: Icons.history, label: 'Rental History', index: 3),
-    SidebarItem(icon: Icons.favorite_border, label: 'Donation History', index: 4),
+    SidebarItem(icon: Icons.event_available, label: 'Equipment', index: 1), // NEW added for task3 by Wadeeah
+    SidebarItem(icon: Icons.shopping_cart, label: 'Reservations', index: 2),
+    SidebarItem(icon: Icons.favorite_border, label: 'Donations', index: 3),
+    SidebarItem(icon: Icons.history, label: 'History', index: 4),
     SidebarItem(icon: Icons.help, label: 'Help & Support', index: 5),
     SidebarItem(icon: Icons.person, label: 'My Profile', index: 6),
     SidebarItem(icon: Icons.settings, label: 'Settings', index: 7),
@@ -70,12 +72,13 @@ class _UserDashboardState extends State<UserDashboard> {
   String _getTitleForIndex(int index) {
     switch (index) {
       case 0: return 'Care Center';
-      case 1: return 'My Cart';
-      case 2: return 'Rental History';
-      case 3: return 'Donation History';
-      case 4: return 'Help & Support';
-      case 5: return 'My Profile';
-      case 6: return 'Settings';
+      case 1: return 'Equipment';
+      case 2: return 'Reservations';
+      case 3: return 'Donations';
+      case 4: return 'History';
+      case 5: return 'Help & Support';
+      case 6: return 'My Profile';
+      case 7: return 'Settings';
       default: return 'Dashboard';
     }
   }
@@ -83,10 +86,10 @@ class _UserDashboardState extends State<UserDashboard> {
   Widget _getBodyForIndex(int index, BuildContext context, AuthProvider auth, dynamic user) {
     switch (index) {
       case 0: return _buildDashboardBody(context, auth, user);
-      case 1: return const MyReservationsScreen(); // NEW added for task3 by Wadeeah
-      case 2: return _buildCartBody(context);
-      case 3: return _buildHistoryBody(context);
-      case 4: return _buildDonationHistoryBody(context);
+      // case 1: return EquipmentListScreen();
+      case 2: return MyReservationsScreen(); // NEW added for task3 by Wadeeah
+      case 3: return UserDonationDetails(donationID: '',);
+      case 4: return _buildHistoryBody(context);
       case 5: return _buildHelpBody(context);
       case 6: return ProfileScreen();
       case 7: return _buildSettingsBody(context);
@@ -97,22 +100,30 @@ class _UserDashboardState extends State<UserDashboard> {
   Widget _buildProfileButton(BuildContext context, dynamic user) {
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),
-      child: CircleAvatar(
-        radius: 18,
-        backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
-        child: user?.firstName != null
-            ? Text(
-                user.firstName[0].toUpperCase(),
-                style: const TextStyle(
-                  color: AppColors.primaryBlue,
-                  fontWeight: FontWeight.w600,
-                ),
-              )
-            : const Icon(
-                Icons.person,
-                size: 18,
-                color: AppColors.primaryBlue,
-              ),
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedIndex = 6),
+        child: CircleAvatar(
+          radius: 18,
+          backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
+          backgroundImage: user?.profileImageUrl != null 
+              ? NetworkImage(user.profileImageUrl) 
+              : null,
+          child: user?.profileImageUrl == null
+              ? (user?.firstName != null
+                  ? Text(
+                      user.firstName[0].toUpperCase(),
+                      style: const TextStyle(
+                        color: AppColors.primaryBlue,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    )
+                  : const Icon(
+                      Icons.person,
+                      size: 18,
+                      color: AppColors.primaryBlue,
+                    ))
+              : null,
+        ),
       ),
     );
   }
@@ -563,70 +574,6 @@ Widget _medicalCategoryCard(BuildContext context, {
     );
   }
 
-//   Widget _buildFeaturedEquipment(BuildContext context) {
-//   return StreamBuilder(
-//     stream: FirebaseFirestore.instance
-//         .collection('equipment')
-//         .limit(4) // Load only 4 featured items
-//         .snapshots(),
-//     builder: (context, snapshot) {
-//       if (!snapshot.hasData) {
-//         return const Center(
-//           child: CircularProgressIndicator(),
-//         );
-//       }
-
-//       final docs = snapshot.data!.docs;
-
-//       if (docs.isEmpty) {
-//         return const Center(
-//           child: Text("No equipment found"),
-//         );
-//       }
-
-//       return Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           Text(
-//             "Featured Equipment",
-//             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-//               fontWeight: FontWeight.w600,
-//             ),
-//           ),
-//           const SizedBox(height: 16),
-
-//           GridView.builder(
-//             shrinkWrap: true,
-//             physics: const NeverScrollableScrollPhysics(),
-//             itemCount: docs.length,
-//             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-//               crossAxisCount: 2,
-//               crossAxisSpacing: 16,
-//               mainAxisSpacing: 16,
-//               childAspectRatio: 0.78,
-//             ),
-//             itemBuilder: (context, index) {
-//   final doc = docs[index];
-//   final item = doc.data() as Map<String, dynamic>;
-
-//   // Simple boolean check - true = available, false = not available
-//   final bool isAvailable = item['availability'] ?? false;
-
-//   return _medicalEquipmentCard(
-//     context,
-//     id: doc.id,
-//     name: item['name'] ?? "Unknown",
-//     category: item['category'] ?? "n/a",
-//     isAvailable: isAvailable,
-//     imageColor: AppColors.primaryBlue.withOpacity(0.1),
-//   );
-// },
-//           )
-//         ],
-//       );
-//     },
-//   );
-// }
 // updayed by wadeeah (task3) to fetch real data
 Widget _buildFeaturedEquipment(BuildContext context) {
   return StreamBuilder(
@@ -691,209 +638,6 @@ Widget _buildFeaturedEquipment(BuildContext context) {
   );
 }
 
-// Widget _medicalEquipmentCard(
-//   BuildContext context, {
-//   required String id,
-//   required String name,
-//   required String category,
-//   required bool isAvailable, // Changed to boolean
-//   required Color imageColor,
-// }) {
-//   return GestureDetector(
-//     onTap: () {
-//       Navigator.push(
-//         context,
-//         MaterialPageRoute(
-//           builder: (_) => EquipmentDetailPage(equipmentId: id),
-//         ),
-//       );
-//     },
-//     child: Container(
-//       decoration: BoxDecoration(
-//         color: Colors.white,
-//         borderRadius: BorderRadius.circular(20),
-//         boxShadow: [
-//           BoxShadow(
-//             color: Colors.black.withOpacity(0.08),
-//             blurRadius: 15,
-//             offset: const Offset(0, 6),
-//             spreadRadius: 0,
-//           ),
-//         ],
-//         border: Border.all(
-//           color: Colors.grey.shade100,
-//           width: 1,
-//         ),
-//       ),
-//       child: Padding(
-//         padding: const EdgeInsets.all(14),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             // IMAGE/CONTAINER SECTION
-//             Stack(
-//               children: [
-//                 Container(
-//                   height: 110,
-//                   width: double.infinity,
-//                   decoration: BoxDecoration(
-//                     borderRadius: BorderRadius.circular(16),
-//                     gradient: LinearGradient(
-//                       begin: Alignment.topLeft,
-//                       end: Alignment.bottomRight,
-//                       colors: [
-//                         imageColor.withOpacity(0.7),
-//                         imageColor.withOpacity(0.9),
-//                       ],
-//                     ),
-//                   ),
-//                   child: Center(
-//                     child: Icon(
-//                       Icons.medical_services,
-//                       size: 42,
-//                       color: Colors.white.withOpacity(0.95),
-//                     ),
-//                   ),
-//                 ),
-                
-//                 // AVAILABILITY BADGE - SIMPLE VERSION
-//                 Positioned(
-//                   top: 8,
-//                   right: 8,
-//                   child: Container(
-//                     padding: const EdgeInsets.symmetric(
-//                       horizontal: 10,
-//                       vertical: 5,
-//                     ),
-//                     decoration: BoxDecoration(
-//                       color: isAvailable 
-//                           ? AppColors.success.withOpacity(0.95)
-//                           : AppColors.error.withOpacity(0.95),
-//                       borderRadius: BorderRadius.circular(20),
-//                       boxShadow: [
-//                         BoxShadow(
-//                           color: Colors.black.withOpacity(0.1),
-//                           blurRadius: 4,
-//                           offset: const Offset(0, 2),
-//                         ),
-//                       ],
-//                     ),
-//                     child: Text(
-//                       isAvailable ? "Available" : "Not Available",
-//                       style: TextStyle(
-//                         fontSize: 10,
-//                         color: Colors.white,
-//                         fontWeight: FontWeight.w600,
-//                         letterSpacing: 0.5,
-//                       ),
-//                     ),
-//                   ),
-//                 ),
-//               ],
-//             ),
-
-//             const SizedBox(height: 16),
-
-//             // NAME
-//             Text(
-//               name,
-//               style: const TextStyle(
-//                 fontSize: 15,
-//                 fontWeight: FontWeight.w700,
-//                 color: AppColors.primaryDark,
-//                 height: 1.3,
-//               ),
-//               maxLines: 2,
-//               overflow: TextOverflow.ellipsis,
-//             ),
-
-//             const SizedBox(height: 8),
-
-//             // CATEGORY WITH ICON
-//             Row(
-//               children: [
-//                 Icon(
-//                   Icons.category_outlined,
-//                   size: 14,
-//                   color: AppColors.neutralGray,
-//                 ),
-//                 const SizedBox(width: 6),
-//                 Expanded(
-//                   child: Text(
-//                     category,
-//                     style: TextStyle(
-//                       fontSize: 13,
-//                       color: AppColors.neutralGray,
-//                       fontWeight: FontWeight.w500,
-//                     ),
-//                     maxLines: 1,
-//                     overflow: TextOverflow.ellipsis,
-//                   ),
-//                 ),
-//               ],
-//             ),
-
-//             const Spacer(),
-
-//             // ADD TO CART BUTTON - SIMPLE VERSION
-//             GestureDetector(
-//               onTap: isAvailable 
-//                   ? () => _addToCart(name)
-//                   : null,
-//               child: Container(
-//                 width: double.infinity,
-//                 padding: const EdgeInsets.symmetric(
-//                   horizontal: 16,
-//                   vertical: 12,
-//                 ),
-//                 decoration: BoxDecoration(
-//                   color: isAvailable
-//                       ? AppColors.primaryBlue
-//                       : AppColors.neutralGray.withOpacity(0.3),
-//                   borderRadius: BorderRadius.circular(12),
-//                   boxShadow: isAvailable
-//                       ? [
-//                           BoxShadow(
-//                             color: AppColors.primaryBlue.withOpacity(0.3),
-//                             blurRadius: 8,
-//                             offset: const Offset(0, 3),
-//                           ),
-//                         ]
-//                       : null,
-//                 ),
-//                 child: Row(
-//                   mainAxisAlignment: MainAxisAlignment.center,
-//                   children: [
-//                     Icon(
-//                       Icons.add_shopping_cart,
-//                       size: 16,
-//                       color: isAvailable
-//                           ? Colors.white
-//                           : Colors.grey[600],
-//                     ),
-//                     const SizedBox(width: 8),
-//                     Text(
-//                       isAvailable ? "Add to Cart" : "Not Available",
-//                       style: TextStyle(
-//                         fontSize: 14,
-//                         fontWeight: FontWeight.w600,
-//                         color: isAvailable
-//                             ? Colors.white
-//                             : Colors.grey[600],
-//                         letterSpacing: 0.5,
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     ),
-//   );
-// }
-//updated by Wadeeah (task3)
 Widget _medicalEquipmentCard(
   BuildContext context, {
   required String id,
@@ -920,14 +664,14 @@ Widget _medicalEquipmentCard(
       }
 
       return GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => EquipmentDetailPage(equipmentId: id),
-            ),
-          );
-        },
+        // onTap: () {
+        //   Navigator.push(
+        //     context,
+        //     MaterialPageRoute(
+        //       builder: (_) => EquipmentDetailPage(id: id),
+        //     ),
+        //   );
+        // },
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -1059,14 +803,14 @@ Widget _medicalEquipmentCard(
 
                 // VIEW DETAILS BUTTON (instead of Add to Cart)
                 GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => EquipmentDetailPage(equipmentId: id),
-                      ),
-                    );
-                  },
+                  // onTap: () {
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(
+                  //       builder: (_) => EquipmentDetailPage(equipmentId: id),
+                  //     ),
+                  //   );
+                  // },
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
