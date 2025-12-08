@@ -14,7 +14,7 @@ class DonationHistory extends StatefulWidget {
 }
 
 class _DonationHistoryState extends State<DonationHistory> {
-  List<String> filterOps = ['Pending', 'Approved', 'Rejected'];
+  List<String> filterOps = ['All', 'Pending', 'Approved', 'Rejected'];
   String? filterVal;
   final user = FirebaseAuth.instance.currentUser;
   late final uid = user?.uid;
@@ -23,8 +23,6 @@ class _DonationHistoryState extends State<DonationHistory> {
   late final day = todaysDate.day;
   late final month = todaysDate.month;
   late final year = todaysDate.year;
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +50,7 @@ class _DonationHistoryState extends State<DonationHistory> {
 
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-               children: [
+              children: [
                 Text(
                   filterVal == null
                       ? 'All Donations:'
@@ -67,7 +65,7 @@ class _DonationHistoryState extends State<DonationHistory> {
                   }).toList(),
                   onSelected: (value) {
                     setState(() {
-                      filterVal = value;
+                      filterVal = (value == 'All') ? null : value;
                     });
                   },
                 ),

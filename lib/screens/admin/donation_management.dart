@@ -12,7 +12,7 @@ class DonationList extends StatefulWidget {
 }
 
 class _DonationListState extends State<DonationList> {
-  List<String> filterOps = ['Pending', 'Approved', 'Rejected'];
+  List<String> filterOps = ['All', 'Pending', 'Approved', 'Rejected'];
   String? filterVal;
 
   DateTime todaysDate = DateTime.now();
@@ -43,7 +43,7 @@ class _DonationListState extends State<DonationList> {
                   }).toList(),
                   onSelected: (value) {
                     setState(() {
-                      filterVal = value;
+                      filterVal = (value == 'All') ? null : value;
                     });
                   },
                 ),
