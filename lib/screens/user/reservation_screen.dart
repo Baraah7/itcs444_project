@@ -181,8 +181,40 @@ class _ReservationScreenState extends State<ReservationScreen> {
     _calculateTotal();
     _checkAvailability();
   }
+<<<<<<< HEAD
 
   void _calculateTotal() {
+=======
+  
+  String _getTrustLevelText() {
+    switch (_userTrustScore) {
+      case 3: return 'Trusted User (+50% duration)';
+      case 2: return 'Regular User (+25% duration)';
+      case 1: return 'New User (standard duration)';
+      default: return 'First-time User (reduced duration)';
+    }
+  }
+  
+ Future<void> _checkAvailability() async {
+  if (_startDate == null || _endDate == null) return;
+  
+  setState(() {
+    _checkingAvailability = true;
+    _availabilityMessage = 'Checking availability...';
+  });
+  
+  // Simplified - always allow submission, admin will verify
+  setState(() {
+    _isAvailable = true;
+    _availabilityMessage = 'Equipment available - pending admin approval';
+    _checkingAvailability = false;
+  });
+  
+  _calculateCost();
+}
+  
+  void _calculateCost() {
+>>>>>>> Task1
     if (_startDate == null || _endDate == null) return;
     
     _totalDays = _endDate!.difference(_startDate!).inDays + 1;

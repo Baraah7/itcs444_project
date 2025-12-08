@@ -2,10 +2,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+<<<<<<< HEAD
+=======
+import '../models/rental_model.dart';
+import '../models/equipment_model.dart';
+import 'notification_service.dart';
+>>>>>>> Task1
 
 class ReservationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+<<<<<<< HEAD
 
 
 
@@ -83,6 +90,17 @@ Future<bool> checkItemAvailability({
 
   Future<Map<String, dynamic>> createReservation({
     required String userId,
+=======
+  final NotificationService _notificationService = NotificationService();
+  
+  // Collection references
+  CollectionReference get rentalsCollection => _firestore.collection('rentals');
+  CollectionReference get equipmentCollection => _firestore.collection('equipment');
+  CollectionReference get usersCollection => _firestore.collection('users');
+  
+  // 1. CREATE A NEW RENTAL (FIXED VERSION)
+  Future<String> createRental({
+>>>>>>> Task1
     required String equipmentId,
     required String itemId,
     required String equipmentName,
@@ -139,6 +157,7 @@ Future<bool> checkItemAvailability({
 
       await reservationRef.set(reservationData);
       
+<<<<<<< HEAD
       await _firestore
           .collection('equipment')
           .doc(equipmentId)
@@ -154,6 +173,69 @@ Future<bool> checkItemAvailability({
         'message': 'Reservation created successfully!',
         'reservationId': reservationId,
       };
+=======
+      final userData = userDoc.data() as Map<String, dynamic>;
+      var userFullName = '${userData['firstName'] ?? ''} ${userData['lastName'] ?? ''}'.trim();
+      if (userFullName.isEmpty) {
+        userFullName = userData['email'] ?? 'User';
+      }
+      
+      // Calculate duration and validate
+      final int duration = endDate.difference(startDate).inDays;
+      if (duration < 1) {
+        throw Exception('Rental must be at least 1 day');
+      }
+      
+      // Get maximum rental days for this equipment type
+      final maxDays = _getMaxRentalDays(itemType);
+      if (duration > maxDays) {
+        throw Exception('Maximum rental period is $maxDays days for $itemType');
+      }
+      
+      // Calculate total cost
+      final double totalCost = dailyRate * duration * quantity;
+      
+      // Create rental document
+      final rentalRef = rentalsCollection.doc();
+      final rentalId = rentalRef.id;
+      
+      final rental = Rental(
+        id: rentalId,
+        userId: firebaseUser.uid,
+        userFullName: userFullName,
+        equipmentId: equipmentId,
+        equipmentName: equipmentName,
+        itemType: itemType,
+        startDate: startDate,
+        endDate: endDate,
+        totalCost: totalCost,
+        status: 'pending',
+        createdAt: DateTime.now(),
+        quantity: quantity,
+      );
+      
+      // Save rental
+      await rentalRef.set(rental.toMap());
+      
+      // Send notification to user
+      await _notificationService.sendNotification(
+        userId: firebaseUser.uid,
+        title: 'Rental Request Submitted',
+        message: 'Your rental request for "$equipmentName" has been submitted and is pending approval.',
+        type: 'approval',
+        data: {'rentalId': rentalId},
+      );
+      
+      // Notify admins
+      await _notifyAdmins(
+        'New Rental Request',
+        'New rental request for "$equipmentName" by $userFullName',
+        'approval',
+        {'rentalId': rentalId},
+      );
+      
+      return rentalId;
+>>>>>>> Task1
     } catch (e) {
       debugPrint('Error creating reservation: $e');
       return {
@@ -245,9 +327,9 @@ Future<bool> checkItemAvailability({
     return _firestore
         .collection('reservations')
         .where('userId', isEqualTo: user.uid)
-        .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
+<<<<<<< HEAD
           return snapshot.docs.map((doc) {
             final data = doc.data() as Map<String, dynamic>?; // ADD CAST HERE
             final startDate = data?['startDate'] as Timestamp?;
@@ -267,6 +349,52 @@ Future<bool> checkItemAvailability({
 
   Future<void> updateReservationStatus({
     required String reservationId,
+=======
+          final rentals = snapshot.docs
+              .map((doc) {
+                try {
+                  return Rental.fromMap(doc.data() as Map<String, dynamic>);
+                } catch (e) {
+                  print('Error parsing rental: $e');
+                  return null;
+                }
+              })
+              .where((rental) => rental != null && rental.id.isNotEmpty)
+              .cast<Rental>()
+              .toList();
+          
+          rentals.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return rentals;
+        });
+  }
+  
+  // 4. GET ALL RENTALS (FOR ADMIN)
+  Stream<List<Rental>> getAllRentals() {
+    return rentalsCollection.snapshots().map((snapshot) {
+      print('getAllRentals: Got ${snapshot.docs.length} documents');
+      final rentals = <Rental>[];
+      
+      for (var doc in snapshot.docs) {
+        try {
+          final data = doc.data() as Map<String, dynamic>;
+          print('Processing rental: ${doc.id}');
+          final rental = Rental.fromMap(data);
+          rentals.add(rental);
+        } catch (e) {
+          print('Error parsing rental ${doc.id}: $e');
+        }
+      }
+      
+      print('getAllRentals: Returning ${rentals.length} rentals');
+      rentals.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return rentals;
+    });
+  }
+  
+  // 5. UPDATE RENTAL STATUS (ADMIN)
+  Future<void> updateRentalStatus({
+    required String rentalId,
+>>>>>>> Task1
     required String status,
     String? adminNotes,
   }) async {
@@ -284,6 +412,46 @@ Future<bool> checkItemAvailability({
           .collection('reservations')
           .doc(reservationId)
           .update(updateData);
+      
+      // Send notification to user
+      final rentalDoc = await rentalsCollection.doc(rentalId).get();
+      if (rentalDoc.exists) {
+        final rentalData = rentalDoc.data() as Map<String, dynamic>;
+        final userId = rentalData['userId'] as String;
+        final equipmentName = rentalData['equipmentName'] as String;
+        
+        String title = '';
+        String message = '';
+        
+        switch (status) {
+          case 'approved':
+            title = 'Rental Approved';
+            message = 'Your rental request for "$equipmentName" has been approved!';
+            break;
+          case 'checked_out':
+            title = 'Equipment Checked Out';
+            message = 'You have checked out "$equipmentName". Please return by the due date.';
+            break;
+          case 'returned':
+            title = 'Rental Completed';
+            message = 'Thank you for returning "$equipmentName" on time!';
+            break;
+          case 'cancelled':
+            title = 'Rental Cancelled';
+            message = 'Your rental for "$equipmentName" has been cancelled.';
+            break;
+        }
+        
+        if (title.isNotEmpty) {
+          await _notificationService.sendNotification(
+            userId: userId,
+            title: title,
+            message: message,
+            type: 'approval',
+            data: {'rentalId': rentalId},
+          );
+        }
+      }
       
     } catch (e) {
       throw Exception('Failed to update reservation status: $e');
@@ -339,4 +507,71 @@ Future<bool> checkItemAvailability({
           }).toList();
         });
     }
+<<<<<<< HEAD
+=======
+  }
+  
+  // CALCULATE USER TRUST SCORE
+  Future<int> calculateUserTrustScore(String userId) async {
+    try {
+      final userRentals = await rentalsCollection
+          .where('userId', isEqualTo: userId)
+          .get();
+      
+      if (userRentals.docs.isEmpty) return 0;
+      
+      int returnedCount = 0;
+      int overdueCount = 0;
+      int cancelledCount = 0;
+      
+      for (final doc in userRentals.docs) {
+        final rentalData = doc.data() as Map<String, dynamic>;
+        final status = rentalData['status'] as String;
+        
+        if (status == 'returned') returnedCount++;
+        if (status == 'cancelled') cancelledCount++;
+        
+        // Check if overdue
+        if (status == 'checked_out') {
+          final endDate = DateTime.parse(rentalData['endDate']);
+          if (endDate.isBefore(DateTime.now())) {
+            overdueCount++;
+          }
+        }
+      }
+      
+      // Simple trust score calculation
+      int score = returnedCount * 10;
+      score -= overdueCount * 20;
+      score -= cancelledCount * 5;
+      
+      return score.clamp(0, 100);
+    } catch (e) {
+      print('Error calculating trust score: $e');
+      return 0;
+    }
+  }
+  
+  // NOTIFY ADMINS
+  Future<void> _notifyAdmins(String title, String message, String type, [Map<String, dynamic>? data]) async {
+    try {
+      final admins = await _firestore
+          .collection('users')
+          .where('role', isEqualTo: 'admin')
+          .get();
+
+      for (var admin in admins.docs) {
+        await _notificationService.sendNotification(
+          userId: admin.id,
+          title: title,
+          message: message,
+          type: type,
+          data: data,
+        );
+      }
+    } catch (e) {
+      print('Error notifying admins: $e');
+    }
+  }
+>>>>>>> Task1
 }
