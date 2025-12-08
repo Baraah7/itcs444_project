@@ -639,7 +639,9 @@ Widget _buildFeaturedEquipment(BuildContext context) {
               crossAxisCount: 2,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
-              childAspectRatio: 0.78,
+              // childAspectRatio: 0.78,
+              childAspectRatio: 0.65,
+
             ),
             itemBuilder: (context, index) {
               final doc = equipmentDocs[index];
@@ -824,6 +826,7 @@ Widget _medicalEquipmentCard(
                 ),
 
                 const Spacer(),
+                // const SizedBox(width: 5,),
 
                 // VIEW DETAILS BUTTON (instead of Add to Cart)
                 GestureDetector(
