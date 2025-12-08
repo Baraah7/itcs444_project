@@ -1,9 +1,9 @@
-import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart' hide Settings;
 import 'package:flutter/material.dart';
+import 'package:itcs444_project/screens/shared/donation_form.dart';
+import 'package:itcs444_project/screens/user/donation_history.dart';
 import 'package:itcs444_project/screens/user/equipment_list.dart';
 import 'package:itcs444_project/screens/user/my_reservations.dart';
-import 'package:itcs444_project/screens/user/donation_page.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/theme.dart';
@@ -83,7 +83,7 @@ class _UserDashboardState extends State<UserDashboard> {
       case 0: return _buildDashboardBody(context, auth, user);
       case 1: return UserEquipmentPage();
       case 2: return MyReservationsScreen();
-      case 3: return UserDonationDetails(donationID: '1',);
+      case 3: return DonationHistory();
       case 4: return _buildHistoryBody(context);
       case 5: return HelpAndSupport();
       case 6: return ProfileScreen();
