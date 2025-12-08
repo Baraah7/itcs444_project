@@ -23,39 +23,50 @@ class _DonationHistoryState extends State<DonationHistory> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Donation History'),
-        backgroundColor: Colors.blue,
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => DonationForm()),
-              );
-            },
-            icon: Icon(Icons.add),
-          ),
-        ],
-      ),
       body: Padding(
         padding: const EdgeInsets.all(10),
         child: Column(
           spacing: 15,
           children: [
-            Align(
-              alignment: Alignment.topLeft,
-              child: Column(
-                children: [
-                  Text(
-                    'Your Donations:',
-                    style: const TextStyle(fontSize: 20),
-                  ),
-                  Text('Thank you for your generous contributions to our center.')
-                ],
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Your Donations', style: const TextStyle(fontSize: 20)),
+                IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => DonationForm()),
+                    );
+                  },
+                  icon: Icon(Icons.add),
+                ),
+              ],
+            ),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+               children: [
+                Text(
+                  filterVal == null
+                      ? 'All Donations:'
+                      : '$filterVal Donations:',
+                  style: const TextStyle(fontSize: 16),
+                ),
+
+                DropdownMenu(
+                  initialSelection: filterVal,
+                  dropdownMenuEntries: filterOps.map((item) {
+                    return DropdownMenuEntry(value: item, label: item);
+                  }).toList(),
+                  onSelected: (value) {
+                    setState(() {
+                      filterVal = value;
+                    });
+                  },
+                ),
+              ],
             ),
 
             //donations
