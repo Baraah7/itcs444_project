@@ -11,6 +11,7 @@ import 'screens/admin/admin_dashboard.dart';
 import 'screens/admin/equipment_management.dart';
 import 'services/background_notification_service.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'screens/user/equipment_list.dart' ;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,7 +61,7 @@ class MyApp extends StatelessWidget {
       title: 'Care Center App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: const RoleWrapper(),
+      home: const UserEquipmentPage(),
       // home: const AdminDashboard(),
       routes: {
         '/login': (_) => const LoginScreen(),
