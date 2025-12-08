@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../services/reservation_service.dart';
 import '../../models/rental_model.dart';
-import '../../providers/auth_provider.dart';
 import '../../utils/theme.dart';
 
 class ReservationManagementScreen extends StatefulWidget {
-  const ReservationManagementScreen({Key? key}) : super(key: key);
+  const ReservationManagementScreen({super.key});
   
   @override
   State<ReservationManagementScreen> createState() => _ReservationManagementScreenState();
@@ -46,7 +44,9 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
   void dispose() {
     _searchController.dispose();
     // Dispose all notes controllers
-    _notesControllers.values.forEach((controller) => controller.dispose());
+    for (var controller in _notesControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
   
@@ -161,7 +161,7 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _detailRow('ID', rental.id.substring(0, 12) + '...'),
+              _detailRow('ID', '${rental.id.substring(0, 12)}...'),
               _detailRow('User', rental.userFullName),
               _detailRow('Equipment', rental.equipmentName),
               _detailRow('Type', rental.itemType),
@@ -833,7 +833,6 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
   
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
     
     return Scaffold(
       appBar: AppBar(

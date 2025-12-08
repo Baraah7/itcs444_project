@@ -61,7 +61,6 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const RoleWrapper(),
-      // home: const AdminDashboard(),
       routes: {
         '/login': (_) => const LoginScreen(),
         '/register': (_) => const RegisterScreen(),
@@ -72,9 +71,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-
-
 
 class RoleWrapper extends StatelessWidget {
   const RoleWrapper({super.key});
