@@ -1,57 +1,42 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:itcs444_project/screens/user/equipment_detail.dart';
-import '../../utils/theme.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'equipment_detail.dart';
 
-class EquipmentListScreen extends StatefulWidget {
-  final String? category;
-  final String? searchQuery;
-
-  const EquipmentListScreen({
-    super.key,
-    this.category,
-    this.searchQuery,
-  });
+class UserEquipmentPage extends StatefulWidget {
+  const UserEquipmentPage({super.key});
 
   @override
-  State<EquipmentListScreen> createState() => _EquipmentListScreenState();
+  State<UserEquipmentPage> createState() => _UserEquipmentPageState();
 }
 
-class _EquipmentListScreenState extends State<EquipmentListScreen> {
-  String _selectedCategory = 'All';
-  String _selectedCondition = 'All';
-  String _sortBy = 'name';
-  bool _showAvailableOnly = false;
+class _UserEquipmentPageState extends State<UserEquipmentPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  String _selectedType = 'All';
+  bool _showOnlyAvailable = false;
+  ViewType _currentView = ViewType.list;
 
-  final List<String> _categories = [
+  // Equipment types from Firestore
+  final List<String> _equipmentTypes = [
     'All',
-    'Mobility Aids',
-    'Home Care',
-    'Monitoring',
-    'Medical Supplies',
-    'Respiratory',
+    'Power Tools',
+    'Hand Tools',
+    'Electrical',
+    'Plumbing',
+    'Gardening',
+    'Cleaning',
+    'Safety',
     'Other',
-  ];
-
-  final List<String> _conditions = [
-    'All',
-    'Excellent',
-    'Good',
-    'Fair',
   ];
 
   @override
   void initState() {
     super.initState();
-    if (widget.category != null) {
-      _selectedCategory = widget.category!;
-    }
-    if (widget.searchQuery != null) {
-      _searchQuery = widget.searchQuery!;
-      _searchController.text = _searchQuery;
-    }
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
   }
 
   @override
@@ -60,427 +45,537 @@ class _EquipmentListScreenState extends State<EquipmentListScreen> {
     super.dispose();
   }
 
+  void _clearFilters() {
+    setState(() {
+      _searchController.clear();
+      _selectedType = 'All';
+      _showOnlyAvailable = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Browse Equipment'),
+        title: const Text("Browse Equipment"),
+        centerTitle: true,
         actions: [
+          // Removed add button for users
           IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () => _showFilterBottomSheet(),
+            icon: Icon(_currentView == ViewType.list ? Icons.grid_view : Icons.list),
+            onPressed: () {
+              setState(() {
+                _currentView = _currentView == ViewType.list
+                    ? ViewType.grid
+                    : ViewType.list;
+              });
+            },
+            tooltip: 'Change view',
           ),
         ],
       ),
       body: Column(
         children: [
-          _buildSearchBar(),
-          _buildFilterChips(),
+          // Search and Filter Section
+          _buildFilterSection(),
+
+          // Active Filters Display
+          if (_hasActiveFilters()) _buildActiveFilters(),
+
+          // Equipment List
           Expanded(
-            child: _buildEquipmentGrid(),
+            child: _buildEquipmentList(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildFilterSection() {
     return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.white,
-      child: TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          hintText: 'Search equipment...',
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: _searchQuery.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    setState(() {
-                      _searchController.clear();
-                      _searchQuery = '';
-                    });
-                  },
-                )
-              : null,
-          filled: true,
-          fillColor: AppColors.backgroundLight,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        ),
-        onChanged: (value) {
-          setState(() {
-            _searchQuery = value.toLowerCase();
-          });
-        },
-      ),
-    );
-  }
-
-  Widget _buildFilterChips() {
-    return Container(
-      height: 60,
-      color: Colors.white,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: Theme.of(context).primaryColor.withOpacity(0.05),
+      padding: const EdgeInsets.all(12),
+      child: Column(
         children: [
-          _buildFilterChip(
-            label: _showAvailableOnly ? 'Available Only' : 'All Items',
-            icon: _showAvailableOnly ? Icons.check_circle : Icons.filter_alt,
-            isSelected: _showAvailableOnly,
-            onTap: () {
-              setState(() {
-                _showAvailableOnly = !_showAvailableOnly;
-              });
-            },
+          // Search Bar
+          TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Search equipment...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                      },
+                    )
+                  : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+            ),
           ),
-          const SizedBox(width: 8),
-          _buildFilterChip(
-            label: _selectedCategory,
-            icon: Icons.category,
-            onTap: () => _showCategoryDialog(),
-          ),
-          const SizedBox(width: 8),
-          _buildFilterChip(
-            label: 'Sort: ${_getSortLabel()}',
-            icon: Icons.sort,
-            onTap: () => _showSortDialog(),
-          ),
-          const SizedBox(width: 8),
-          _buildFilterChip(
-            label: _selectedCondition,
-            icon: Icons.star,
-            onTap: () => _showConditionDialog(),
+          const SizedBox(height: 12),
+
+          // Filter Row
+          Row(
+            children: [
+              // Type Filter Dropdown
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey[300]!),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedType,
+                      isExpanded: true,
+                      icon: const Icon(Icons.arrow_drop_down),
+                      items: _equipmentTypes.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(
+                            value,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedType = newValue!;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Availability Filter
+              FilterChip(
+                label: const Text('Available'),
+                selected: _showOnlyAvailable,
+                onSelected: (bool selected) {
+                  setState(() {
+                    _showOnlyAvailable = selected;
+                  });
+                },
+                checkmarkColor: Colors.white,
+                selectedColor: Colors.green,
+                avatar: _showOnlyAvailable
+                    ? const Icon(Icons.check, size: 16, color: Colors.white)
+                    : const Icon(Icons.check, size: 16, color: Colors.grey),
+              ),
+
+              // Clear Filters Button
+              if (_hasActiveFilters())
+                IconButton(
+                  icon: const Icon(Icons.filter_alt_off),
+                  onPressed: _clearFilters,
+                  tooltip: 'Clear filters',
+                ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterChip({
-    required String label,
-    required IconData icon,
-    bool isSelected = false,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected 
-              ? AppColors.primaryBlue 
-              : AppColors.backgroundLight,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected 
-                ? AppColors.primaryBlue 
-                : AppColors.neutralGray.withOpacity(0.3),
+  Widget _buildActiveFilters() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      color: Colors.blue[50],
+      child: Row(
+        children: [
+          const Icon(Icons.filter_list, size: 16, color: Colors.blue),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Wrap(
+              spacing: 8,
+              children: [
+                if (_searchQuery.isNotEmpty)
+                  Chip(
+                    label: Text('Search: $_searchQuery'),
+                    onDeleted: () => _searchController.clear(),
+                    deleteIcon: const Icon(Icons.close, size: 16),
+                  ),
+                if (_selectedType != 'All')
+                  Chip(
+                    label: Text('Type: $_selectedType'),
+                    onDeleted: () => setState(() => _selectedType = 'All'),
+                    deleteIcon: const Icon(Icons.close, size: 16),
+                  ),
+                if (_showOnlyAvailable)
+                  Chip(
+                    label: const Text('Available Only'),
+                    onDeleted: () => setState(() => _showOnlyAvailable = false),
+                    deleteIcon: const Icon(Icons.close, size: 16),
+                  ),
+              ],
+            ),
           ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isSelected ? Colors.white : AppColors.primaryDark,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : AppColors.primaryDark,
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildEquipmentGrid() {
+  Widget _buildEquipmentList() {
     return StreamBuilder<QuerySnapshot>(
-      stream: _buildQuery().snapshots(),
+      stream: FirebaseFirestore.instance.collection('equipment').snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
         if (snapshot.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                const SizedBox(height: 16),
-                Text(
-                  'Error loading equipment',
-                  style: TextStyle(color: AppColors.error),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: () => setState(() {}),
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          );
+          return Center(child: Text('Error: ${snapshot.error}'));
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.inventory_2_outlined,
-                  size: 80,
-                  color: AppColors.neutralGray.withOpacity(0.3),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No equipment found',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.neutralGray,
+          return _buildEmptyState();
+        }
+
+        // Filter equipment using the async function
+        return FutureBuilder<List<QueryDocumentSnapshot>>(
+          future: _filterEquipmentAsync(snapshot.data!.docs),
+          builder: (context, filterSnapshot) {
+            if (filterSnapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (!filterSnapshot.hasData || filterSnapshot.data!.isEmpty) {
+              return _buildNoResultsState();
+            }
+
+            final filteredDocs = filterSnapshot.data!;
+
+            // Sort by name
+            filteredDocs.sort((a, b) {
+              final aData = a.data() as Map<String, dynamic>;
+              final bData = b.data() as Map<String, dynamic>;
+              return (aData['name'] ?? '').compareTo(bData['name'] ?? '');
+            });
+
+            // Build based on view type
+            return _currentView == ViewType.list
+                ? _buildListView(filteredDocs)
+                : _buildGridView(filteredDocs);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildListView(List<QueryDocumentSnapshot> equipmentDocs) {
+    return ListView.builder(
+      itemCount: equipmentDocs.length,
+      itemBuilder: (context, index) {
+        final equipmentDoc = equipmentDocs[index];
+        final data = equipmentDoc.data() as Map<String, dynamic>;
+
+        final name = data['name'] ?? 'Unnamed';
+        final description = data['description'] ?? '';
+        final type = data['type'] ?? 'Other';
+
+        return Card(
+          margin: const EdgeInsets.all(8),
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => EquipmentDetailPage(
+                    equipmentId: equipmentDoc.id,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Try adjusting your filters',
-                  style: TextStyle(color: AppColors.neutralGray),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: () => _resetFilters(),
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Reset Filters'),
-                ),
-              ],
-            ),
-          );
-        }
-
-        // Apply client-side filtering for search and sorting
-        List<DocumentSnapshot> docs = snapshot.data!.docs;
-        
-        // Filter by search query
-        if (_searchQuery.isNotEmpty) {
-          docs = docs.where((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            final name = (data['name'] ?? '').toString().toLowerCase();
-            final description = (data['description'] ?? '').toString().toLowerCase();
-            final category = (data['category'] ?? '').toString().toLowerCase();
-            
-            return name.contains(_searchQuery) || 
-                   description.contains(_searchQuery) ||
-                   category.contains(_searchQuery);
-          }).toList();
-        }
-
-        // Sort
-        docs.sort((a, b) {
-          final aData = a.data() as Map<String, dynamic>;
-          final bData = b.data() as Map<String, dynamic>;
-          
-          switch (_sortBy) {
-            case 'price_low':
-              return (aData['rentalPrice'] ?? 0).compareTo(bData['rentalPrice'] ?? 0);
-            case 'price_high':
-              return (bData['rentalPrice'] ?? 0).compareTo(aData['rentalPrice'] ?? 0);
-            case 'newest':
-              final aDate = aData['createdAt'] as Timestamp?;
-              final bDate = bData['createdAt'] as Timestamp?;
-              if (aDate == null || bDate == null) return 0;
-              return bDate.compareTo(aDate);
-            default: // name
-              return (aData['name'] ?? '').toString().compareTo((bData['name'] ?? '').toString());
-          }
-        });
-
-        return RefreshIndicator(
-          onRefresh: () async {
-            setState(() {});
-          },
-          child: GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 0.68,
-            ),
-            itemCount: docs.length,
-            itemBuilder: (context, index) {
-              final doc = docs[index];
-              final data = doc.data() as Map<String, dynamic>;
-              
-              return _buildEquipmentCard(
-                id: doc.id,
-                name: data['name'] ?? 'Unknown',
-                category: data['category'] ?? 'General',
-                price: (data['rentalPrice'] ?? 0).toDouble(),
-                condition: data['condition'] ?? 'Good',
-                imageUrl: data['imageUrl'],
-                isAvailable: data['availability'] ?? false,
-                availableQuantity: data['availableQuantity'] ?? 0,
               );
             },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  // Equipment Icon
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: _getTypeColor(type).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(
+                      child: _getEquipmentIcon(type, size: 30),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Equipment Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          type,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          description.length > 60
+                              ? '${description.substring(0, 60)}...'
+                              : description,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[700],
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Availability Status
+                  const SizedBox(width: 8),
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('equipment')
+                        .doc(equipmentDoc.id)
+                        .collection('Items')
+                        .where('availability', isEqualTo: true)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return const SizedBox();
+                      }
+
+                      final hasAvailableItems = snapshot.data!.docs.isNotEmpty;
+
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: hasAvailableItems
+                              ? Colors.green.withOpacity(0.1)
+                              : Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: hasAvailableItems
+                                ? Colors.green
+                                : Colors.red,
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              hasAvailableItems
+                                  ? Icons.check_circle
+                                  : Icons.cancel,
+                              size: 14,
+                              color: hasAvailableItems
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              hasAvailableItems ? 'Available' : 'Unavailable',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: hasAvailableItems
+                                    ? Colors.green
+                                    : Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
           ),
         );
       },
     );
   }
 
-  Query _buildQuery() {
-    Query query = FirebaseFirestore.instance.collection('equipment');
+  Widget _buildGridView(List<QueryDocumentSnapshot> equipmentDocs) {
+    return GridView.builder(
+      padding: const EdgeInsets.all(12),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.85,
+      ),
+      itemCount: equipmentDocs.length,
+      itemBuilder: (context, index) {
+        final equipmentDoc = equipmentDocs[index];
+        final data = equipmentDoc.data() as Map<String, dynamic>;
 
-    // Filter by availability
-    if (_showAvailableOnly) {
-      query = query.where('availability', isEqualTo: true);
-    }
+        final name = data['name'] ?? 'Unnamed';
+        final type = data['type'] ?? 'Other';
 
-    // Filter by category
-    if (_selectedCategory != 'All') {
-      query = query.where('category', isEqualTo: _selectedCategory);
-    }
-
-    // Filter by condition
-    if (_selectedCondition != 'All') {
-      query = query.where('condition', isEqualTo: _selectedCondition);
-    }
-
-    return query;
-  }
-
-  Widget _buildEquipmentCard({
-    required String id,
-    required String name,
-    required String category,
-    required double price,
-    required String condition,
-    String? imageUrl,
-    required bool isAvailable,
-    required int availableQuantity,
-  }) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => EquipmentDetailPage(equipmentId: id),
+        return Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image Section
-            Stack(
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => EquipmentDetailPage(
+                    equipmentId: equipmentDoc.id,
+                  ),
+                ),
+              );
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                  child: imageUrl != null && imageUrl.isNotEmpty
-                      ? Image.network(
-                          imageUrl,
-                          height: 140,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
+                // Top icon section
+                Container(
+                  height: 100,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: _getTypeColor(type).withOpacity(0.1),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      topRight: Radius.circular(12),
+                    ),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _getEquipmentIcon(type, size: 40),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            type,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: _getTypeColor(type),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Content section
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Availability status
+                        StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('equipment')
+                              .doc(equipmentDoc.id)
+                              .collection('Items')
+                              .where('availability', isEqualTo: true)
+                              .snapshots(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) {
+                              return const SizedBox();
+                            }
+
+                            final hasAvailableItems =
+                                snapshot.data!.docs.isNotEmpty;
+
                             return Container(
-                              height: 140,
-                              color: AppColors.backgroundLight,
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
-                                      : null,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: hasAvailableItems
+                                    ? Colors.green.withOpacity(0.1)
+                                    : Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: hasAvailableItems
+                                      ? Colors.green
+                                      : Colors.red,
+                                  width: 1,
                                 ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    hasAvailableItems
+                                        ? Icons.check_circle
+                                        : Icons.cancel,
+                                    size: 12,
+                                    color: hasAvailableItems
+                                        ? Colors.green
+                                        : Colors.red,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    hasAvailableItems
+                                        ? 'Available'
+                                        : 'Unavailable',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: hasAvailableItems
+                                          ? Colors.green
+                                          : Colors.red,
+                                    ),
+                                  ),
+                                ],
                               ),
                             );
                           },
-                          errorBuilder: (_, __, ___) => _placeholderImage(),
-                        )
-                      : _placeholderImage(),
-                ),
-                
-                // Availability Badge
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isAvailable ? AppColors.success : AppColors.error,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      isAvailable ? 'Available' : 'Unavailable',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                
-                // Condition Badge
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: _getConditionColor(condition).withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.star,
-                          size: 10,
-                          color: Colors.white,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          condition,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                          ),
                         ),
                       ],
                     ),
@@ -488,362 +583,168 @@ class _EquipmentListScreenState extends State<EquipmentListScreen> {
                 ),
               ],
             ),
-
-            // Details Section
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Name
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryDark,
-                        height: 1.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 6),
-
-                    // Category
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.category_outlined,
-                          size: 12,
-                          color: AppColors.neutralGray,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            category,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppColors.neutralGray,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const Spacer(),
-
-                    // Quantity
-                    if (availableQuantity > 0)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.info.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '$availableQuantity available',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: AppColors.info,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-
-                    const SizedBox(height: 8),
-
-                    // Price and Action
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'BD ${price.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primaryBlue,
-                                ),
-                              ),
-                              Text(
-                                'per day',
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  color: AppColors.neutralGray,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryBlue,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_forward,
-                            size: 16,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _placeholderImage() {
-    return Container(
-      height: 140,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.primaryBlue.withOpacity(0.3),
-            AppColors.accentMauve.withOpacity(0.3),
-          ],
-        ),
-      ),
-      child: Center(
-        child: Icon(
-          Icons.medical_services,
-          size: 48,
-          color: Colors.white.withOpacity(0.7),
-        ),
-      ),
-    );
-  }
-
-  Color _getConditionColor(String condition) {
-    switch (condition.toLowerCase()) {
-      case 'excellent':
-        return AppColors.success;
-      case 'good':
-        return AppColors.info;
-      case 'fair':
-        return AppColors.warning;
+  Icon _getEquipmentIcon(String type, {double size = 24}) {
+    switch (type.toLowerCase()) {
+      case 'power tools':
+        return Icon(Icons.build, color: Colors.blue, size: size);
+      case 'hand tools':
+        return Icon(Icons.handyman, color: Colors.green, size: size);
+      case 'electrical':
+        return Icon(Icons.electrical_services,
+            color: Colors.yellow[700], size: size);
+      case 'plumbing':
+        return Icon(Icons.plumbing, color: Colors.blue[300], size: size);
+      case 'gardening':
+        return Icon(Icons.nature, color: Colors.green[700], size: size);
+      case 'cleaning':
+        return Icon(Icons.cleaning_services, color: Colors.cyan, size: size);
+      case 'safety':
+        return Icon(Icons.security, color: Colors.red, size: size);
       default:
-        return AppColors.neutralGray;
+        return Icon(Icons.devices_other, color: Colors.grey, size: size);
     }
   }
 
-  String _getSortLabel() {
-    switch (_sortBy) {
-      case 'price_low':
-        return 'Price (Low)';
-      case 'price_high':
-        return 'Price (High)';
-      case 'newest':
-        return 'Newest';
+  Color _getTypeColor(String type) {
+    switch (type.toLowerCase()) {
+      case 'power tools':
+        return Colors.blue;
+      case 'hand tools':
+        return Colors.green;
+      case 'electrical':
+        return Colors.yellow[700]!;
+      case 'plumbing':
+        return Colors.blue[300]!;
+      case 'gardening':
+        return Colors.green[700]!;
+      case 'cleaning':
+        return Colors.cyan;
+      case 'safety':
+        return Colors.red;
       default:
-        return 'Name';
+        return Colors.grey;
     }
   }
 
-  void _showFilterBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Filters',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    _resetFilters();
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Reset All'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            SwitchListTile(
-              title: const Text('Show Available Only'),
-              value: _showAvailableOnly,
-              activeColor: AppColors.primaryBlue,
-              onChanged: (value) {
-                setState(() {
-                  _showAvailableOnly = value;
-                });
-                Navigator.pop(context);
-              },
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-              ),
-              child: const Text('Apply Filters'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showCategoryDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Category'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: _categories.length,
-            itemBuilder: (context, index) {
-              final category = _categories[index];
-              return RadioListTile<String>(
-                title: Text(category),
-                value: category,
-                groupValue: _selectedCategory,
-                activeColor: AppColors.primaryBlue,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedCategory = value!;
-                  });
-                  Navigator.pop(context);
-                },
-              );
-            },
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.devices_other, size: 80, color: Colors.grey[300]),
+          const SizedBox(height: 20),
+          const Text(
+            'No Equipment Found',
+            style: TextStyle(fontSize: 18, color: Colors.grey),
           ),
-        ),
-      ),
-    );
-  }
-
-  void _showSortDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sort By'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RadioListTile<String>(
-              title: const Text('Name (A-Z)'),
-              value: 'name',
-              groupValue: _sortBy,
-              activeColor: AppColors.primaryBlue,
-              onChanged: (value) {
-                setState(() {
-                  _sortBy = value!;
-                });
-                Navigator.pop(context);
-              },
-            ),
-            RadioListTile<String>(
-              title: const Text('Price (Low to High)'),
-              value: 'price_low',
-              groupValue: _sortBy,
-              activeColor: AppColors.primaryBlue,
-              onChanged: (value) {
-                setState(() {
-                  _sortBy = value!;
-                });
-                Navigator.pop(context);
-              },
-            ),
-            RadioListTile<String>(
-              title: const Text('Price (High to Low)'),
-              value: 'price_high',
-              groupValue: _sortBy,
-              activeColor: AppColors.primaryBlue,
-              onChanged: (value) {
-                setState(() {
-                  _sortBy = value!;
-                });
-                Navigator.pop(context);
-              },
-            ),
-            RadioListTile<String>(
-              title: const Text('Newest First'),
-              value: 'newest',
-              groupValue: _sortBy,
-              activeColor: AppColors.primaryBlue,
-              onChanged: (value) {
-                setState(() {
-                  _sortBy = value!;
-                });
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showConditionDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Condition'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: _conditions.length,
-            itemBuilder: (context, index) {
-              final condition = _conditions[index];
-              return RadioListTile<String>(
-                title: Text(condition),
-                value: condition,
-                groupValue: _selectedCondition,
-                activeColor: AppColors.primaryBlue,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedCondition = value!;
-                  });
-                  Navigator.pop(context);
-                },
-              );
-            },
+          const SizedBox(height: 8),
+          const Text(
+            'Check back later for available equipment',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  void _resetFilters() {
-    setState(() {
-      _selectedCategory = 'All';
-      _selectedCondition = 'All';
-      _sortBy = 'name';
-      _showAvailableOnly = false;
-      _searchQuery = '';
-      _searchController.clear();
-    });
+  Widget _buildNoResultsState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.search_off, size: 80, color: Colors.grey[300]),
+          const SizedBox(height: 20),
+          const Text(
+            'No Results Found',
+            style: TextStyle(fontSize: 18, color: Colors.grey),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Try adjusting your search or filters',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: _clearFilters,
+            icon: const Icon(Icons.filter_alt_off),
+            label: const Text('Clear Filters'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Async filter function that checks availability
+  Future<List<QueryDocumentSnapshot>> _filterEquipmentAsync(
+    List<QueryDocumentSnapshot> docs,
+  ) async {
+    final List<QueryDocumentSnapshot> result = [];
+
+    for (final doc in docs) {
+      final data = doc.data() as Map<String, dynamic>;
+
+      final name = data['name']?.toString().toLowerCase() ?? '';
+      final description = data['description']?.toString().toLowerCase() ?? '';
+      final type = data['type']?.toString() ?? 'Other';
+
+      // Apply search filter
+      final matchesSearch = _searchQuery.isEmpty ||
+          name.contains(_searchQuery.toLowerCase()) ||
+          description.contains(_searchQuery.toLowerCase());
+
+      // Apply type filter
+      final matchesType = _selectedType == 'All' || type == _selectedType;
+
+      // If availability filter is OFF, skip the expensive check
+      if (!_showOnlyAvailable) {
+        if (matchesSearch && matchesType) {
+          result.add(doc);
+        }
+        continue;
+      }
+
+      // Apply availability filter by checking subcollection
+      try {
+        final itemsSnapshot = await FirebaseFirestore.instance
+            .collection('equipment')
+            .doc(doc.id)
+            .collection('Items')
+            .where('availability', isEqualTo: true)
+            .limit(1) // We only need to know if ANY item is available
+            .get();
+
+        final hasAvailableItems = itemsSnapshot.docs.isNotEmpty;
+
+        if (matchesSearch && matchesType && hasAvailableItems) {
+          result.add(doc);
+        }
+      } catch (e) {
+        // If there's an error, include the item anyway
+        if (matchesSearch && matchesType) {
+          result.add(doc);
+        }
+      }
+    }
+
+    return result;
+  }
+
+  bool _hasActiveFilters() {
+    return _searchQuery.isNotEmpty ||
+        _selectedType != 'All' ||
+        _showOnlyAvailable;
   }
 }
+
+enum ViewType { list, grid }
