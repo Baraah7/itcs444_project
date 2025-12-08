@@ -285,7 +285,7 @@ class _UserDashboardState extends State<UserDashboard> {
             const SizedBox(height: 28),
 
             // Medical Equipment Categories
-            _buildMedicalCategories(context),
+            // _buildMedicalCategories(context),
             
             const SizedBox(height: 28),
 
@@ -431,143 +431,143 @@ class _UserDashboardState extends State<UserDashboard> {
 //     );
 //   }
 
-  Widget _buildMedicalCategories(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              "Browse by Category",
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            TextButton(
-              onPressed: () => _navigateToAllCategories(),
-              child: const Row(
-                children: [
-                  Text(
-                    "View All",
-                    style: TextStyle(
-                      color: AppColors.primaryBlue,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  SizedBox(width: 4),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 14,
-                    color: AppColors.primaryBlue,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
+//   Widget _buildMedicalCategories(BuildContext context) {
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         Row(
+//           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//           children: [
+//             Text(
+//               "Browse by Category",
+//               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+//                 fontWeight: FontWeight.w600,
+//               ),
+//             ),
+//             TextButton(
+//               onPressed: () => _navigateToAllCategories(),
+//               child: const Row(
+//                 children: [
+//                   Text(
+//                     "View All",
+//                     style: TextStyle(
+//                       color: AppColors.primaryBlue,
+//                       fontWeight: FontWeight.w600,
+//                     ),
+//                   ),
+//                   SizedBox(width: 4),
+//                   Icon(
+//                     Icons.arrow_forward_ios,
+//                     size: 14,
+//                     color: AppColors.primaryBlue,
+//                   ),
+//                 ],
+//               ),
+//             ),
+//           ],
+//         ),
+//         const SizedBox(height: 16),
         
-        // Medical Equipment Categories
-        SizedBox(
-          height: 160,
-          width: double.infinity,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              _medicalCategoryCard(
-                context,
-                icon: Icons.wheelchair_pickup,
-                label: "Mobility Aids",
-                sublabel: "Wheelchairs, Walkers",
-                color: const Color.fromARGB(255, 255, 67, 117),
-              ),
-              const SizedBox(width: 12),
-              _medicalCategoryCard(
-                context,
-                icon: Icons.bed,
-                label: "Home Care",
-                sublabel: "Hospital Beds, Lifts",
-                color: const Color.fromARGB(255, 0, 200, 183),
-              ),
-              const SizedBox(width: 12),
-              _medicalCategoryCard(
-                context,
-                icon: Icons.monitor_heart,
-                label: "Monitoring",
-                sublabel: "BP Monitors, Oximeters",
-                color: AppColors.warning,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+//         // Medical Equipment Categories
+//         SizedBox(
+//           height: 160,
+//           width: double.infinity,
+//           child: ListView(
+//             scrollDirection: Axis.horizontal,
+//             children: [
+//               _medicalCategoryCard(
+//                 context,
+//                 icon: Icons.wheelchair_pickup,
+//                 label: "Mobility Aids",
+//                 sublabel: "Wheelchairs, Walkers",
+//                 color: const Color.fromARGB(255, 255, 67, 117),
+//               ),
+//               const SizedBox(width: 12),
+//               _medicalCategoryCard(
+//                 context,
+//                 icon: Icons.bed,
+//                 label: "Home Care",
+//                 sublabel: "Hospital Beds, Lifts",
+//                 color: const Color.fromARGB(255, 0, 200, 183),
+//               ),
+//               const SizedBox(width: 12),
+//               _medicalCategoryCard(
+//                 context,
+//                 icon: Icons.monitor_heart,
+//                 label: "Monitoring",
+//                 sublabel: "BP Monitors, Oximeters",
+//                 color: AppColors.warning,
+//               ),
+//             ],
+//           ),
+//         ),
+//       ],
+//     );
+//   }
 
-Widget _medicalCategoryCard(BuildContext context, {
-  required IconData icon,
-  required String label,
-  required String sublabel,
-  required Color color,
-}) {
-  return GestureDetector(
-    onTap: () {
-      _navigateToCategory(label);
-    },
-    child: Container(
-        width: 140,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 28,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              sublabel,
-              style: TextStyle(
-                fontSize: 11,
-                color: AppColors.neutralGray,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+// Widget _medicalCategoryCard(BuildContext context, {
+//   required IconData icon,
+//   required String label,
+//   required String sublabel,
+//   required Color color,
+// }) {
+//   return GestureDetector(
+//     onTap: () {
+//       _navigateToCategory(label);
+//     },
+//     child: Container(
+//         width: 140,
+//         padding: const EdgeInsets.all(16),
+//         decoration: BoxDecoration(
+//           color: Colors.white,
+//           borderRadius: BorderRadius.circular(16),
+//           border: Border.all(color: Colors.grey.shade200),
+//           boxShadow: [
+//             BoxShadow(
+//               color: Colors.black.withOpacity(0.05),
+//               blurRadius: 8,
+//               offset: const Offset(0, 2),
+//             ),
+//           ],
+//         ),
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+//             Container(
+//               padding: const EdgeInsets.all(12),
+//               decoration: BoxDecoration(
+//                 color: color.withOpacity(0.1),
+//                 borderRadius: BorderRadius.circular(12),
+//               ),
+//               child: Icon(
+//                 icon,
+//                 color: color,
+//                 size: 28,
+//               ),
+//             ),
+//             const SizedBox(height: 12),
+//             Text(
+//               label,
+//               style: const TextStyle(
+//                 fontWeight: FontWeight.w600,
+//                 fontSize: 14,
+//               ),
+//               textAlign: TextAlign.center,
+//             ),
+//             const SizedBox(height: 4),
+//             Text(
+//               sublabel,
+//               style: TextStyle(
+//                 fontSize: 11,
+//                 color: AppColors.neutralGray,
+//               ),
+//               textAlign: TextAlign.center,
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
 
 // updayed by wadeeah (task3) to fetch real data
 Widget _buildFeaturedEquipment(BuildContext context) {

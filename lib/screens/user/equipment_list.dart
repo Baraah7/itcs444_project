@@ -19,14 +19,11 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
   // Equipment types from Firestore
   final List<String> _equipmentTypes = [
     'All',
-    'Power Tools',
-    'Hand Tools',
-    'Electrical',
-    'Plumbing',
-    'Gardening',
-    'Cleaning',
-    'Safety',
-    'Other',
+    'Mobility Aid',
+    'Hospital Furniture',
+    'Shower Chair',
+    'Walker',
+    'Other', // Check thiiiiiiiiiiiiiiiiiiiiiiiiiiiiiis
   ];
 
   @override

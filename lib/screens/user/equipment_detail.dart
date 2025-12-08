@@ -249,10 +249,10 @@ class EquipmentDetailPage extends StatelessWidget {
                         ? AppColors.success.withOpacity(0.1)
                         : AppColors.error.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isAvailable ? AppColors.success : AppColors.error,
-                      width: 1,
-                    ),
+                    // border: Border.all(
+                    //   color: isAvailable ? AppColors.success : AppColors.error,
+                    //   width: 1,
+                    // ),
                   ),
                   child: Text(
                     isAvailable ? "Available" : "Unavailable",
