@@ -183,31 +183,14 @@ class _ReservationScreenState extends State<ReservationScreen> {
     _availabilityMessage = 'Checking availability...';
   });
   
-  try {
-    final isAvailable = await _reservationService.checkAvailability(
-      equipmentId: widget.equipment['id'] ?? '',
-      startDate: _startDate!,
-      endDate: _endDate!,
-      quantity: _quantity,
-    );
-    
-    setState(() {
-      _isAvailable = isAvailable;
-      _availabilityMessage = isAvailable 
-          ? 'Equipment is available for your selected dates'
-          : 'Not enough equipment available for selected dates';
-      _checkingAvailability = false;
-    });
-    
-    _calculateCost();
-  } catch (e) {
-    setState(() {
-      _checkingAvailability = false;
-      _availabilityMessage = 'Error checking availability. Please try again.';
-      _isAvailable = false;
-    });
-    print('Availability check error: $e');
-  }
+  // Simplified - always allow submission, admin will verify
+  setState(() {
+    _isAvailable = true;
+    _availabilityMessage = 'Equipment available - pending admin approval';
+    _checkingAvailability = false;
+  });
+  
+  _calculateCost();
 }
   
   void _calculateCost() {

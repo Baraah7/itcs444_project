@@ -9,6 +9,7 @@ import 'equipment_management.dart';
 import 'add_edit_equipment.dart';
 import '../admin/reservation_management.dart';
 import '../test_notification_screen.dart';
+import '../debug_rentals_screen.dart';
 
 
 class AdminDashboard extends StatefulWidget {
@@ -368,6 +369,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   color: Colors.teal,
                   label: "Notifications",
                   onTap: () => Navigator.pushNamed(context, '/notifications'),
+                ),
+
+                _dashboardTile(
+                  icon: Icons.bug_report,
+                  color: Colors.pink,
+                  label: "Debug Rentals",
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const DebugRentalsScreen()),
+                  ),
                 ),
               ],
             ),

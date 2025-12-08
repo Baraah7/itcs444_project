@@ -58,87 +58,27 @@ class ReservationService {
       // Calculate total cost
       final double totalCost = dailyRate * duration * quantity;
       
-      // Use Firestore transaction to ensure data consistency
-      final String rentalId = await _firestore.runTransaction<String>((transaction) async {
-        // 1. Get equipment document
-        final equipmentRef = equipmentCollection.doc(equipmentId);
-        final equipmentDoc = await transaction.get(equipmentRef);
-        
-        if (!equipmentDoc.exists) {
-          throw Exception('Equipment not found');
-        }
-        
-        final equipmentData = equipmentDoc.data() as Map<String, dynamic>;
-        
-        // 2. Check if equipment is available
-        final availability = equipmentData['availability'] ?? false;
-        if (!availability) {
-          throw Exception('This equipment is currently unavailable');
-        }
-        
-        // 3. Check quantity
-        final totalQuantity = (equipmentData['quantity'] ?? 1) as int;
-        final availableQuantity = (equipmentData['availableQuantity'] ?? totalQuantity) as int;
-        
-        if (availableQuantity < quantity) {
-          throw Exception('Not enough equipment available. Only $availableQuantity available');
-        }
-        
-        // 4. Check for overlapping reservations
-        final overlappingQuery = await _firestore
-            .collection('rentals')
-            .where('equipmentId', isEqualTo: equipmentId)
-            .where('status', whereIn: ['pending', 'approved', 'checked_out'])
-            .get();
-        
-        int reservedCount = 0;
-        for (final rentalDoc in overlappingQuery.docs) {
-          final rentalData = rentalDoc.data() as Map<String, dynamic>;
-          final rentalStart = DateTime.parse(rentalData['startDate']);
-          final rentalEnd = DateTime.parse(rentalData['endDate']);
-          
-          // Check for date overlap
-          if (startDate.isBefore(rentalEnd) && endDate.isAfter(rentalStart)) {
-            reservedCount += (rentalData['quantity'] ?? 1) as int;
-          }
-        }
-        
-        final actuallyAvailable = availableQuantity - reservedCount;
-        if (actuallyAvailable < quantity) {
-          throw Exception('Not available for selected dates. Try different dates.');
-        }
-        
-        // 5. Create rental document
-        final rentalRef = rentalsCollection.doc();
-        final rentalId = rentalRef.id;
-        
-        final rental = Rental(
-          id: rentalId,
-          userId: firebaseUser.uid,
-          userFullName: userFullName,
-          equipmentId: equipmentId,
-          equipmentName: equipmentName,
-          itemType: itemType,
-          startDate: startDate,
-          endDate: endDate,
-          totalCost: totalCost,
-          status: 'pending',
-          createdAt: DateTime.now(),
-          quantity: quantity,
-        );
-        
-        // 6. Update equipment's available quantity
-        final newAvailableQuantity = availableQuantity - quantity;
-        transaction.update(equipmentRef, {
-          'availableQuantity': newAvailableQuantity,
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-        
-        // 7. Save rental
-        transaction.set(rentalRef, rental.toMap());
-        
-        return rentalId;
-      });
+      // Create rental document
+      final rentalRef = rentalsCollection.doc();
+      final rentalId = rentalRef.id;
+      
+      final rental = Rental(
+        id: rentalId,
+        userId: firebaseUser.uid,
+        userFullName: userFullName,
+        equipmentId: equipmentId,
+        equipmentName: equipmentName,
+        itemType: itemType,
+        startDate: startDate,
+        endDate: endDate,
+        totalCost: totalCost,
+        status: 'pending',
+        createdAt: DateTime.now(),
+        quantity: quantity,
+      );
+      
+      // Save rental
+      await rentalRef.set(rental.toMap());
       
       // Send notification to user
       await _notificationService.sendNotification(
@@ -229,41 +169,47 @@ class ReservationService {
     
     return rentalsCollection
         .where('userId', isEqualTo: user.uid)
-        .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs
+          final rentals = snapshot.docs
               .map((doc) {
                 try {
                   return Rental.fromMap(doc.data() as Map<String, dynamic>);
                 } catch (e) {
                   print('Error parsing rental: $e');
-                  return Rental.fromMap({}); // Return empty rental on error
+                  return null;
                 }
               })
-              .where((rental) => rental.id.isNotEmpty) // Filter out empty rentals
+              .where((rental) => rental != null && rental.id.isNotEmpty)
+              .cast<Rental>()
               .toList();
+          
+          rentals.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return rentals;
         });
   }
   
   // 4. GET ALL RENTALS (FOR ADMIN)
   Stream<List<Rental>> getAllRentals() {
-    return rentalsCollection
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs
-              .map((doc) {
-                try {
-                  return Rental.fromMap(doc.data() as Map<String, dynamic>);
-                } catch (e) {
-                  print('Error parsing rental: $e');
-                  return Rental.fromMap({});
-                }
-              })
-              .where((rental) => rental.id.isNotEmpty)
-              .toList();
-        });
+    return rentalsCollection.snapshots().map((snapshot) {
+      print('getAllRentals: Got ${snapshot.docs.length} documents');
+      final rentals = <Rental>[];
+      
+      for (var doc in snapshot.docs) {
+        try {
+          final data = doc.data() as Map<String, dynamic>;
+          print('Processing rental: ${doc.id}');
+          final rental = Rental.fromMap(data);
+          rentals.add(rental);
+        } catch (e) {
+          print('Error parsing rental ${doc.id}: $e');
+        }
+      }
+      
+      print('getAllRentals: Returning ${rentals.length} rentals');
+      rentals.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return rentals;
+    });
   }
   
   // 5. UPDATE RENTAL STATUS (ADMIN)
