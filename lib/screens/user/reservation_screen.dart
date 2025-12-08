@@ -1,168 +1,184 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../services/reservation_service.dart';
-import '../../providers/auth_provider.dart';
 import '../../utils/theme.dart';
-import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 
 class ReservationScreen extends StatefulWidget {
   final Map<String, dynamic> equipment;
   
-  const ReservationScreen({Key? key, required this.equipment}) : super(key: key);
-  
+  const ReservationScreen({super.key, required this.equipment});
+
   @override
   State<ReservationScreen> createState() => _ReservationScreenState();
 }
 
 class _ReservationScreenState extends State<ReservationScreen> {
   final ReservationService _reservationService = ReservationService();
+  final TextEditingController _notesController = TextEditingController();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
-  int _userTrustScore = 0;
   DateTime? _startDate;
   DateTime? _endDate;
-  int _quantity = 1;
-  bool _isLoading = false;
   bool _checkingAvailability = false;
-  double _calculatedCost = 0.0;
-  bool _isAvailable = true;
-  String _availabilityMessage = '';
-  bool _immediatePickup = false;
+  bool _creatingReservation = false;
+  bool _isLoading = false;
+  String? _availabilityError;
+  String? _reservationError;
+  String? _reservationSuccess;
   
-  // For date range selection
-  final DateFormat _dateFormat = DateFormat('MMM dd, yyyy');
+  // User trust score for auto-calculation
+  int _userTrustScore = 0;
+  bool _canChangeDuration = true;
+  int _maxExtensionDays = 7;
   
+  // Default daily rate (you can get this from equipment data)
+  double _dailyRate = 0.0;
+  int _totalDays = 0;
+  double _totalPrice = 0.0;
+  int _defaultDuration = 7;
+  int _maxRentalDays = 30;
+
   @override
   void initState() {
     super.initState();
-    _initializeDates();
-    _loadUserTrustScore(); 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkAvailability();
-    });
+    _initializeData();
+    _loadUserTrustScore();
   }
-  
-  void _initializeDates() {
+
+  void _initializeData() {
+    // Set default dates
     final now = DateTime.now();
-    setState(() {
-      _startDate = now;
-      _endDate = now.add(const Duration(days: 7));
-    });
+    _startDate = now.add(const Duration(days: 1)); // Tomorrow
+    _endDate = now.add(const Duration(days: 8)); // Default 7 days
+    
+    // Get daily rate from equipment or use default
+    _dailyRate = (widget.equipment['rentalPrice'] as num?)?.toDouble() ?? 50.0;
+    
+    // Calculate max rental days based on equipment type
+    _maxRentalDays = _getMaxRentalDays();
+    _defaultDuration = _getDefaultDuration();
+    
+    _calculateTotal();
+    _checkAvailability();
   }
-  
-  // Get maximum rental days based on item type
+
+  // Load user trust score from Firestore
+  Future<void> _loadUserTrustScore() async {
+    try {
+      // TODO: Replace with actual user ID from your auth system
+      const userId = 'current_user_id';
+      
+      // Get user's rental history
+      final rentalsSnapshot = await _firestore
+          .collection('reservations')
+          .where('userId', isEqualTo: userId)
+          .where('status', whereIn: ['returned', 'completed'])
+          .get();
+      
+      final returnedCount = rentalsSnapshot.docs.length;
+      
+      // Calculate trust score
+      if (returnedCount >= 10) {
+        _userTrustScore = 5; // Trusted user
+        _canChangeDuration = true;
+        _maxExtensionDays = 14;
+      } else if (returnedCount >= 5) {
+        _userTrustScore = 3; // Regular user
+        _canChangeDuration = true;
+        _maxExtensionDays = 7;
+      } else if (returnedCount >= 1) {
+        _userTrustScore = 1; // New user with history
+        _canChangeDuration = true;
+        _maxExtensionDays = 3;
+      } else {
+        _userTrustScore = 0; // First-time user
+        _canChangeDuration = false;
+        _maxExtensionDays = 0;
+      }
+      
+      // Auto-calculate duration based on trust score
+      _autoCalculateDuration();
+      
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      debugPrint('Error loading trust score: $e');
+    }
+  }
+
+  // Get maximum rental days based on equipment type
   int _getMaxRentalDays() {
     final itemType = widget.equipment['type']?.toString().toLowerCase() ?? '';
     
     switch (itemType) {
       case 'wheelchair':
       case 'walker':
-        return 30; // Max 30 days for mobility aids
+        return 30;
       case 'hospital bed':
       case 'oxygen machine':
-        return 60; // Max 60 days for medical equipment
+        return 60;
       case 'crutches':
       case 'cane':
-      case 'walking stick':
-        return 14; // Max 14 days for temporary aids
+        return 14;
       case 'shower chair':
-      case 'commode':
-        return 21; // Max 21 days for bathroom aids
+        return 21;
       default:
-        return 30; // Default max 30 days
+        return 30;
     }
   }
-  
-  // Get default duration based on item type
+
+  // Get default duration based on equipment type
   int _getDefaultDuration() {
     final itemType = widget.equipment['type']?.toString().toLowerCase() ?? '';
     
     switch (itemType) {
       case 'wheelchair':
       case 'walker':
-        return 14; // 2 weeks for mobility aids
+        return 14;
       case 'hospital bed':
       case 'oxygen machine':
-        return 30; // 1 month for medical equipment
+        return 30;
       case 'crutches':
       case 'cane':
-      case 'walking stick':
-        return 7; // 1 week for temporary aids
+        return 7;
       case 'shower chair':
-      case 'commode':
-        return 10; // 10 days for bathroom aids
+        return 10;
       default:
-        return 7; // Default 1 week
+        return 7;
     }
   }
-  
-  // Load user trust score
-  Future<void> _loadUserTrustScore() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final user = authProvider.currentUser;
-    if (user == null) return;
+
+  // Auto-calculate duration based on item type and trust score
+  void _autoCalculateDuration() {
+    if (_startDate == null) return;
     
-    try {
-      // Get user's rental history - use docId instead of user.id
-      final rentalsSnapshot = await _firestore
-          .collection('rentals')
-          .where('userId', isEqualTo: user.docId ?? user.id.toString())
-          .where('status', whereIn: ['returned', 'checked_out'])
-          .get();
-      
-      final returnedCount = rentalsSnapshot.docs
-          .where((doc) => doc['status'] == 'returned')
-          .length;
-      
-      // Calculate trust score (simplified)
-      int trustScore = 0;
-      if (returnedCount >= 10) trustScore = 3; // Trusted user
-      else if (returnedCount >= 5) trustScore = 2; // Regular user
-      else if (returnedCount >= 1) trustScore = 1; // New user with history
-      
-      setState(() {
-        _userTrustScore = trustScore;
-      });
-      
-      // Recalculate dates if immediate pickup
-      if (_immediatePickup) {
-        _recalculateDatesBasedOnTrust();
-      }
-    } catch (e) {
-      print('Error loading trust score: $e');
-    }
-  }
-  
-  // Recalculate dates based on trust
-  void _recalculateDatesBasedOnTrust() {
-    if (!_immediatePickup || _startDate == null) return;
-    
-    int baseDuration = _getDefaultDuration();
+    int calculatedDuration = _getDefaultDuration();
     
     // Adjust based on trust score
     switch (_userTrustScore) {
-      case 3: // Trusted user - 50% longer
-        baseDuration = (baseDuration * 1.5).ceil();
+      case 5: // Trusted user
+        calculatedDuration = (calculatedDuration * 1.5).ceil();
         break;
-      case 2: // Regular user - 25% longer
-        baseDuration = (baseDuration * 1.25).ceil();
+      case 3: // Regular user
+        calculatedDuration = (calculatedDuration * 1.25).ceil();
         break;
-      case 1: // New user with history - normal
+      case 1: // New user
+        calculatedDuration = calculatedDuration;
         break;
-      default: // Brand new user - shorter
-        baseDuration = (baseDuration * 0.75).ceil();
+      default: // First-time user
+        calculatedDuration = (calculatedDuration * 0.75).ceil();
     }
     
     // Ensure within max limits
-    final maxDays = _getMaxRentalDays();
-    baseDuration = baseDuration.clamp(1, maxDays);
+    calculatedDuration = calculatedDuration.clamp(1, _maxRentalDays);
     
     setState(() {
-      _endDate = _startDate!.add(Duration(days: baseDuration));
+      _endDate = _startDate!.add(Duration(days: calculatedDuration - 1));
     });
     
+    _calculateTotal();
     _checkAvailability();
   }
   
@@ -228,995 +244,835 @@ class _ReservationScreenState extends State<ReservationScreen> {
     
     if (picked != null && picked != _startDate) {
       setState(() {
-        _startDate = picked;
-        // If end date is before new start date, adjust it
-        if (_endDate != null && _endDate!.isBefore(picked)) {
-          _endDate = picked.add(const Duration(days: 1));
-        }
+        _reservationError = 'Maximum rental period is $_maxRentalDays days for this equipment';
       });
-      await _checkAvailability();
+      return;
     }
-  }
-  
-  Future<void> _selectEndDate(BuildContext context) async {
-    if (_immediatePickup) return;
     
-    final maxDays = _getMaxRentalDays();
-    final maxDate = (_startDate ?? DateTime.now()).add(Duration(days: maxDays));
+    setState(() {
+      _creatingReservation = true;
+      _reservationError = null;
+      _reservationSuccess = null;
+      _isLoading = true;
+    });
     
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _endDate ?? DateTime.now().add(const Duration(days: 7)),
-      firstDate: _startDate ?? DateTime.now(),
-      lastDate: maxDate,
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primaryBlue,
-              onPrimary: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
+    // TODO: Get actual user data from your auth provider
+    const userId = 'current_user_id'; // Replace with actual user ID
+    const userEmail = 'user@example.com'; // Replace with actual email
+    const userName = 'User Name'; // Replace with actual name
     
-    if (picked != null) {
-      final duration = picked.difference(_startDate!).inDays;
-      if (duration > maxDays) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Maximum rental period is $maxDays days for this item'),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-        return;
-      }
-      
-      setState(() {
-        _endDate = picked;
-      });
-      await _checkAvailability();
-    }
-  }
-  
- Future<void> _submitReservation() async {
-  if (_startDate == null || _endDate == null) return;
-  
-  // Check if user is logged in
-  final auth = FirebaseAuth.instance;
-  if (auth.currentUser == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please login to make a reservation'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    Navigator.pushReplacementNamed(context, '/login');
-    return;
-  }
-  
-  // Validate date range
-  final duration = _endDate!.difference(_startDate!).inDays;
-  if (duration < 1) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Rental duration must be at least 1 day'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return;
-  }
-  
-  // Get maximum rental days
-  final maxDays = _getMaxRentalDays();
-  if (duration > maxDays) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Maximum rental period is $maxDays days for this equipment'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return;
-  }
-  
-  setState(() {
-    _isLoading = true;
-  });
-  
-  try {
-    final rentalId = await _reservationService.createRental(
-      equipmentId: widget.equipment['id'] ?? '',
-      equipmentName: widget.equipment['name'] ?? 'Equipment',
-      itemType: widget.equipment['type'] ?? 'General',
+    final result = await _reservationService.createReservation(
+      userId: userId,
+      equipmentId: widget.equipment['id']!,
+      itemId: widget.equipment['itemId']!,
+      equipmentName: widget.equipment['name']!,
+      itemName: widget.equipment['itemName']!,
       startDate: _startDate!,
       endDate: _endDate!,
-      quantity: _quantity,
-      dailyRate: (widget.equipment['rentalPrice'] ?? 0).toDouble(),
+      userEmail: userEmail,
+      userName: userName,
+      dailyRate: _dailyRate,
+      notes: _notesController.text.trim(),
     );
     
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Reservation submitted successfully!'),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-          action: SnackBarAction(
-            label: 'View',
-            textColor: Colors.white,
-            onPressed: () {
-              Navigator.pushNamed(context, '/my-reservations');
-            },
-          ),
-        ),
-      );
-      
-      // Navigate back
-      Navigator.pop(context, rentalId);
-    }
-  } catch (e) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString().replaceAll("Exception: ", "")}'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  } finally {
-    if (mounted) {
+    setState(() {
+      _creatingReservation = false;
+      _isLoading = false;
+    });
+    
+    if (result['success'] == true) {
       setState(() {
-        _isLoading = false;
+        _reservationSuccess = result['message'];
+      });
+      
+      // Navigate back after success
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          Navigator.pop(context, true); // Return success
+        }
+      });
+    } else {
+      setState(() {
+        _reservationError = result['message'];
       });
     }
   }
-}
-  Widget _buildImmediatePickupCard() {
-    final now = DateTime.now();
-    final duration = _endDate != null && _startDate != null 
-        ? _endDate!.difference(_startDate!).inDays 
-        : _getDefaultDuration();
-    final returnDate = _endDate ?? now.add(Duration(days: duration));
-    
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.blue.shade100, width: 1),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.flash_on, color: Colors.orange.shade700),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'Immediate Pickup Selected',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Pickup Date',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                      Text(
-                        _dateFormat.format(now),
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.arrow_forward, color: Colors.grey, size: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      const Text(
-                        'Return Date',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                      Text(
-                        _dateFormat.format(returnDate),
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Duration: $duration days (auto-calculated based on:',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-            Text(
-              '• Item type: ${widget.equipment['type']}',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-            if (_userTrustScore > 0)
-              Text(
-                '• Your trust level: ${_getTrustLevelText()}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildDateSelection() {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Start Date',
-                    style: TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: () => _selectStartDate(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            _startDate != null 
-                                ? _dateFormat.format(_startDate!)
-                                : 'Select Date',
-                            style: const TextStyle(fontSize: 15),
-                          ),
-                          Icon(Icons.calendar_today, color: Colors.grey.shade600),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'End Date',
-                    style: TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: () => _selectEndDate(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            _endDate != null 
-                                ? _dateFormat.format(_endDate!)
-                                : 'Select Date',
-                            style: const TextStyle(fontSize: 15),
-                          ),
-                          Icon(Icons.calendar_today, color: Colors.grey.shade600),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        
-        if (_startDate != null && _endDate != null) ...[
-          const SizedBox(height: 16),
-          _buildDurationInfo(),
-        ],
-      ],
-    );
-  }
-  
-  Widget _buildDurationInfo() {
-    final duration = _endDate!.difference(_startDate!).inDays;
-    final maxDays = _getMaxRentalDays();
-    final progress = duration / maxDays;
-    
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Rental Duration',
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-                Text(
-                  '$duration day${duration != 1 ? 's' : ''}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: AppColors.primaryBlue,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            LinearProgressIndicator(
-              value: progress,
-              backgroundColor: Colors.grey.shade200,
-              color: progress > 1 ? Colors.red : AppColors.primaryBlue,
-              minHeight: 6,
-              borderRadius: BorderRadius.circular(3),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Minimum: 1 day',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-                Text(
-                  'Maximum: $maxDays days',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: progress > 1 ? Colors.red : Colors.grey[600],
-                    fontWeight: progress > 1 ? FontWeight.bold : FontWeight.normal,
-                  ),
-                ),
-              ],
-            ),
-            if (progress > 1) ...[
-              const SizedBox(height: 8),
-              Text(
-                '⚠️ Exceeds maximum rental period',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildAvailabilityStatus() {
-    if (_checkingAvailability) {
-      return Card(
-        color: Colors.blue.withOpacity(0.05),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Text(
-                  'Checking availability...',
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-              ),
-            ],
-          ),
+
+  // Show duration change dialog
+  Future<void> _showChangeDurationDialog() async {
+    if (!_canChangeDuration) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Duration change is not available for your account level'),
+          backgroundColor: Colors.orange,
         ),
       );
+      return;
     }
     
-    return Card(
-      color: _isAvailable 
-          ? Colors.green.withOpacity(0.1)
-          : Colors.red.withOpacity(0.1),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: _isAvailable ? Colors.green : Colors.red,
-          width: 1,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
+    final durationController = TextEditingController(text: _totalDays.toString());
+    
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Change Rental Duration'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              _isAvailable ? Icons.check_circle : Icons.error,
-              color: _isAvailable ? Colors.green : Colors.red,
-              size: 24,
+            Text('Current duration: $_totalDays days'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: durationController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'New duration (days)',
+                border: OutlineInputBorder(),
+                hintText: 'Enter number of days',
+                suffixText: 'days',
+              ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                _availabilityMessage,
-                style: TextStyle(
-                  color: _isAvailable ? Colors.green : Colors.red,
-                  fontWeight: FontWeight.w500,
-                ),
+            const SizedBox(height: 8),
+            Text(
+              'You can change duration within ±$_maxExtensionDays days',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-  
-  Widget _buildProgressStep({
-    required int step,
-    required String title,
-    required bool isCompleted,
-    required bool isCurrent,
-    bool isLast = false,
-  }) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            // Step Number
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isCompleted 
-                    ? Colors.green
-                    : isCurrent
-                        ? AppColors.primaryBlue
-                        : Colors.grey.shade300,
-                border: Border.all(
-                  color: isCompleted 
-                      ? Colors.green
-                      : isCurrent
-                          ? AppColors.primaryBlue
-                          : Colors.grey.shade400,
-                  width: 2,
-                ),
-              ),
-              child: Center(
-                child: isCompleted
-                    ? const Icon(Icons.check, size: 18, color: Colors.white)
-                    : Text(
-                        '$step',
-                        style: TextStyle(
-                          color: isCurrent ? Colors.white : Colors.grey.shade700,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-              ),
-            ),
-            
-            const SizedBox(width: 12),
-            
-            // Step Title
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
-                  color: isCurrent ? AppColors.primaryDark : Colors.grey.shade700,
-                ),
-              ),
-            ),
-            
-            // Status Indicator
-            if (isCompleted)
-              const Icon(Icons.check_circle, color: Colors.green, size: 20),
-            if (isCurrent && !isCompleted)
-              const Icon(Icons.radio_button_checked, color: AppColors.primaryBlue, size: 20),
-          ],
-        ),
-        
-        // Connector Line (except for last step)
-        if (!isLast)
-          Padding(
-            padding: const EdgeInsets.only(left: 15, top: 4, bottom: 4),
-            child: Container(
-              width: 2,
-              height: 20,
-              color: isCompleted ? Colors.green : Colors.grey.shade300,
-            ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
-      ],
+          ElevatedButton(
+            onPressed: () {
+              final newDuration = int.tryParse(durationController.text);
+              if (newDuration == null || newDuration < 1) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please enter a valid number of days'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+              
+              final currentDuration = _totalDays;
+              final change = newDuration - currentDuration;
+              
+              if (change.abs() > _maxExtensionDays) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('You can only change duration by ±$_maxExtensionDays days'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+              
+              if (newDuration > _maxRentalDays) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Maximum rental period is $_maxRentalDays days'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+              
+              setState(() {
+                _endDate = _startDate!.add(Duration(days: newDuration - 1));
+              });
+              
+              Navigator.pop(context);
+              _checkAvailability();
+            },
+            child: const Text('Update'),
+          ),
+        ],
+      ),
     );
   }
-  
+
   @override
   Widget build(BuildContext context) {
-    final dailyRate = (widget.equipment['rentalPrice'] ?? 0).toDouble();
-    final duration = _endDate != null && _startDate != null 
-        ? _endDate!.difference(_startDate!).inDays 
-        : 0;
-    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Make Reservation'),
-        centerTitle: true,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Equipment Info Card
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        actions: [
+          if (_userTrustScore > 0)
+            Tooltip(
+              message: 'Trust Level: $_userTrustScore/5',
+              child: Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.green),
+                ),
+                child: Row(
                   children: [
+                    const Icon(Icons.verified, size: 14, color: Colors.green),
+                    const SizedBox(width: 4),
                     Text(
-                      widget.equipment['name'] ?? 'Equipment',
+                      'Level $_userTrustScore',
                       style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    if (widget.equipment['type'] != null)
-                      Text(
-                        'Type: ${widget.equipment['type']}',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    if (dailyRate > 0) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'Daily Rate: \$${dailyRate.toStringAsFixed(2)}',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    ],
                   ],
                 ),
               ),
             ),
-            
-            const SizedBox(height: 24),
-            
-            // Immediate Pickup Toggle
-            Card(
-              elevation: 1,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: Row(
-                  children: [
-                    const Icon(Icons.flash_on, color: Colors.orange),
-                    const SizedBox(width: 12),
-                    const Expanded(
+        ],
+      ),
+      body: _isLoading && !_checkingAvailability
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Equipment Info Card
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Immediate Pickup',
-                            style: TextStyle(fontWeight: FontWeight.w500),
+                            widget.equipment['name'] ?? 'Equipment',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
+                          const SizedBox(height: 8),
+                          
+                          if (widget.equipment['itemName'] != null)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.inventory_2,
+                                    size: 14,
+                                    color: AppColors.neutralGray,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Item: ${widget.equipment['itemName']}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.neutralGray,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          
+                          if (widget.equipment['serial'] != null)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.confirmation_number,
+                                    size: 14,
+                                    color: AppColors.neutralGray,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Serial: ${widget.equipment['serial']}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.neutralGray,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          
+                          if (widget.equipment['condition'] != null)
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.health_and_safety,
+                                  size: 14,
+                                  color: AppColors.neutralGray,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Condition: ${widget.equipment['condition']}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: AppColors.neutralGray,
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 24),
+
+                  // Progress Tracker
+                  _buildProgressTracker(),
+                  
+                  const SizedBox(height: 24),
+
+                  // Date Selection Section
+                  const Text(
+                    "Select Rental Period",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+
+                  // Start Date
+                  Card(
+                    elevation: 1,
+                    child: ListTile(
+                      leading: const Icon(Icons.calendar_today, color: AppColors.primaryBlue),
+                      title: const Text("Start Date"),
+                      subtitle: Text(
+                        _startDate == null 
+                            ? 'Select date'
+                            : DateFormat('EEEE, MMMM d, yyyy').format(_startDate!),
+                      ),
+                      trailing: const Icon(Icons.arrow_drop_down),
+                      onTap: () async {
+                        final selectedDate = await showDatePicker(
+                          context: context,
+                          initialDate: _startDate ?? DateTime.now().add(const Duration(days: 1)),
+                          firstDate: DateTime.now().add(const Duration(days: 1)),
+                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                        );
+                        
+                        if (selectedDate != null) {
+                          setState(() {
+                            _startDate = selectedDate;
+                            // Auto-calculate end date based on trust score
+                            _autoCalculateDuration();
+                          });
+                          _checkAvailability();
+                        }
+                      },
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 12),
+
+                  // End Date with Change Duration Button
+                  Card(
+                    elevation: 1,
+                    child: ListTile(
+                      leading: const Icon(Icons.calendar_today, color: AppColors.primaryBlue),
+                      title: const Text("End Date"),
+                      subtitle: Text(
+                        _endDate == null 
+                            ? 'Select date'
+                            : DateFormat('EEEE, MMMM d, yyyy').format(_endDate!),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_canChangeDuration && _userTrustScore > 0)
+                            IconButton(
+                              icon: const Icon(Icons.edit, size: 18),
+                              onPressed: _showChangeDurationDialog,
+                              tooltip: 'Change Duration',
+                            ),
+                          const Icon(Icons.arrow_drop_down),
+                        ],
+                      ),
+                      onTap: () async {
+                        final selectedDate = await showDatePicker(
+                          context: context,
+                          initialDate: _endDate ?? _startDate?.add(Duration(days: _defaultDuration - 1)) ?? DateTime.now().add(Duration(days: _defaultDuration)),
+                          firstDate: _startDate ?? DateTime.now().add(const Duration(days: 1)),
+                          lastDate: (_startDate ?? DateTime.now().add(const Duration(days: 1))).add(Duration(days: _maxRentalDays)),
+                        );
+                        
+                        if (selectedDate != null) {
+                          final newDuration = selectedDate.difference(_startDate!).inDays + 1;
+                          
+                          if (newDuration > _maxRentalDays) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Maximum rental period is $_maxRentalDays days'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+                          
+                          // Check if user can change duration
+                          if (_canChangeDuration) {
+                            final currentDuration = _totalDays;
+                            final change = newDuration - currentDuration;
+                            
+                            if (change.abs() > _maxExtensionDays && _userTrustScore > 0) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('You can only change duration by ±$_maxExtensionDays days'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+                          }
+                          
+                          setState(() {
+                            _endDate = selectedDate;
+                          });
+                          _checkAvailability();
+                        }
+                      },
+                    ),
+                  ),
+                  
+                  // Duration Info
+                  if (_startDate != null && _endDate != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
                           Text(
-                            'Pick up today with auto-calculated return date',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                            'Duration: $_totalDays day${_totalDays != 1 ? 's' : ''}',
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          if (_canChangeDuration)
+                            TextButton(
+                              onPressed: _showChangeDurationDialog,
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.edit, size: 14),
+                                  SizedBox(width: 4),
+                                  Text('Change Duration'),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  
+                  const SizedBox(height: 20),
+
+                  // Availability Check
+                  if (_checkingAvailability)
+                    const Center(
+                      child: Column(
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 8),
+                          Text("Checking availability..."),
+                        ],
+                      ),
+                    ),
+                    
+                  if (_availabilityError != null)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            color: AppColors.error,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              _availabilityError!,
+                              style: TextStyle(
+                                color: AppColors.error,
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    Switch(
-                      value: _immediatePickup,
-                      onChanged: (value) {
-                        setState(() {
-                          _immediatePickup = value;
-                          if (value) {
-                            final now = DateTime.now();
-                            _startDate = now;
-                            _endDate = now.add(Duration(days: _getDefaultDuration()));
-                            _recalculateDatesBasedOnTrust();
-                          }
-                        });
-                        _checkAvailability();
-                      },
-                      activeColor: AppColors.primaryBlue,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Date Selection or Immediate Pickup Display
-            if (_immediatePickup)
-              _buildImmediatePickupCard()
-            else
-              _buildDateSelection(),
-            
-            const SizedBox(height: 24),
-            
-            // Quantity Selector
-            Card(
-              elevation: 1,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Quantity',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Number of items needed'),
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.grey.shade300),
-                                ),
-                                child: const Icon(Icons.remove, size: 20),
-                              ),
-                              onPressed: () {
-                                if (_quantity > 1) {
-                                  setState(() {
-                                    _quantity--;
-                                  });
-                                  _checkAvailability();
-                                }
-                              },
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: AppColors.primaryBlue),
-                                borderRadius: BorderRadius.circular(8),
-                                color: AppColors.primaryBlue.withOpacity(0.1),
-                              ),
-                              child: Text(
-                                '$_quantity',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primaryBlue,
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              icon: Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: AppColors.primaryBlue,
-                                ),
-                                child: const Icon(Icons.add, size: 20, color: Colors.white),
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _quantity++;
-                                });
-                                _checkAvailability();
-                              },
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Availability Status
-            _buildAvailabilityStatus(),
-            
-            const SizedBox(height: 24),
-            
-            // Cost Summary
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Cost Summary',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Icon(Icons.receipt, color: AppColors.primaryBlue),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Daily Rate × $_quantity item${_quantity != 1 ? 's' : ''}'),
-                        Text('\$${(dailyRate * _quantity).toStringAsFixed(2)}'),
-                      ],
-                    ),
-                    
-                    const SizedBox(height: 8),
-                    
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Duration'),
-                        Text('$duration day${duration != 1 ? 's' : ''}'),
-                      ],
-                    ),
-                    
-                    const Divider(height: 24),
-                    
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Total Cost',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          '\$${_calculatedCost.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryBlue,
-                          ),
-                        ),
-                      ],
-                    ),
-                    
-                    if (_immediatePickup) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        '*Return date auto-calculated based on item type and your trust level',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
+                  
+                  const SizedBox(height: 24),
 
-            // Progress Tracker section
-            const SizedBox(height: 24),
-            Card(
-              elevation: 1,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Reservation Progress',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                  // Price Summary
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          const Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Price Summary",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          
+                          const SizedBox(height: 16),
+                          
+                          _priceRow("Daily Rate", "\$$_dailyRate/day"),
+                          _priceRow("Rental Period", "$_totalDays days"),
+                          const Divider(),
+                          _priceRow(
+                            "Total Price",
+                            "\$${_totalPrice.toStringAsFixed(2)}",
+                            isTotal: true,
+                          ),
+                          
+                          // Auto-calculation info
+                          if (_userTrustScore > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 12),
+                              child: Text(
+                                _getTrustLevelInfo(),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.green[700],
+                                  fontStyle: FontStyle.italic,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    
-                    // Progress Steps
-                    _buildProgressStep(
-                      step: 1,
-                      title: 'Select Dates & Quantity',
-                      isCompleted: _startDate != null && _endDate != null && _quantity > 0,
-                      isCurrent: true,
+                  ),
+                  
+                  const SizedBox(height: 24),
+
+                  // Notes (Optional)
+                  const Text(
+                    "Additional Notes (Optional)",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
-                    
-                    _buildProgressStep(
-                      step: 2,
-                      title: 'Check Availability',
-                      isCompleted: !_checkingAvailability && _availabilityMessage.isNotEmpty,
-                      isCurrent: false,
+                  ),
+                  
+                  const SizedBox(height: 8),
+                  
+                  TextField(
+                    controller: _notesController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: "Any special requests or instructions...",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
-                    
-                    _buildProgressStep(
-                      step: 3,
-                      title: 'Review & Submit',
-                      isCompleted: false,
-                      isCurrent: false,
-                      isLast: true,
-                    ),
-                    
-                    const SizedBox(height: 12),
-                    
-                    // Status Summary
-                    if (!_checkingAvailability && _availabilityMessage.isNotEmpty)
-                      Container(
+                  ),
+                  
+                  const SizedBox(height: 30),
+
+                  // Reservation Messages
+                  if (_reservationError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: _isAvailable ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                          color: AppColors.error.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           children: [
                             Icon(
-                              _isAvailable ? Icons.check_circle : Icons.error,
-                              color: _isAvailable ? Colors.green : Colors.red,
-                              size: 20,
+                              Icons.error_outline,
+                              color: AppColors.error,
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                _isAvailable 
-                                    ? 'Ready to submit reservation'
-                                    : 'Cannot proceed: ${_availabilityMessage.toLowerCase()}',
+                                _reservationError!,
                                 style: TextStyle(
-                                  fontSize: 13,
-                                  color: _isAvailable ? Colors.green : Colors.red,
+                                  color: AppColors.error,
                                 ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                  ],
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 30),
-            
-            // Submit Button
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: (_isLoading || !_isAvailable || duration < 1 || duration > _getMaxRentalDays()) 
-                    ? null 
-                    : _submitReservation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlue,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 2,
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
+                    ),
+                    
+                  if (_reservationSuccess != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.success.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                      )
-                    : const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.handshake),
-                          SizedBox(width: 12),
-                          Text(
-                            'Submit Reservation',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              color: AppColors.success,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                _reservationSuccess!,
+                                style: TextStyle(
+                                  color: AppColors.success,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-              ),
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // Info Note
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade100),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.info_outline, color: Colors.blue, size: 20),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      _immediatePickup
-                          ? 'Your reservation will be processed immediately. Admin approval is required before pickup.'
-                          : 'Your reservation request will be sent for admin approval. You\'ll be notified once approved.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.blue.shade800,
+                    ),
+
+                  // Submit Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: (_startDate != null && 
+                                _endDate != null && 
+                                _availabilityError == null &&
+                                !_creatingReservation && 
+                                !_checkingAvailability)
+                          ? _createReservation
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.success,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: _creatingReservation
+                          ? const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                ),
+                                SizedBox(width: 12),
+                                Text("Creating Reservation..."),
+                              ],
+                            )
+                          : const Text(
+                              "Confirm Reservation",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+
+                  // Cancel Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Text(
+                        "Cancel",
+                        style: TextStyle(
+                          color: AppColors.neutralGray,
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildProgressTracker() {
+    final steps = ['Select Dates', 'Check Availability', 'Confirm'];
+    final completedSteps = [
+      _startDate != null && _endDate != null,
+      !_checkingAvailability && _availabilityError == null,
+      false, // Confirmation is last step
+    ];
+    
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Reservation Progress',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 16),
             
-            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: steps.asMap().entries.map((entry) {
+                final index = entry.key;
+                final step = entry.value;
+                final isCompleted = completedSteps[index];
+                final isCurrent = index == 0 
+                    ? _startDate == null
+                    : index == 1 
+                        ? _startDate != null && !_checkingAvailability
+                        : false;
+                
+                return Column(
+                  children: [
+                    // Step circle
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isCompleted 
+                            ? AppColors.success
+                            : isCurrent
+                                ? AppColors.primaryBlue
+                                : Colors.grey[300] ?? Colors.grey,
+                        border: Border.all(
+                          color: isCompleted 
+                              ? AppColors.success
+                              : isCurrent
+                                  ? AppColors.primaryBlue
+                                  : Colors.grey[400] ?? Colors.grey,
+                          width: 2,
+                        ),
+                      ),
+                      child: Center(
+                        child: isCompleted
+                            ? const Icon(Icons.check, size: 20, color: Colors.white)
+                            : Text(
+                                '${index + 1}',
+                                style: TextStyle(
+                                  color: isCurrent ? Colors.white : Colors.grey[700],
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      step,
+                      style: TextStyle(
+                        fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
+                        color: isCurrent ? AppColors.primaryDark : Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+            
+            // Progress bar
+            const SizedBox(height: 16),
+            LinearProgressIndicator(
+              value: completedSteps.where((c) => c).length / steps.length,
+              backgroundColor: Colors.grey[200],
+              color: AppColors.primaryBlue,
+              minHeight: 6,
+              borderRadius: BorderRadius.circular(3),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Step ${completedSteps.where((c) => c).length} of ${steps.length}',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
-  
+
+  String _getTrustLevelInfo() {
+    switch (_userTrustScore) {
+      case 5:
+        return '🌟 Trusted User: You can change duration by ±14 days';
+      case 3:
+        return '👍 Regular User: You can change duration by ±7 days';
+      case 1:
+        return '👋 New User: You can change duration by ±3 days';
+      default:
+        return '🔒 First-time User: Standard rental period applies';
+    }
+  }
+
+  Widget _priceRow(String label, String value, {bool isTotal = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: AppColors.neutralGray,
+              fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: isTotal ? 18 : 14,
+              fontWeight: isTotal ? FontWeight.w700 : FontWeight.w600,
+              color: isTotal ? AppColors.success : AppColors.primaryDark,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
+    _notesController.dispose();
     super.dispose();
   }
 }
-

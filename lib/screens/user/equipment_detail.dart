@@ -361,6 +361,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../utils/theme.dart';
 import '../user/reservation_screen.dart';
 
@@ -655,69 +656,15 @@ class EquipmentDetailPage extends StatelessWidget {
                 ],
               ),
 
+            // Check if item has active reservations
+            const SizedBox(height: 12),
+            _buildReservationStatus(context, itemId),
+
             // ACTION BUTTONS
             const SizedBox(height: 16),
 
             if (isAvailable) 
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ReservationScreen(
-                              equipment: {
-                                'id': equipmentId,
-                                'itemId': itemId,
-                                'name': equipmentData['name'] ?? 'Equipment',
-                                'itemName': itemData['name'] ?? equipmentData['name'] ?? 'Item',
-                                'type': equipmentData['type'] ?? equipmentData['category'] ?? 'Unknown',
-                                'serial': itemData['serial'] ?? 'N/A',
-                                'condition': itemData['condition'] ?? 'N/A',
-                                // Add other necessary fields
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.handshake, size: 18),
-                      label: const Text("Reserve This Item"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.success,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        _addItemToCart(
-                          context, 
-                          equipmentData['name'] ?? 'Equipment',
-                          itemData['name'] ?? 'Item'
-                        );
-                      },
-                      icon: const Icon(Icons.add_shopping_cart, size: 18),
-                      label: const Text("Add to Cart"),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primaryBlue,
-                        side: BorderSide(color: AppColors.primaryBlue),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              )
+              _buildActionButtons(context, equipmentData, itemId, itemData)
             else
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -738,6 +685,181 @@ class EquipmentDetailPage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  // Build reservation status stream
+  Widget _buildReservationStatus(BuildContext context, String itemId) {
+  return StreamBuilder<QuerySnapshot>(
+    stream: FirebaseFirestore.instance
+        .collection('reservations')
+        .where('itemId', isEqualTo: itemId)
+        .where('status', whereIn: ['confirmed', 'active']) // REMOVED 'pending'
+        .snapshots(),
+    builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const SizedBox(); // No active reservations
+        }
+
+        final reservations = snapshot.data!.docs;
+        final now = DateTime.now();
+        
+        // Find the soonest upcoming reservation
+        Timestamp? nearestEndDate;
+        for (final reservation in reservations) {
+          final data = reservation.data() as Map<String, dynamic>;
+          final endDate = (data['endDate'] as Timestamp).toDate();
+          
+          if (endDate.isAfter(now)) {
+            if (nearestEndDate == null || endDate.isBefore(nearestEndDate.toDate())) {
+              nearestEndDate = data['endDate'] as Timestamp;
+            }
+          }
+        }
+
+        if (nearestEndDate == null) {
+          return const SizedBox();
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.warning.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.calendar_today,
+                size: 14,
+                color: AppColors.warning,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  "Next available: ${DateFormat('MMM dd, yyyy').format(nearestEndDate.toDate())}",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.warning,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Build action buttons with availability check
+Widget _buildActionButtons(
+  BuildContext context,
+  Map<String, dynamic> equipmentData,
+  String itemId,
+  Map<String, dynamic> itemData,
+) {
+  return StreamBuilder<QuerySnapshot>(
+    stream: FirebaseFirestore.instance
+        .collection('reservations')
+        .where('itemId', isEqualTo: itemId)
+        .where('status', whereIn: ['confirmed', 'active']) // REMOVED 'pending'
+        .snapshots(),
+    builder: (context, reservationSnapshot) {
+        bool hasActiveReservations = false;
+        String nextAvailableDate = "";
+        
+        if (reservationSnapshot.hasData) {
+          final reservations = reservationSnapshot.data!.docs;
+          if (reservations.isNotEmpty) {
+            hasActiveReservations = true;
+            
+            // Calculate next available date
+            final now = DateTime.now();
+            DateTime? earliestEndDate;
+            
+            for (final reservation in reservations) {
+              final data = reservation.data() as Map<String, dynamic>;
+              final endDate = (data['endDate'] as Timestamp).toDate();
+              
+              if (endDate.isAfter(now)) {
+                if (earliestEndDate == null || endDate.isBefore(earliestEndDate)) {
+                  earliestEndDate = endDate;
+                }
+              }
+            }
+            
+            if (earliestEndDate != null) {
+              nextAvailableDate = DateFormat('MMM dd, yyyy').format(earliestEndDate);
+            }
+          }
+        }
+        
+        return Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: hasActiveReservations 
+                        ? null 
+                        : () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ReservationScreen(
+                                  equipment: {
+                                    'id': equipmentId,
+                                    'itemId': itemId,
+                                    'name': equipmentData['name'] ?? 'Equipment',
+                                    'itemName': itemData['name'] ?? equipmentData['name'] ?? 'Item',
+                                    'type': equipmentData['type'] ?? equipmentData['category'] ?? 'Unknown',
+                                    'serial': itemData['serial'] ?? 'N/A',
+                                    'condition': itemData['condition'] ?? 'N/A',
+                                    'hasActiveReservations': hasActiveReservations,
+                                    'nextAvailableDate': nextAvailableDate,
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                    icon: const Icon(Icons.handshake, size: 18),
+                    label: Text(
+                      hasActiveReservations 
+                          ? "Currently Reserved" 
+                          : "Reserve This Item"
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: hasActiveReservations 
+                          ? AppColors.neutralGray 
+                          : AppColors.success,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            
+            if (hasActiveReservations && nextAvailableDate.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  "Next available: $nextAvailableDate",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.neutralGray,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
