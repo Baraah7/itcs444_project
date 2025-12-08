@@ -21,6 +21,27 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _rememberMe = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadSavedCredentials();
+    });
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final accounts = await authProvider.getSavedAccounts();
+    
+    if (accounts.isNotEmpty && mounted) {
+      _emailController.text = accounts[0]['email']!;
+      _passwordController.text = accounts[0]['password']!;
+      setState(() {
+        _rememberMe = true;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final size = MediaQuery.of(context).size;
@@ -71,6 +92,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             hintText: "you@example.com",
                             prefixIcon: Icon(Icons.email_outlined,
                                 color: AppColors.neutralGray),
+                            suffixIcon: IconButton(
+                              icon: Icon(Icons.arrow_drop_down),
+                              onPressed: () => _showSavedAccounts(),
+                            ),
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
@@ -300,6 +325,41 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Future<void> _showSavedAccounts() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final accounts = await authProvider.getSavedAccounts();
+    
+    if (accounts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No saved accounts')),
+      );
+      return;
+    }
+    
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => ListView.builder(
+        shrinkWrap: true,
+        itemCount: accounts.length,
+        itemBuilder: (context, index) {
+          final account = accounts[index];
+          return ListTile(
+            leading: Icon(Icons.person),
+            title: Text(account['email']!),
+            onTap: () {
+              setState(() {
+                _emailController.text = account['email']!;
+                _passwordController.text = account['password']!;
+                _rememberMe = true;
+              });
+              Navigator.pop(context);
+            },
+          );
+        },
       ),
     );
   }

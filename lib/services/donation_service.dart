@@ -191,6 +191,4 @@ class DonationService {
     return Donation.fromMap(doc.data(), doc.id);
   }).toList();
 }
-
-
 }
