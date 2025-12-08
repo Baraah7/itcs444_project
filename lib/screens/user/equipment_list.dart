@@ -92,136 +92,141 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
   }
 
   Widget _buildFilterSection() {
-    return Container(
-      color: Theme.of(context).primaryColor.withOpacity(0.05),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        children: [
-          // Search Bar
-          TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Search equipment...',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                      },
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+  return Container(
+    padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          offset: const Offset(0, 3),
+          blurRadius: 6,
+        )
+      ],
+    ),
+    child: Column(
+      children: [
+        // Search Bar
+        TextField(
+          controller: _searchController,
+          decoration: InputDecoration(
+            hintText: 'Search equipment...',
+            filled: true,
+            fillColor: Colors.grey[100],
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => _searchController.clear(),
+                  )
+                : null,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide.none,
             ),
           ),
-          const SizedBox(height: 12),
+        ),
 
-          // Filter Row
-          Row(
-            children: [
-              // Type Filter Dropdown
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey[300]!),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedType,
-                      isExpanded: true,
-                      icon: const Icon(Icons.arrow_drop_down),
-                      items: _equipmentTypes.map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(
-                            value,
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedType = newValue!;
-                        });
-                      },
-                    ),
+        const SizedBox(height: 14),
+
+        Row(
+          children: [
+            // Type Dropdown
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedType,
+                    isExpanded: true,
+                    items: _equipmentTypes.map((value) {
+                      return DropdownMenuItem(
+                        value: value,
+                        child: Text(value, style: const TextStyle(fontSize: 14)),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() => _selectedType = value!);
+                    },
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+            ),
 
-              // Availability Filter
-              FilterChip(
-                label: const Text('Available'),
-                selected: _showOnlyAvailable,
-                onSelected: (bool selected) {
-                  setState(() {
-                    _showOnlyAvailable = selected;
-                  });
-                },
-                checkmarkColor: Colors.white,
-                selectedColor: Colors.green,
-                avatar: _showOnlyAvailable
-                    ? const Icon(Icons.check, size: 16, color: Colors.white)
-                    : const Icon(Icons.check, size: 16, color: Colors.grey),
+            const SizedBox(width: 12),
+
+            // Availability Chip
+            FilterChip(
+              label: const Text("Available"),
+              selected: _showOnlyAvailable,
+              selectedColor: Colors.green.shade400,
+              backgroundColor: Colors.grey.shade200,
+              labelStyle: TextStyle(
+                color: _showOnlyAvailable ? Colors.white : Colors.black87,
+                fontWeight: FontWeight.w600,
               ),
+              checkmarkColor: Colors.white,
+              onSelected: (value) {
+                setState(() => _showOnlyAvailable = value);
+              },
+            ),
 
-              // Clear Filters Button
-              if (_hasActiveFilters())
-                IconButton(
-                  icon: const Icon(Icons.filter_alt_off),
-                  onPressed: _clearFilters,
-                  tooltip: 'Clear filters',
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+            if (_hasActiveFilters())
+              IconButton(
+                icon: const Icon(Icons.filter_alt_off_rounded),
+                onPressed: _clearFilters,
+              )
+          ],
+        )
+      ],
+    ),
+  );
+}
+
 
   Widget _buildActiveFilters() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      color: Colors.blue[50],
-      child: Row(
-        children: [
-          const Icon(Icons.filter_list, size: 16, color: Colors.blue),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Wrap(
-              spacing: 8,
-              children: [
-                if (_searchQuery.isNotEmpty)
-                  Chip(
-                    label: Text('Search: $_searchQuery'),
-                    onDeleted: () => _searchController.clear(),
-                    deleteIcon: const Icon(Icons.close, size: 16),
-                  ),
-                if (_selectedType != 'All')
-                  Chip(
-                    label: Text('Type: $_selectedType'),
-                    onDeleted: () => setState(() => _selectedType = 'All'),
-                    deleteIcon: const Icon(Icons.close, size: 16),
-                  ),
-                if (_showOnlyAvailable)
-                  Chip(
-                    label: const Text('Available Only'),
-                    onDeleted: () => setState(() => _showOnlyAvailable = false),
-                    deleteIcon: const Icon(Icons.close, size: 16),
-                  ),
-              ],
-            ),
-          ),
-        ],
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    decoration: BoxDecoration(
+      color: Colors.blue.shade50,
+      border: Border(
+        bottom: BorderSide(color: Colors.blue.shade100),
       ),
-    );
-  }
+    ),
+    child: Wrap(
+      spacing: 10,
+      children: [
+        if (_searchQuery.isNotEmpty)
+          Chip(
+            backgroundColor: Colors.white,
+            label: Text('Search: $_searchQuery'),
+            deleteIcon: const Icon(Icons.close),
+            onDeleted: () => _searchController.clear(),
+          ),
+        if (_selectedType != 'All')
+          Chip(
+            backgroundColor: Colors.white,
+            label: Text('Type: $_selectedType'),
+            deleteIcon: const Icon(Icons.close),
+            onDeleted: () => setState(() => _selectedType = 'All'),
+          ),
+        if (_showOnlyAvailable)
+          Chip(
+            backgroundColor: Colors.white,
+            label: const Text('Available Only'),
+            deleteIcon: const Icon(Icons.close),
+            onDeleted: () => setState(() => _showOnlyAvailable = false),
+          ),
+      ],
+    ),
+  );
+}
+
 
   Widget _buildEquipmentList() {
     return StreamBuilder<QuerySnapshot>(
@@ -282,143 +287,125 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
         final type = data['type'] ?? 'Other';
 
         return Card(
-          margin: const EdgeInsets.all(8),
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+          color: Colors.white,
+  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+  elevation: 3,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(16),
+  ),
+  child: InkWell(
+    borderRadius: BorderRadius.circular(16),
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EquipmentDetailPage(equipmentId: equipmentDoc.id),
+        ),
+      );
+    },
+    child: Padding(
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          // Icon Section
+          Container(
+            width: 65,
+            height: 65,
+            decoration: BoxDecoration(
+              color: _getTypeColor(type).withOpacity(0.12),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: _getEquipmentIcon(type, size: 32),
+            ),
           ),
-          child: InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => EquipmentDetailPage(
-                    equipmentId: equipmentDoc.id,
+
+          const SizedBox(width: 14),
+
+          // Text Section
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
                   ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  type,
+                  style: TextStyle(color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  description.length > 60
+                      ? '${description.substring(0, 60)}...'
+                      : description,
+                  style: TextStyle(color: Colors.grey.shade700),
+                  maxLines: 2,
+                )
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 10),
+
+          // Availability badge
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('equipment')
+                .doc(equipmentDoc.id)
+                .collection('Items')
+                .where('availability', isEqualTo: true)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const SizedBox();
+              }
+
+              final available = snapshot.data!.docs.isNotEmpty;
+
+              return Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color:
+                      available ? Colors.green.shade50 : Colors.red.shade50,
+                  // border: Border.all(
+                  //   color: available ? Colors.green : Colors.red,
+                  // ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      available ? Icons.check_circle : Icons.cancel,
+                      size: 14,
+                      color: available ? Colors.green : Colors.red,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      available ? 'Available' : 'Unavailable',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: available ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               );
             },
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  // Equipment Icon
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: _getTypeColor(type).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Center(
-                      child: _getEquipmentIcon(type, size: 30),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // Equipment Info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          type,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          description.length > 60
-                              ? '${description.substring(0, 60)}...'
-                              : description,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[700],
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Availability Status
-                  const SizedBox(width: 8),
-                  StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('equipment')
-                        .doc(equipmentDoc.id)
-                        .collection('Items')
-                        .where('availability', isEqualTo: true)
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return const SizedBox();
-                      }
-
-                      final hasAvailableItems = snapshot.data!.docs.isNotEmpty;
-
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: hasAvailableItems
-                              ? Colors.green.withOpacity(0.1)
-                              : Colors.red.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: hasAvailableItems
-                                ? Colors.green
-                                : Colors.red,
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              hasAvailableItems
-                                  ? Icons.check_circle
-                                  : Icons.cancel,
-                              size: 14,
-                              color: hasAvailableItems
-                                  ? Colors.green
-                                  : Colors.red,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              hasAvailableItems ? 'Available' : 'Unavailable',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: hasAvailableItems
-                                    ? Colors.green
-                                    : Colors.red,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
           ),
-        );
+        ],
+      ),
+    ),
+  ),
+);
+
       },
     );
   }
@@ -430,7 +417,7 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 0.85,
+        childAspectRatio: 0.82,
       ),
       itemCount: equipmentDocs.length,
       itemBuilder: (context, index) {
@@ -438,153 +425,119 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
         final data = equipmentDoc.data() as Map<String, dynamic>;
 
         final name = data['name'] ?? 'Unnamed';
+        final description = data['description'] ?? '';
         final type = data['type'] ?? 'Other';
 
         return Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+  elevation: 3,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(18),
+  ),
+  child: InkWell(
+    borderRadius: BorderRadius.circular(18),
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EquipmentDetailPage(equipmentId: equipmentDoc.id),
+        ),
+      );
+    },
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Icon area
+        Container(
+          height: 110,
+          decoration: BoxDecoration(
+            color: _getTypeColor(type).withOpacity(0.12),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
           ),
-          child: InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => EquipmentDetailPage(
-                    equipmentId: equipmentDoc.id,
-                  ),
-                ),
-              );
-            },
-            borderRadius: BorderRadius.circular(12),
+          child: Center(
+            child: _getEquipmentIcon(type, size: 45),
+          ),
+        ),
+
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top icon section
-                Container(
-                  height: 100,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: _getTypeColor(type).withOpacity(0.1),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      topRight: Radius.circular(12),
-                    ),
-                  ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _getEquipmentIcon(type, size: 40),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.8),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            type,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: _getTypeColor(type),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                Text(
+                  name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
                   ),
                 ),
-
-                // Content section
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          name,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-
-                        // Availability status
-                        StreamBuilder<QuerySnapshot>(
-                          stream: FirebaseFirestore.instance
-                              .collection('equipment')
-                              .doc(equipmentDoc.id)
-                              .collection('Items')
-                              .where('availability', isEqualTo: true)
-                              .snapshots(),
-                          builder: (context, snapshot) {
-                            if (!snapshot.hasData) {
-                              return const SizedBox();
-                            }
-
-                            final hasAvailableItems =
-                                snapshot.data!.docs.isNotEmpty;
-
-                            return Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: hasAvailableItems
-                                    ? Colors.green.withOpacity(0.1)
-                                    : Colors.red.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: hasAvailableItems
-                                      ? Colors.green
-                                      : Colors.red,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    hasAvailableItems
-                                        ? Icons.check_circle
-                                        : Icons.cancel,
-                                    size: 12,
-                                    color: hasAvailableItems
-                                        ? Colors.green
-                                        : Colors.red,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    hasAvailableItems
-                                        ? 'Available'
-                                        : 'Unavailable',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: hasAvailableItems
-                                          ? Colors.green
-                                          : Colors.red,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+                const SizedBox(height: 8),
+                Text(
+                  type,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
                   ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  description.length > 60
+                      ? '${description.substring(0, 60)}...'
+                      : description,
+                  style: TextStyle(color: Colors.grey.shade700),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 8),
+                // Availability badge
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('equipment')
+                      .doc(equipmentDoc.id)
+                      .collection('Items')
+                      .where('availability', isEqualTo: true)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) return const SizedBox();
+
+                    final available = snapshot.data!.docs.isNotEmpty;
+
+                    return Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: available
+                            ? Colors.green.shade50
+                            : Colors.red.shade50,
+                        // border: Border.all(
+                        //   color: available ? Colors.green : Colors.red,
+                        // ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        available ? 'Available' : 'Unavailable',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: available ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
           ),
-        );
+        ),
+      ],
+    ),
+  ),
+);
+
       },
     );
   }
