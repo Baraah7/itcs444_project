@@ -1,6 +1,7 @@
 // 
 import 'package:flutter/material.dart';
 import 'package:itcs444_project/models/donation_model.dart';
+import 'package:itcs444_project/screens/shared/donation_form.dart';
 import 'package:itcs444_project/services/donation_service.dart';
 
 class UserDonationDetails extends StatefulWidget {
@@ -117,7 +118,13 @@ class _UserDonationDetailsState extends State<UserDonationDetails> {
                       ),
                     ),
                     ElevatedButton(onPressed: () {
-                      Navigator.pop(context);
+                      Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      DonationForm(),
+                                ),
+                              );
                     }, child: Text('Submit Another Donation'))
                 ],
               ),
