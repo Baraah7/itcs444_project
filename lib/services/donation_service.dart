@@ -49,6 +49,7 @@ class DonationService {
     DateTime? rejectionDate,
     String? comments,
     int? iconCode,
+    String? donorID,
   }) async {
     try {
       // Create Donation object with ALL fields
@@ -67,6 +68,7 @@ class DonationService {
         rejectionDate: rejectionDate,
         comments: comments,
         iconCode: iconCode,
+        donorID: donorID,
       );
 
       // Save to Firestore
@@ -175,4 +177,20 @@ class DonationService {
       'rejectionDate': DateTime.now(),
     });
   }
+
+  //fetch donation by user id
+  Future<List<Donation>> fetchDonationsByUserId(String userId) async {
+  final snapshot = await db
+      .collection('donations')
+      .where('donorID', isEqualTo: userId)
+      .where('status', isEqualTo: 'Approved')
+      //.orderBy('submissionDate', descending: true) // add back if you like (may need index)
+      .get();
+
+  return snapshot.docs.map((doc) {
+    return Donation.fromMap(doc.data(), doc.id);
+  }).toList();
+}
+
+
 }

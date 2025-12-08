@@ -1,71 +1,67 @@
 //Review + approve donations
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:itcs444_project/models/donation_model.dart';
-import 'package:itcs444_project/screens/admin/admin_donation_details.dart';
+import 'package:itcs444_project/screens/shared/donation_form.dart';
+import 'package:itcs444_project/screens/user/user_donation_details.dart';
 import 'package:itcs444_project/services/donation_service.dart';
 
-class DonationList extends StatefulWidget {
-  const DonationList({super.key});
+class DonationHistory extends StatefulWidget {
+  const DonationHistory({super.key});
 
   @override
-  State<DonationList> createState() => _DonationListState();
+  State<DonationHistory> createState() => _DonationHistoryState();
 }
 
-class _DonationListState extends State<DonationList> {
+class _DonationHistoryState extends State<DonationHistory> {
   List<String> filterOps = ['Pending', 'Approved', 'Rejected'];
   String? filterVal;
+  final user = FirebaseAuth.instance.currentUser;
+  late final uid = user?.uid;
 
   DateTime todaysDate = DateTime.now();
 
   @override
   Widget build(BuildContext context) {
-    final day = todaysDate.day;
-    final month = todaysDate.month;
-    final year = todaysDate.year;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Donation Management'),
+        title: const Text('Donation History'),
         backgroundColor: Colors.blue,
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => DonationForm()),
+              );
+            },
+            icon: Icon(Icons.add),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(10),
         child: Column(
           spacing: 15,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                DropdownMenu(
-                  initialSelection: filterVal,
-                  dropdownMenuEntries: filterOps.map((item) {
-                    return DropdownMenuEntry(value: item, label: item);
-                  }).toList(),
-                  onSelected: (value) {
-                    setState(() {
-                      filterVal = value;
-                    });
-                  },
-                ),
-                Text(
-                  'Today\'s date: $day-$month-$year',
-                  style: const TextStyle(fontSize: 16),
-                ),
-              ],
-            ),
-
             Align(
               alignment: Alignment.topLeft,
-              child: Text(
-                filterVal == null ? 'All Donations:' : '$filterVal Donations:',
-                style: const TextStyle(fontSize: 20),
+              child: Column(
+                children: [
+                  Text(
+                    'Your Donations:',
+                    style: const TextStyle(fontSize: 20),
+                  ),
+                  Text('Thank you for your generous contributions to our center.')
+                ],
               ),
             ),
 
             //donations
             Expanded(
               child: FutureBuilder<List<Donation>>(
-                future: DonationService().fetchAllDonations(),
+                future: DonationService().fetchDonationsByUserId(user!.uid),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -129,7 +125,7 @@ class _DonationListState extends State<DonationList> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) =>
-                                      DonationDetails(donationID: d.id!),
+                                      UserDonationDetails(donationID: d.id!),
                                 ),
                               );
                             },

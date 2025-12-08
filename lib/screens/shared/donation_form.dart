@@ -3,9 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_iconpicker/Models/configuration.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:itcs444_project/screens/user/donation_page.dart';
+import 'package:itcs444_project/screens/user/user_donation_details.dart';
 import 'package:itcs444_project/services/donation_service.dart';
 import 'package:flutter_iconpicker/flutter_iconpicker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class DonationForm extends StatefulWidget {
   const DonationForm({super.key});
@@ -27,6 +28,8 @@ class DonationFormState extends State<DonationForm> {
   List<File>? images;
   int quantity = 1;
   DateTime? approvalDate;
+  final user = FirebaseAuth.instance.currentUser;
+  late final uid = user?.uid;
 
   List<String> conditionTypes = [
     'New',
@@ -354,6 +357,7 @@ class DonationFormState extends State<DonationForm> {
                                 imagePaths: imageUrls,
                                 iconCode: iconCode,
                                 comments: comments,
+                                donorID: uid,
                               );
 
                           ScaffoldMessenger.of(context).showSnackBar(

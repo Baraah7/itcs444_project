@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:itcs444_project/screens/shared/donation_form.dart';
+import 'package:itcs444_project/screens/user/donation_history.dart';
 import 'package:itcs444_project/screens/user/equipment_detail.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -83,7 +84,7 @@ class _UserDashboardState extends State<UserDashboard> {
       case 0: return _buildDashboardBody(context, auth, user);
       case 1: return _buildCartBody(context);
       case 2: return _buildHistoryBody(context);
-      case 3: return DonationForm();
+      case 3: return DonationHistory();
       case 4: return _buildHelpBody(context);
       case 5: return ProfileScreen();
       case 6: return _buildSettingsBody(context);

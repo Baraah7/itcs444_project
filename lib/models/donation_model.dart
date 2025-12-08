@@ -14,6 +14,7 @@ const Map<String, int> defaultIconCodes = {
 
 class Donation {
   final String? id;
+  final String? donorID;
   final String itemName;
   final String itemType;
   final String condition;
@@ -31,6 +32,7 @@ class Donation {
 
   Donation({
     this.id,
+    this.donorID,
     required this.itemName,
     required this.donorName,
     required this.donorContact,
@@ -66,6 +68,7 @@ class Donation {
       rejectionDate: (data['rejectionDate'] as Timestamp?)?.toDate(),
           comments: data['comments'],
       iconCode: data['iconCode'],
+      donorID: data['donorID'],
     );
   }
 
@@ -85,6 +88,7 @@ class Donation {
       'rejectionDate': rejectionDate,
       'comments': comments,
       'iconCode': iconCode,
+      'donorID': donorID,
     };
   }
 }
