@@ -11,6 +11,7 @@ import '../shared/profile_screen.dart';
 import '../test_notification_screen.dart';
 import 'settings.dart';
 import 'help&support.dart';
+import 'equipment_detail.dart';
 
 class UserDashboard extends StatefulWidget {
   const UserDashboard({super.key});
@@ -80,7 +81,7 @@ class _UserDashboardState extends State<UserDashboard> {
   Widget _getBodyForIndex(int index, BuildContext context, AuthProvider auth, dynamic user) {
     switch (index) {
       case 0: return _buildDashboardBody(context, auth, user);
-      // case 1: return EquipmentListScreen();
+      case 1: return UserEquipmentPage();
       case 2: return MyReservationsScreen();
       case 3: return UserDonationDetails(donationID: '1',);
       case 4: return _buildHistoryBody(context);
@@ -605,7 +606,7 @@ Widget _buildFeaturedEquipment(BuildContext context) {
               TextButton(
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const EquipmentListScreen()),
+                MaterialPageRoute(builder: (context) => const UserEquipmentPage()),
               ),
               child: const Row(
                 children: [
@@ -827,14 +828,14 @@ Widget _medicalEquipmentCard(
 
                 // VIEW DETAILS BUTTON (instead of Add to Cart)
                 GestureDetector(
-                  // onTap: () {
-                  //   Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(
-                  //       builder: (_) => EquipmentDetailPage(equipmentId: id),
-                  //     ),
-                  //   );
-                  // },
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => EquipmentDetailPage(equipmentId: id),
+                      ),
+                    );
+                  },
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(

@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/rental_model.dart';
-import '../models/equipment_model.dart';
 import 'notification_service.dart';
 
 class ReservationService {
