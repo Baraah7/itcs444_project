@@ -7,7 +7,8 @@ import '../../utils/theme.dart';
 import '../shared/profile_screen.dart';
 import 'equipment_management.dart';
 import 'add_edit_equipment.dart';
-import '../admin/reservation_management.dart'; //NEW added by Wadeeah (task3)
+import '../admin/reservation_management.dart';
+import '../test_notification_screen.dart';
 
 
 class AdminDashboard extends StatefulWidget {
@@ -897,7 +898,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   // ============ NAVIGATION METHODS ============
   void _navigateToNotifications() {
-    // Implement notifications navigation
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => TestNotificationScreen()),
+    );
   }
 
   void _navigateToAddEquipment() {

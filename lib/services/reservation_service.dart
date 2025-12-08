@@ -2,10 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/rental_model.dart';
 import '../models/equipment_model.dart';
+import 'notification_service.dart';
 
 class ReservationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final NotificationService _notificationService = NotificationService();
   
   // Collection references
   CollectionReference get rentalsCollection => _firestore.collection('rentals');
@@ -138,8 +140,22 @@ class ReservationService {
         return rentalId;
       });
       
-      // Send notification (you can implement this later)
-      print('Rental created successfully: $rentalId');
+      // Send notification to user
+      await _notificationService.sendNotification(
+        userId: firebaseUser.uid,
+        title: 'Rental Request Submitted',
+        message: 'Your rental request for "$equipmentName" has been submitted and is pending approval.',
+        type: 'approval',
+        data: {'rentalId': rentalId},
+      );
+      
+      // Notify admins
+      await _notifyAdmins(
+        'New Rental Request',
+        'New rental request for "$equipmentName" by $userFullName',
+        'approval',
+        {'rentalId': rentalId},
+      );
       
       return rentalId;
     } catch (e) {
@@ -293,6 +309,46 @@ class ReservationService {
       }
       
       await rentalsCollection.doc(rentalId).update(updateData);
+      
+      // Send notification to user
+      final rentalDoc = await rentalsCollection.doc(rentalId).get();
+      if (rentalDoc.exists) {
+        final rentalData = rentalDoc.data() as Map<String, dynamic>;
+        final userId = rentalData['userId'] as String;
+        final equipmentName = rentalData['equipmentName'] as String;
+        
+        String title = '';
+        String message = '';
+        
+        switch (status) {
+          case 'approved':
+            title = 'Rental Approved';
+            message = 'Your rental request for "$equipmentName" has been approved!';
+            break;
+          case 'checked_out':
+            title = 'Equipment Checked Out';
+            message = 'You have checked out "$equipmentName". Please return by the due date.';
+            break;
+          case 'returned':
+            title = 'Rental Completed';
+            message = 'Thank you for returning "$equipmentName" on time!';
+            break;
+          case 'cancelled':
+            title = 'Rental Cancelled';
+            message = 'Your rental for "$equipmentName" has been cancelled.';
+            break;
+        }
+        
+        if (title.isNotEmpty) {
+          await _notificationService.sendNotification(
+            userId: userId,
+            title: title,
+            message: message,
+            type: 'approval',
+            data: {'rentalId': rentalId},
+          );
+        }
+      }
       
     } catch (e) {
       throw Exception('Failed to update rental status: $e');
@@ -488,9 +544,25 @@ class ReservationService {
     }
   }
   
-  // SEND NOTIFICATION (PLACEHOLDER)
-  void _sendNewReservationNotification(String rentalId) {
-    print('New reservation created: $rentalId');
-    // Implement Firebase Cloud Messaging here
+  // NOTIFY ADMINS
+  Future<void> _notifyAdmins(String title, String message, String type, [Map<String, dynamic>? data]) async {
+    try {
+      final admins = await _firestore
+          .collection('users')
+          .where('role', isEqualTo: 'admin')
+          .get();
+
+      for (var admin in admins.docs) {
+        await _notificationService.sendNotification(
+          userId: admin.id,
+          title: title,
+          message: message,
+          type: type,
+          data: data,
+        );
+      }
+    } catch (e) {
+      print('Error notifying admins: $e');
+    }
   }
 }

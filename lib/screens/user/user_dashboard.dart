@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/theme.dart';
 import '../shared/profile_screen.dart';
+import '../test_notification_screen.dart';
 
 class UserDashboard extends StatefulWidget {
   const UserDashboard({super.key});
@@ -1292,7 +1293,10 @@ Widget _medicalEquipmentCard(
 
   // ============ NAVIGATION METHODS ============
   void _navigateToNotifications() {
-    // Implement notifications navigation
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => TestNotificationScreen()),
+    );
   }
 
   void _navigateToAddEquipment() {
