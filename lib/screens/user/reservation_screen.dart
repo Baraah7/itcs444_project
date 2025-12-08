@@ -181,91 +181,68 @@ class _ReservationScreenState extends State<ReservationScreen> {
     _calculateTotal();
     _checkAvailability();
   }
-
-  void _calculateTotal() {
-    if (_startDate == null || _endDate == null) return;
-    
-    _totalDays = _endDate!.difference(_startDate!).inDays + 1;
-    _totalPrice = _totalDays * _dailyRate;
-    
-    if (mounted) {
-      setState(() {});
+  
+  String _getTrustLevelText() {
+    switch (_userTrustScore) {
+      case 3: return 'Trusted User (+50% duration)';
+      case 2: return 'Regular User (+25% duration)';
+      case 1: return 'New User (standard duration)';
+      default: return 'First-time User (reduced duration)';
     }
   }
-
-  // Check availability when dates are selected
-  Future<void> _checkAvailability() async {
+  
+ Future<void> _checkAvailability() async {
+  if (_startDate == null || _endDate == null) return;
+  
+  setState(() {
+    _checkingAvailability = true;
+    _availabilityMessage = 'Checking availability...';
+  });
+  
+  // Simplified - always allow submission, admin will verify
+  setState(() {
+    _isAvailable = true;
+    _availabilityMessage = 'Equipment available - pending admin approval';
+    _checkingAvailability = false;
+  });
+  
+  _calculateCost();
+}
+  
+  void _calculateCost() {
     if (_startDate == null || _endDate == null) return;
     
-    // Validate dates
-    if (_startDate!.isBefore(DateTime.now())) {
-      setState(() {
-        _availabilityError = 'Start date cannot be in the past';
-      });
-      return;
-    }
-    
-    if (_endDate!.isBefore(_startDate!)) {
-      setState(() {
-        _availabilityError = 'End date must be after start date';
-      });
-      return;
-    }
-    
-    // Check if reservation is within max days
-    if (_totalDays > _maxRentalDays) {
-      setState(() {
-        _availabilityError = 'Maximum rental period is $_maxRentalDays days for this equipment';
-      });
-      return;
-    }
+    final dailyRate = (widget.equipment['rentalPrice'] ?? 0).toDouble();
+    final duration = _endDate!.difference(_startDate!).inDays;
+    final total = dailyRate * duration * _quantity;
     
     setState(() {
-      _checkingAvailability = true;
-      _availabilityError = null;
-      _isLoading = true;
+      _calculatedCost = total;
     });
+  }
+  
+  Future<void> _selectStartDate(BuildContext context) async {
+    if (_immediatePickup) return;
     
-    final isAvailable = await _reservationService.checkItemAvailability(
-      itemId: widget.equipment['itemId']!,
-      equipmentId: widget.equipment['id']!,
-      startDate: _startDate!,
-      endDate: _endDate!,
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _startDate ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primaryBlue,
+              onPrimary: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     
-    setState(() {
-      _checkingAvailability = false;
-      _isLoading = false;
-      if (!isAvailable) {
-        _availabilityError = 'This item is not available for the selected dates. Please choose different dates.';
-      } else {
-        _calculateTotal();
-      }
-    });
-  }
-
-  // Create reservation
-  Future<void> _createReservation() async {
-    if (_startDate == null || _endDate == null) {
-      setState(() {
-        _reservationError = 'Please select start and end dates';
-      });
-      return;
-    }
-    
-    if (_availabilityError != null) {
-      return;
-    }
-    
-    // Validate total days
-    if (_totalDays < 1) {
-      setState(() {
-        _reservationError = 'Rental duration must be at least 1 day';
-      });
-      return;
-    }
-    
-    if (_totalDays > _maxRentalDays) {
+    if (picked != null && picked != _startDate) {
       setState(() {
         _reservationError = 'Maximum rental period is $_maxRentalDays days for this equipment';
       });

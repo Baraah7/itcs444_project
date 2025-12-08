@@ -5,9 +5,7 @@ import 'package:itcs444_project/screens/admin/donation_details.dart';
 import 'package:itcs444_project/services/donation_service.dart';
 
 class DonationList extends StatefulWidget {
-  const DonationList({super.key, required this.donations});
-
-  final List<Donation> donations;
+  const DonationList({super.key});
 
   @override
   State<DonationList> createState() => _DonationListState();

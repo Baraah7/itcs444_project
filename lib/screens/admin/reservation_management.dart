@@ -856,6 +856,13 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
             child: StreamBuilder<List<Map<String, dynamic>>>(
               stream: _getAllReservationsStream(),
               builder: (context, snapshot) {
+                print('=== RESERVATION MANAGEMENT DEBUG ===');
+                print('Connection State: ${snapshot.connectionState}');
+                print('Has Error: ${snapshot.hasError}');
+                print('Error: ${snapshot.error}');
+                print('Has Data: ${snapshot.hasData}');
+                print('Data Length: ${snapshot.data?.length ?? 0}');
+                
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -877,7 +884,8 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
                   );
                 }
                 
-                final allReservations = snapshot.data ?? [];
+                final allRentals = snapshot.data ?? [];
+                print('All Rentals Count: ${allRentals.length}');
                 
                 // Apply filters
                 List<Map<String, dynamic>> filteredReservations = allReservations;

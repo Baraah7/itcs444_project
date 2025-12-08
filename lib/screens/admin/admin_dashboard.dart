@@ -1,12 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:itcs444_project/screens/admin/donation_management.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/theme.dart';
 import '../shared/profile_screen.dart';
 import 'equipment_management.dart';
 import 'add_edit_equipment.dart';
-import '../admin/reservation_management.dart'; //NEW added by Wadeeah (task3)
+import '../admin/reservation_management.dart';
+import '../test_notification_screen.dart';
+import '../debug_rentals_screen.dart';
 
 
 class AdminDashboard extends StatefulWidget {
@@ -339,7 +342,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   icon: Icons.volunteer_activism,
                   color: Colors.orange,
                   label: "Donations",
-                  onTap: () => Navigator.pushNamed(context, '/donation-management'),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DonationList(),
+                    ),
+                  ),
                 ),
 
                 _dashboardTile(
@@ -361,6 +369,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   color: Colors.teal,
                   label: "Notifications",
                   onTap: () => Navigator.pushNamed(context, '/notifications'),
+                ),
+
+                _dashboardTile(
+                  icon: Icons.bug_report,
+                  color: Colors.pink,
+                  label: "Debug Rentals",
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const DebugRentalsScreen()),
+                  ),
                 ),
               ],
             ),
@@ -814,27 +832,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Widget _buildDonationsBody(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.volunteer_activism,
-            size: 80,
-            color: AppColors.neutralGray.withOpacity(0.3),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            "Donation Management",
-            style: TextStyle(
-              fontSize: 24,
-              color: AppColors.neutralGray,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
+    return DonationList();
   }
 
   Widget _buildMaintenanceBody(BuildContext context) {
@@ -911,7 +909,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   // ============ NAVIGATION METHODS ============
   void _navigateToNotifications() {
-    // Implement notifications navigation
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => TestNotificationScreen()),
+    );
   }
 
   void _navigateToAddEquipment() {
