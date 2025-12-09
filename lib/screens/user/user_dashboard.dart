@@ -366,222 +366,141 @@ class _UserDashboardState extends State<UserDashboard> {
 
   // ----------------- Recent Activities -----------------
   Widget _buildRecentActivity(dynamic user) {
-    final userId = user?.id;
+    final userId = user?.docId;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Your Recent Activities",
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: const Color(0xFF1E293B),
-            letterSpacing: -0.3,
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFE8ECEF),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Recent Activity",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1E293B),
+            ),
           ),
-
           const SizedBox(height: 16),
 
-          // We'll show equipment types, but availability will be determined differently
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: equipmentDocs.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 0.65,
-            ),
-            itemBuilder: (context, index) {
-              final doc = equipmentDocs[index];
-              final equipment = doc.data();
-
-              return _medicalEquipmentCard(
-                context,
-                id: doc.id,
-                name: equipment['name'] ?? "Unknown",
-                category: equipment['type'] ?? "n/a",
-                // We'll check availability differently - maybe show first item's availability
-                // or fetch items to check availability
-                imageColor: AppColors.primaryBlue.withOpacity(0.1),
-              );
-            },
-          )
-        ],
-      );
-    },
-  );
-}
-
-Widget _medicalEquipmentCard(
-  BuildContext context, {
-  required String id,
-  required String name,
-  required String category,
-  required Color imageColor,
-}) {
-  // We'll use a StreamBuilder to fetch items for this equipment
-  return StreamBuilder<QuerySnapshot>(
-    stream: FirebaseFirestore.instance
-        .collection('equipment')
-        .doc(id)
-        .collection('Items')
-        .where('availability', isEqualTo: true) // Only available items
-        .limit(1) // Just check if at least one is available
-        .snapshots(),
-    builder: (context, itemsSnapshot) {
-      bool isAvailable = false;
-      int availableCount = 0;
-
-      if (itemsSnapshot.hasData && itemsSnapshot.data!.docs.isNotEmpty) {
-        isAvailable = true;
-        availableCount = itemsSnapshot.data!.docs.length;
-      }
-
-      return GestureDetector(
-        // onTap: () {
-        //   Navigator.push(
-        //     context,
-        //     MaterialPageRoute(
-        //       builder: (_) => EquipmentDetailPage(id: id),
-        //     ),
-        //   );
-        // },
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF1A4A47).withOpacity(0.05),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-            border: Border.all(
-              color: const Color(0xFFE8ECEF),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          // We'll show a horizontal row that contains two stacked columns:
+          // Left: Last 2 Reservations, Right: Last 2 Donations
+          Row(
             children: [
-              const Text(
-                "Recent Activity",
-                style: TextStyle(
-                  fontSize: 16, 
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1E293B),
+              // Reservations Column
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Reservations",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF475569),
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('reservations')
+                          .where('userId', isEqualTo: userId)
+                          .orderBy('createdAt', descending: true)
+                          .limit(2)
+                          .snapshots(),
+                      builder: (context, snap) {
+                        if (snap.connectionState == ConnectionState.waiting) {
+                          return const SizedBox(
+                            height: 68,
+                            child: Center(
+                                child: CircularProgressIndicator(color: Color(0xFF2B6C67))),
+                          );
+                        }
+                        final docs = snap.data?.docs ?? [];
+                        if (docs.isEmpty) {
+                          return _smallEmptyCard("No reservations");
+                        }
+                        return Column(
+                          children: docs.map((d) {
+                            final data = d.data() as Map<String, dynamic>;
+                            final title = data['equipmentName'] ?? 'Equipment';
+                            final status = (data['status'] ?? 'pending').toString();
+                            final date = (data['createdAt'] is Timestamp)
+                                ? (data['createdAt'] as Timestamp).toDate()
+                                : null;
+                            return _compactActivityRow(
+                                title: title, status: status, date: date);
+                          }).toList(),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-        
-              // We'll show a horizontal row that contains two stacked columns:
-              // Left: Last 2 Reservations, Right: Last 2 Donations
-              Row(
-                children: [
-                  // Reservations Column
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Reservations",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF475569),
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        StreamBuilder<QuerySnapshot>(
-                          stream: FirebaseFirestore.instance
-                              .collection('reservations')
-                              .where('userId', isEqualTo: userId)
-                              .orderBy('createdAt', descending: true)
-                              .limit(2)
-                              .snapshots(),
-                          builder: (context, snap) {
-                            if (snap.connectionState == ConnectionState.waiting) {
-                              return const SizedBox(
-                                height: 68,
-                                child: Center(child: CircularProgressIndicator(color: Color(0xFF2B6C67))),
-                              );
-                            }
-                            final docs = snap.data?.docs ?? [];
-                            if (docs.isEmpty) {
-                              return _smallEmptyCard("No reservations");
-                            }
-                            return Column(
-                              children: docs.map((d) {
-                                final data = d.data() as Map<String, dynamic>;
-                                final title = data['equipmentName'] ?? 'Equipment';
-                                final status = (data['status'] ?? 'pending').toString();
-                                final date = (data['createdAt'] is Timestamp) ? (data['createdAt'] as Timestamp).toDate() : null;
-                                return _compactActivityRow(title: title, status: status, date: date);
-                              }).toList(),
-                            );
-                          },
-                        ),
-                      ],
+
+              const SizedBox(width: 16),
+
+              // Donations Column
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Donations",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF475569),
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
-        
-                  const SizedBox(width: 16),
-        
-                  // Donations Column
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Donations",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF475569),
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        StreamBuilder<QuerySnapshot>(
-                          stream: FirebaseFirestore.instance
-                              .collection('donations')
-                              .where('userId', isEqualTo: userId)
-                              .orderBy('createdAt', descending: true)
-                              .limit(2)
-                              .snapshots(),
-                          builder: (context, snap) {
-                            if (snap.connectionState == ConnectionState.waiting) {
-                              return const SizedBox(
-                                height: 68,
-                                child: Center(child: CircularProgressIndicator(color: Color(0xFF2B6C67))),
-                              );
-                            }
-                            final docs = snap.data?.docs ?? [];
-                            if (docs.isEmpty) {
-                              return _smallEmptyCard("No donations");
-                            }
-                            return Column(
-                              children: docs.map((d) {
-                                final data = d.data() as Map<String, dynamic>;
-                                final title = data['equipmentName'] ?? 'Donation';
-                                final status = (data['status'] ?? 'pending').toString();
-                                final date = (data['createdAt'] is Timestamp) ? (data['createdAt'] as Timestamp).toDate() : null;
-                                return _compactActivityRow(title: title, status: status, date: date);
-                              }).toList(),
-                            );
-                          },
-                        ),
-                      ],
+                    const SizedBox(height: 8),
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('donations')
+                          .where('userId', isEqualTo: userId)
+                          .orderBy('createdAt', descending: true)
+                          .limit(2)
+                          .snapshots(),
+                      builder: (context, snap) {
+                        if (snap.connectionState == ConnectionState.waiting) {
+                          return const SizedBox(
+                            height: 68,
+                            child: Center(
+                                child: CircularProgressIndicator(color: Color(0xFF2B6C67))),
+                          );
+                        }
+                        final docs = snap.data?.docs ?? [];
+                        if (docs.isEmpty) {
+                          return _smallEmptyCard("No donations");
+                        }
+                        return Column(
+                          children: docs.map((d) {
+                            final data = d.data() as Map<String, dynamic>;
+                            final title = data['equipmentName'] ?? 'Donation';
+                            final status = (data['status'] ?? 'pending').toString();
+                            final date = (data['createdAt'] is Timestamp)
+                                ? (data['createdAt'] as Timestamp).toDate()
+                                : null;
+                            return _compactActivityRow(
+                                title: title, status: status, date: date);
+                          }).toList(),
+                        );
+                      },
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

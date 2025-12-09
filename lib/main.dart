@@ -99,8 +99,6 @@ class RoleWrapper extends StatelessWidget {
         switch (user.role.toLowerCase()) {
           case 'admin':
             return const AdminDashboard();
-          case 'renter':
-          case 'donor':
           case 'user':
             return const UserDashboard();
           default:

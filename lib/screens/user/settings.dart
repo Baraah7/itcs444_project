@@ -15,7 +15,6 @@ class _SettingsState extends State<Settings> {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
-    final user = auth.currentUser;
 
     return Scaffold(
       appBar: AppBar(

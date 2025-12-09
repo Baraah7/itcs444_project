@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:itcs444_project/utils/theme.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/user_model.dart';
-import '../user/user_dashboard.dart';
-import '../admin/admin_dashboard.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -23,7 +20,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _idController = TextEditingController();
 
   String selectedRole = "Renter";
   String selectedContactPref = "Email";
