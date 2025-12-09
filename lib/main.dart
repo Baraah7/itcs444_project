@@ -101,6 +101,7 @@ class RoleWrapper extends StatelessWidget {
             return const AdminDashboard();
           case 'renter':
           case 'donor':
+          case 'user':
             return const UserDashboard();
           default:
             return const LoginScreen();

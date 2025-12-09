@@ -23,6 +23,7 @@ class AuthProvider with ChangeNotifier {
   Future<bool> register(AppUser user, String password) async {
     try {
       _isLoading = true;
+      _errorMessage = null;
       notifyListeners();
 
       AppUser? createdUser = await _authService.registerUser(user, password);
@@ -33,11 +34,14 @@ class AuthProvider with ChangeNotifier {
         notifyListeners();
         return true;
       } else {
+        _errorMessage = "Registration failed. User could not be created.";
         _isLoading = false;
         notifyListeners();
         return false;
       }
     } catch (e) {
+      _errorMessage = e.toString();
+      print('Registration error: $e'); // Debug print
       _isLoading = false;
       notifyListeners();
       return false;
