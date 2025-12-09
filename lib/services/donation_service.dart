@@ -183,7 +183,7 @@ class DonationService {
   final snapshot = await db
       .collection('donations')
       .where('donorID', isEqualTo: userId)
-      .where('status', isEqualTo: 'Approved')
+      //.where('status', isEqualTo: 'Approved')
       //.orderBy('submissionDate', descending: true) // add back if you like (may need index)
       .get();
 
