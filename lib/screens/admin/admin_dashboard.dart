@@ -354,7 +354,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             const SizedBox(height: 28),
 
             // Recent Activity
-            _buildRecentActivity(context, title: '', status: ''),
+            _buildRecentActivity(context),
             
             const SizedBox(height: 20),
 
@@ -775,7 +775,170 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  Widget _buildRecentActivity(BuildContext context, {required String title, required String status, DateTime? date}) {
+Widget _buildRecentActivity(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Recent Activity",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF1E293B),
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: const Color(0xFFE8ECEF),
+            ),
+          ),
+          child: Row(
+            children: [
+              // Reservations Column
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Recent Reservations",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF475569),
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('reservations')
+                          .orderBy('createdAt', descending: true)
+                          .limit(2)
+                          .snapshots(),
+                      builder: (context, snap) {
+                        if (snap.connectionState == ConnectionState.waiting) {
+                          return const SizedBox(
+                            height: 68,
+                            child: Center(
+                                child: CircularProgressIndicator(color: Color(0xFF2B6C67))),
+                          );
+                        }
+                        final docs = snap.data?.docs ?? [];
+                        if (docs.isEmpty) {
+                          return _smallEmptyCard("No reservations");
+                        }
+                        return Column(
+                          children: docs.map((d) {
+                            final data = d.data() as Map<String, dynamic>;
+                            final title = data['equipmentName'] ?? 'Equipment';
+                            final status = (data['status'] ?? 'pending').toString();
+                            final date = (data['createdAt'] is Timestamp)
+                                ? (data['createdAt'] as Timestamp).toDate()
+                                : null;
+                            return _buildActivityRow(
+                                title: title, status: status, date: date);
+                          }).toList(),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+                  
+              const SizedBox(width: 16),
+                  
+              // Donations Column
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Recent Donations",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF475569),
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('donations')
+                          .orderBy('createdAt', descending: true)
+                          .limit(2)
+                          .snapshots(),
+                      builder: (context, snap) {
+                        if (snap.connectionState == ConnectionState.waiting) {
+                          return const SizedBox(
+                            height: 68,
+                            child: Center(
+                                child: CircularProgressIndicator(color: Color(0xFF2B6C67))),
+                          );
+                        }
+                        final docs = snap.data?.docs ?? [];
+                        if (docs.isEmpty) {
+                          return _smallEmptyCard("No donations");
+                        }
+                        return Column(
+                          children: docs.map((d) {
+                            final data = d.data() as Map<String, dynamic>;
+                            final title = data['equipmentName'] ?? 'Donation';
+                            final status = (data['status'] ?? 'pending').toString();
+                            final date = (data['createdAt'] is Timestamp)
+                                ? (data['createdAt'] as Timestamp).toDate()
+                                : null;
+                            return _buildActivityRow(
+                                title: title, status: status, date: date);
+                          }).toList(),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _smallEmptyCard(String text) {
+    return Container(
+      height: 68,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE8ECEF)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, color: const Color(0xFF64748B)),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: const TextStyle(
+              color: Color(0xFF475569),
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityRow({required String title, required String status, DateTime? date}) {
     Color badgeColor;
     String badgeText;
     
