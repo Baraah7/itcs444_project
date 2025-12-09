@@ -8,7 +8,7 @@ import '../shared/profile_screen.dart';
 import 'equipment_management.dart';
 import 'add_edit_equipment.dart';
 import '../admin/reservation_management.dart';
-import '../test_notification_screen.dart';
+import '../shared/notifications_screen.dart';
 import '../debug_rentals_screen.dart';
 
 
@@ -875,7 +875,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   void _navigateToNotifications() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => TestNotificationScreen()),
+      MaterialPageRoute(builder: (_) => const NotificationsScreen()),
     );
   }
 
