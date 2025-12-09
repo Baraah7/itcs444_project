@@ -765,6 +765,16 @@ Widget _buildGridView(List<QueryDocumentSnapshot> equipmentDocs) {
         ),
       ),
       const PopupMenuItem(
+        value: 'maintenance',
+        child: Row(
+          children: [
+            Icon(Icons.build, color: Colors.purple, size: 20),
+            SizedBox(width: 8),
+            Text('Mark for Maintenance', style: TextStyle(color: Colors.purple)),
+          ],
+        ),
+      ),
+      const PopupMenuItem(
         value: 'delete',
         child: Row(
           children: [
@@ -796,9 +806,88 @@ Widget _buildGridView(List<QueryDocumentSnapshot> equipmentDocs) {
           ),
         ),
       );
+    } else if (value == 'maintenance') {
+      await _showMaintenanceDialog(context, equipmentDoc.id, name);
     } else if (value == 'delete') {
       await _showDeleteDialog(context, equipmentDoc.id, name);
     }
+  }
+
+  Future<void> _showMaintenanceDialog(
+    BuildContext context,
+    String equipmentId,
+    String name,
+  ) async {
+    final notesController = TextEditingController();
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Mark for Maintenance'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Mark "$name" as under maintenance?'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: notesController,
+              decoration: const InputDecoration(
+                labelText: 'Maintenance Notes',
+                hintText: 'Enter reason or notes...',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await FirebaseFirestore.instance
+                    .collection('equipment')
+                    .doc(equipmentId)
+                    .update({
+                  'status': 'maintenance',
+                  'availability': false,
+                  'updatedAt': FieldValue.serverTimestamp(),
+                });
+
+                await FirebaseFirestore.instance.collection('maintenance_logs').add({
+                  'equipmentId': equipmentId,
+                  'action': 'started',
+                  'notes': notesController.text,
+                  'timestamp': FieldValue.serverTimestamp(),
+                });
+
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Equipment marked for maintenance'),
+                      backgroundColor: Colors.purple,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e')),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _showDeleteDialog(
