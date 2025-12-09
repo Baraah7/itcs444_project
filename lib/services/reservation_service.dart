@@ -284,8 +284,7 @@ class ReservationService {
             message = 'Your rental for "$equipmentName" has been cancelled.';
             break;
           case 'maintenance':
-            title = 'Equipment Under Maintenance';
-            message = 'The equipment "$equipmentName" is now under maintenance.';
+            // No notification sent to user for maintenance
             break;
         }
         
