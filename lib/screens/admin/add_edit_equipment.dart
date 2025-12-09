@@ -24,15 +24,18 @@ class _AddEditEquipmentPageState extends State<AddEditEquipmentPage> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   
-  // Equipment types for dropdown
+  // Medical equipment types for dropdown
   final List<String> _equipmentTypes = [
-    'Power Tools',
-    'Hand Tools',
-    'Electrical',
-    'Plumbing',
-    'Gardening',
-    'Cleaning',
-    'Safety',
+    'Wheelchair',
+    'Crutches',
+    'Walker',
+    'Hospital Bed',
+    'Oxygen Tank',
+    'Nebulizer',
+    'Blood Pressure Monitor',
+    'Glucose Meter',
+    'Thermometer',
+    'First Aid Kit',
     'Other'
   ];
   
@@ -89,9 +92,13 @@ class _AddEditEquipmentPageState extends State<AddEditEquipmentPage> {
         
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Equipment added successfully'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: const Text('Equipment added successfully'),
+              backgroundColor: const Color(0xFF10B981),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           );
           Navigator.pop(context);
@@ -105,9 +112,13 @@ class _AddEditEquipmentPageState extends State<AddEditEquipmentPage> {
         
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Equipment updated successfully'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: const Text('Equipment updated successfully'),
+              backgroundColor: const Color(0xFF10B981),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           );
           Navigator.pop(context);
@@ -118,7 +129,11 @@ class _AddEditEquipmentPageState extends State<AddEditEquipmentPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: const Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         );
       }
@@ -137,21 +152,41 @@ class _AddEditEquipmentPageState extends State<AddEditEquipmentPage> {
     final result = await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Equipment'),
-        content: const Text('This will permanently delete this equipment and all items under it. This action cannot be undone.'),
+        title: const Text(
+          'Delete Equipment',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1E293B),
+          ),
+        ),
+        content: const Text(
+          'This will permanently delete this equipment and all items under it. This action cannot be undone.',
+          style: TextStyle(
+            color: Color(0xFF64748B),
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF64748B),
+            ),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFEF4444),
+            ),
             child: const Text(
               'Delete',
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
         ],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
 
@@ -182,9 +217,13 @@ class _AddEditEquipmentPageState extends State<AddEditEquipmentPage> {
         
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Equipment deleted successfully'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: const Text('Equipment deleted successfully'),
+              backgroundColor: const Color(0xFF10B981),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           );
           Navigator.pop(context);
@@ -197,7 +236,11 @@ class _AddEditEquipmentPageState extends State<AddEditEquipmentPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error: ${e.toString()}'),
-              backgroundColor: Colors.red,
+              backgroundColor: const Color(0xFFEF4444),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           );
         }
@@ -207,43 +250,28 @@ class _AddEditEquipmentPageState extends State<AddEditEquipmentPage> {
 
   Widget _buildTypeIcon(String type) {
     switch (type.toLowerCase()) {
-      case 'power tools':
-        return const Icon(Icons.build, color: Colors.blue);
-      case 'hand tools':
-        return const Icon(Icons.handyman, color: Colors.green);
-      case 'electrical':
-        return const Icon(Icons.electrical_services, color: Colors.yellow);
-      case 'plumbing':
-        return const Icon(Icons.plumbing, color: Colors.blueAccent);
-      case 'gardening':
-        return const Icon(Icons.nature, color: Colors.greenAccent);
-      case 'cleaning':
-        return const Icon(Icons.cleaning_services, color: Colors.cyan);
-      case 'safety':
-        return const Icon(Icons.security, color: Colors.red);
+      case 'wheelchair':
+        return const Icon(Icons.accessible_forward, color: Color(0xFF2B6C67));
+      case 'crutches':
+        return const Icon(Icons.directions_walk, color: Color(0xFF2B6C67));
+      case 'walker':
+        return const Icon(Icons.directions_walk, color: Color(0xFF2B6C67));
+      case 'hospital bed':
+        return const Icon(Icons.bed, color: Color(0xFF2B6C67));
+      case 'oxygen tank':
+        return const Icon(Icons.air, color: Color(0xFF2B6C67));
+      case 'nebulizer':
+        return const Icon(Icons.medical_services, color: Color(0xFF2B6C67));
+      case 'blood pressure monitor':
+        return const Icon(Icons.monitor_heart, color: Color(0xFF2B6C67));
+      case 'glucose meter':
+        return const Icon(Icons.monitor, color: Color(0xFF2B6C67));
+      case 'thermometer':
+        return const Icon(Icons.thermostat, color: Color(0xFF2B6C67));
+      case 'first aid kit':
+        return const Icon(Icons.medical_services, color: Color(0xFF2B6C67));
       default:
-        return const Icon(Icons.devices_other, color: Colors.grey);
-    }
-  }
-
-  Color _getTypeColor(String type) {
-    switch (type.toLowerCase()) {
-      case 'power tools':
-        return Colors.blue;
-      case 'hand tools':
-        return Colors.green;
-      case 'electrical':
-        return Colors.yellow[700]!;
-      case 'plumbing':
-        return Colors.blue[300]!;
-      case 'gardening':
-        return Colors.green[700]!;
-      case 'cleaning':
-        return Colors.cyan;
-      case 'safety':
-        return Colors.red;
-      default:
-        return Colors.grey;
+        return const Icon(Icons.medical_services, color: Color(0xFF2B6C67));
     }
   }
 
@@ -251,62 +279,164 @@ class _AddEditEquipmentPageState extends State<AddEditEquipmentPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF2B6C67)),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Text(
           widget.equipmentId == null ? 'Add New Equipment' : 'Edit Equipment',
-          style: const TextStyle(fontSize: 18),
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1E293B),
+            fontSize: 20,
+            letterSpacing: -0.3,
+          ),
         ),
-        centerTitle: true,
         actions: [
           if (widget.equipmentId != null)
             IconButton(
-              icon: const Icon(Icons.delete_outline),
+              icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444)),
               onPressed: _isLoading ? null : _deleteEquipment,
               tooltip: 'Delete Equipment',
             ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF2B6C67),
+              ),
+            )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(20.0),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Equipment Name Field
-                    Text(
-                      'Equipment Details',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            Color.fromARGB(255, 56, 146, 137),
+                            Color.fromARGB(255, 122, 201, 194),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              widget.equipmentId == null 
+                                  ? Icons.add_circle_outline 
+                                  : Icons.edit,
+                              color: Colors.white,
+                              size: 24,
+                            ),
                           ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.equipmentId == null 
+                                      ? 'Add Medical Equipment' 
+                                      : 'Update Equipment Details',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Fill in the details below',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.white.withOpacity(0.9),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Equipment Name Field
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Equipment Name *',
+                          style: TextStyle(
+                            color: const Color(0xFF1E293B),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _nameController,
+                          decoration: InputDecoration(
+                            hintText: 'e.g., Standard Wheelchair, Portable Oxygen Tank',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFFE8ECEF)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFFE8ECEF)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFF2B6C67)),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            prefixIcon: const Icon(
+                              Icons.medical_services,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                          style: const TextStyle(
+                            color: Color(0xFF1E293B),
+                            fontSize: 15,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Equipment name is required';
+                            }
+                            if (value.trim().length < 3) {
+                              return 'Name must be at least 3 characters';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
+                    
                     const SizedBox(height: 20),
                     
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        labelText: 'Equipment Name *',
-                        hintText: 'e.g., Power Drill, Safety Helmet',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        prefixIcon: const Icon(Icons.devices),
-                        filled: true,
-                        fillColor: Colors.grey[50],
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Equipment name is required';
-                        }
-                        if (value.trim().length < 3) {
-                          return 'Name must be at least 3 characters';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-
                     // Equipment Type Dropdown
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -314,36 +444,45 @@ class _AddEditEquipmentPageState extends State<AddEditEquipmentPage> {
                         Text(
                           'Equipment Type *',
                           style: TextStyle(
-                            color: Colors.grey[700],
+                            color: const Color(0xFF1E293B),
                             fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Container(
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey[300]!),
-                            borderRadius: BorderRadius.circular(10),
-                            color: Colors.grey[50],
+                            border: Border.all(color: const Color(0xFFE8ECEF)),
+                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.white,
                           ),
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<String>(
                               value: _selectedType,
                               isExpanded: true,
-                              icon: const Padding(
-                                padding: EdgeInsets.only(right: 10),
-                                child: Icon(Icons.arrow_drop_down),
+                              icon: Container(
+                                padding: const EdgeInsets.only(right: 16),
+                                child: const Icon(
+                                  Icons.arrow_drop_down,
+                                  color: Color(0xFF64748B),
+                                ),
                               ),
                               items: _equipmentTypes.map((String value) {
                                 return DropdownMenuItem<String>(
                                   value: value,
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
                                     child: Row(
                                       children: [
                                         _buildTypeIcon(value),
                                         const SizedBox(width: 12),
-                                        Text(value),
+                                        Text(
+                                          value,
+                                          style: const TextStyle(
+                                            color: Color(0xFF1E293B),
+                                            fontSize: 15,
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -360,15 +499,16 @@ class _AddEditEquipmentPageState extends State<AddEditEquipmentPage> {
                                 return _equipmentTypes.map<Widget>((String value) {
                                   return Container(
                                     alignment: Alignment.centerLeft,
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
                                     child: Row(
                                       children: [
                                         _buildTypeIcon(value),
                                         const SizedBox(width: 12),
                                         Text(
                                           value,
-                                          style: TextStyle(
-                                            color: _getTypeColor(value),
+                                          style: const TextStyle(
+                                            color: Color(0xFF1E293B),
+                                            fontSize: 15,
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -382,137 +522,218 @@ class _AddEditEquipmentPageState extends State<AddEditEquipmentPage> {
                         ),
                       ],
                     ),
+                    
                     const SizedBox(height: 20),
-
+                    
                     // Description Field
-                    TextFormField(
-                      controller: _descriptionController,
-                      maxLines: 4,
-                      decoration: InputDecoration(
-                        labelText: 'Description *',
-                        hintText: 'Describe the equipment, its uses, and any important notes...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        alignLabelWithHint: true,
-                        prefixIcon: const Icon(Icons.description),
-                        filled: true,
-                        fillColor: Colors.grey[50],
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Description is required';
-                        }
-                        if (value.trim().length < 10) {
-                          return 'Description must be at least 10 characters';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 30),
-
-                    // Save Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _saveEquipment,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).primaryColor,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Description *',
+                          style: TextStyle(
+                            color: const Color(0xFF1E293B),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                           ),
-                          elevation: 2,
                         ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _descriptionController,
+                          maxLines: 5,
+                          minLines: 3,
+                          decoration: InputDecoration(
+                            hintText: 'Describe the equipment, specifications, usage instructions, maintenance requirements...',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFFE8ECEF)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFFE8ECEF)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFF2B6C67)),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            alignLabelWithHint: true,
+                          ),
+                          style: const TextStyle(
+                            color: Color(0xFF1E293B),
+                            fontSize: 15,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Description is required';
+                            }
+                            if (value.trim().length < 10) {
+                              return 'Description must be at least 10 characters';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 32),
+                    
+                    // Action Buttons
+                    Row(
+                      children: [
+                        // Cancel Button
+                        if (widget.equipmentId != null)
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _isLoading ? null : () => Navigator.pop(context),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF64748B),
+                                side: const BorderSide(color: Color(0xFFE8ECEF)),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                              )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(widget.equipmentId == null
-                                      ? Icons.add_circle_outline
-                                      : Icons.save),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    widget.equipmentId == null
-                                        ? 'Add Equipment'
-                                        : 'Save Changes',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
                               ),
-                      ),
-                    ),
-
-                    // Cancel Button
-                    if (widget.equipmentId != null) ...[
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: TextButton(
-                          onPressed: _isLoading ? null : () => Navigator.pop(context),
-                          style: TextButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              child: const Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                           ),
-                          child: const Text(
-                            'Cancel',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey,
+                        
+                        if (widget.equipmentId != null) const SizedBox(width: 12),
+                        
+                        // Save Button
+                        Expanded(
+                          flex: widget.equipmentId == null ? 1 : 2,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _saveEquipment,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2B6C67),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
                             ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        widget.equipmentId == null
+                                            ? Icons.add_circle_outline
+                                            : Icons.save,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        widget.equipmentId == null
+                                            ? 'Add Equipment'
+                                            : 'Save Changes',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                           ),
                         ),
-                      ),
-                    ],
-
-                    // Help Text
-                    const SizedBox(height: 40),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Help Card
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.blue[50],
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.blue[100]!),
+                        color: const Color(0xFFF0F9F8),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFD1FAE5)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.info_outline, color: Colors.blue, size: 20),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Tips for adding equipment:',
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF10B981),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Icon(
+                                  Icons.info_outline,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Text(
+                                'Tips for adding medical equipment:',
                                 style: TextStyle(
-                                  color: Colors.blue[800],
+                                  color: Color(0xFF065F46),
                                   fontWeight: FontWeight.w600,
+                                  fontSize: 15,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '• Use descriptive names that are easy to recognize\n'
-                            '• Choose the most appropriate type for better filtering\n'
-                            '• Include details like brand, model, or specifications in the description',
-                            style: TextStyle(
-                              color: Colors.blue[700],
-                              fontSize: 13,
-                            ),
+                          const SizedBox(height: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                '• Use descriptive names that clearly identify the equipment',
+                                style: TextStyle(
+                                  color: Color(0xFF047857),
+                                  fontSize: 13,
+                                ),
+                              ),
+                              SizedBox(height: 6),
+                              Text(
+                                '• Include brand, model, and specifications in description',
+                                style: TextStyle(
+                                  color: Color(0xFF047857),
+                                  fontSize: 13,
+                                ),
+                              ),
+                              SizedBox(height: 6),
+                              Text(
+                                '• Add maintenance requirements and safety instructions',
+                                style: TextStyle(
+                                  color: Color(0xFF047857),
+                                  fontSize: 13,
+                                ),
+                              ),
+                              SizedBox(height: 6),
+                              Text(
+                                '• Specify usage limitations if applicable',
+                                style: TextStyle(
+                                  color: Color(0xFF047857),
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

@@ -791,6 +791,28 @@ Widget _buildRecentActivity(BuildContext context) {
                 letterSpacing: -0.3,
               ),
             ),
+            TextButton(
+              onPressed: () {},
+              child: const Row(
+                children: [
+                  Text(
+                    "View All",
+                    style: TextStyle(
+                      color: Color(0xFF2B6C67),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 14,
+                    color: Color(0xFF2B6C67),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),

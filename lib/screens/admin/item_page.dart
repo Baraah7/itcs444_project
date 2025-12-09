@@ -21,7 +21,7 @@ class ItemsPage extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) => AddEditItemPage(
-                    toolId: toolId,
+                    equipmentId: toolId,
                   ),
                 ),
               );
@@ -160,7 +160,7 @@ class ItemsPage extends StatelessWidget {
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => AddEditItemPage(
-                                    toolId: toolId,
+                                    equipmentId: toolId,
                                     itemId: item.id,
                                     initialSerial: serial,
                                     initialCondition: condition,

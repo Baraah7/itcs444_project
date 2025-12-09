@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AddEditItemPage extends StatefulWidget {
-  final String toolId;
+  final String equipmentId;
   final String? itemId;
   final String? initialSerial;
   final String? initialCondition;
@@ -12,7 +12,7 @@ class AddEditItemPage extends StatefulWidget {
 
   const AddEditItemPage({
     super.key,
-    required this.toolId,
+    required this.equipmentId,
     this.itemId,
     this.initialSerial,
     this.initialCondition,
@@ -84,7 +84,7 @@ class _AddEditItemPageState extends State<AddEditItemPage> {
         itemData['createdAt'] = FieldValue.serverTimestamp();
         await FirebaseFirestore.instance
             .collection('equipment')
-            .doc(widget.toolId)
+            .doc(widget.equipmentId)
             .collection('Items')
             .add(itemData);
         
@@ -98,7 +98,7 @@ class _AddEditItemPageState extends State<AddEditItemPage> {
         // Update existing item
         await FirebaseFirestore.instance
             .collection('equipment')
-            .doc(widget.toolId)
+            .doc(widget.equipmentId)
             .collection('Items')
             .doc(widget.itemId)
             .update(itemData);
