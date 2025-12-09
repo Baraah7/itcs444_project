@@ -287,7 +287,7 @@ class _MaintenanceManagementScreenState extends State<MaintenanceManagementScree
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                if (maintenanceEquipment.isNotEmpty) ..[
+                if (maintenanceEquipment.isNotEmpty) ...[
                   const Text('Equipment Under Maintenance', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
                   ...maintenanceEquipment.map((doc) {
@@ -311,7 +311,7 @@ class _MaintenanceManagementScreenState extends State<MaintenanceManagementScree
                   }),
                   const SizedBox(height: 24),
                 ],
-                if (maintenanceRentals.isNotEmpty) ..[
+                if (maintenanceRentals.isNotEmpty) ...[
                   const Text('Rentals Under Maintenance', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
                   ...maintenanceRentals.map((doc) {

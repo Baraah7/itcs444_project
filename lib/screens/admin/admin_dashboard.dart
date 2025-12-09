@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart' hide Settings;
 import 'package:flutter/material.dart';
 import 'package:itcs444_project/screens/admin/donation_management.dart';
+import 'package:itcs444_project/screens/admin/maintenance_management.dart';
 import 'package:itcs444_project/screens/admin/users_managment.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -173,7 +174,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       case 1: return EquipmentPage();
       case 2: return ReservationManagementScreen();
       case 3: return DonationList();
-      case 4: return _buildMaintenanceBody(context);
+      case 4: return MaintenanceManagementScreen();
       case 5: return _buildReportsBody(context);
       case 6: return UsersManagement();
       case 7: return ProfileScreen();
