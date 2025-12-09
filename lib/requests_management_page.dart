@@ -9,7 +9,6 @@ class RequestsManagementPage extends StatefulWidget {
 
 class _RequestsManagementPageState extends State<RequestsManagementPage>
     with SingleTickerProviderStateMixin {
-  
   late TabController tabController;
 
   @override
@@ -51,7 +50,7 @@ class _RequestsManagementPageState extends State<RequestsManagementPage>
       "dateStart": "2024-12-20",
       "dateEnd": "2024-12-30",
       "status": "completed",
-    }
+    },
   ];
 
   // Filter helper
@@ -104,9 +103,10 @@ class _RequestsManagementPageState extends State<RequestsManagementPage>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // User Info
-            Text(req["user"],
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(
+              req["user"],
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const SizedBox(height: 4),
             Text(req["contact"], style: const TextStyle(color: Colors.grey)),
 
@@ -119,16 +119,19 @@ class _RequestsManagementPageState extends State<RequestsManagementPage>
                 Text("Equipment: ${req["equipment"]}"),
                 Chip(
                   label: Text(req["status"].toUpperCase()),
-                  backgroundColor: getStatusColor(req["status"]).withOpacity(.2),
+                  backgroundColor: getStatusColor(
+                    req["status"],
+                  ).withOpacity(.2),
                   labelStyle: TextStyle(
-                      color: getStatusColor(req["status"]),
-                      fontWeight: FontWeight.bold),
+                    color: getStatusColor(req["status"]),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
             Text(
-                "From: ${req["dateStart"]}   →   To: ${req["dateEnd"]}",
-                style: const TextStyle(fontSize: 13)
+              "From: ${req["dateStart"]}   →   To: ${req["dateEnd"]}",
+              style: const TextStyle(fontSize: 13),
             ),
 
             const SizedBox(height: 12),
@@ -151,8 +154,9 @@ class _RequestsManagementPageState extends State<RequestsManagementPage>
 
                 if (req["status"] == "approved") ...[
                   ElevatedButton(
-                      onPressed: () => checkOutEquipment(req),
-                      child: const Text("Check Out")),
+                    onPressed: () => checkOutEquipment(req),
+                    child: const Text("Pick Up"),
+                  ),
                 ],
 
                 if (req["status"] == "active") ...[
@@ -162,7 +166,7 @@ class _RequestsManagementPageState extends State<RequestsManagementPage>
                   ),
                 ],
               ],
-            )
+            ),
           ],
         ),
       ),
@@ -191,26 +195,24 @@ class _RequestsManagementPageState extends State<RequestsManagementPage>
         children: [
           // PENDING
           ListView(
-            children:
-                filterRequests("pending").map(buildRequestCard).toList(),
+            children: filterRequests("pending").map(buildRequestCard).toList(),
           ),
 
           // APPROVED
           ListView(
-            children:
-                filterRequests("approved").map(buildRequestCard).toList(),
+            children: filterRequests("approved").map(buildRequestCard).toList(),
           ),
 
           // ACTIVE RENTALS
           ListView(
-            children:
-                filterRequests("active").map(buildRequestCard).toList(),
+            children: filterRequests("active").map(buildRequestCard).toList(),
           ),
 
           // COMPLETED
           ListView(
-            children:
-                filterRequests("completed").map(buildRequestCard).toList(),
+            children: filterRequests(
+              "completed",
+            ).map(buildRequestCard).toList(),
           ),
         ],
       ),

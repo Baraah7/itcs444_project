@@ -1,47 +1,56 @@
 # Equipment and Rental Synchronization System
 
 ## Overview
+
 This document explains how equipment reservations are created, managed, and synchronized with Firestore.
 
 ## System Flow
 
 ### 1. User Reserves Equipment
+
 **Location**: `lib/screens/user/reservation_screen.dart`
 
 When a user reserves equipment:
+
 - User selects dates and quantity
 - System calls `ReservationService.createRental()`
 - A new rental document is created in Firestore `rentals` collection with status `pending`
 - Equipment status is automatically synced via `EquipmentService.syncEquipmentWithRental()`
 
 ### 2. Admin Actions and Equipment Sync
+
 **Location**: `lib/screens/admin/reservation_management.dart`
 
 Admin can perform these actions, each syncing with equipment:
 
 #### Approve Reservation
+
 - Status changes: `pending` → `approved`
 - Equipment: `availableQuantity` decreases
 - Equipment status: Updates to `rented` if all units are reserved
 
-#### Check Out Equipment
+#### Pick Up Equipment
+
 - Status changes: `approved` → `checked_out`
 - Equipment: Quantity remains reserved
 - User can now pick up the equipment
 
 #### Mark as Returned
+
 - Status changes: `checked_out` → `returned`
 - Equipment: `availableQuantity` increases
 - Equipment status: Changes to `available`
 - Equipment availability: Set to `true`
 
 #### Cancel Reservation
+
 - Status changes: Any → `cancelled`
 - Equipment: `availableQuantity` increases (releases reserved quantity)
 - Equipment status: Changes to `available`
 - Shown in reports page
 
 #### Mark for Maintenance
+
 - Status changes: `returned` → `maintenance`
 - Equipment: Status changes to `maintenance`
 - Equipment availability: Set to `false`
@@ -49,6 +58,7 @@ Admin can perform these actions, each syncing with equipment:
 - Shown in reports page
 
 #### Mark Equipment Available (from Maintenance)
+
 - Equipment status: `maintenance` → `available`
 - Equipment availability: Set to `true`
 - Item returns to equipment list
@@ -56,6 +66,7 @@ Admin can perform these actions, each syncing with equipment:
 ## Key Services
 
 ### EquipmentService
+
 **Location**: `lib/services/equipment_service.dart`
 
 ```dart
@@ -73,14 +84,17 @@ getMaintenanceEquipment()
 ```
 
 ### ReservationService
+
 **Location**: `lib/services/reservation_service.dart`
 
 All rental status updates automatically call `EquipmentService.syncEquipmentWithRental()`:
+
 - `createRental()` - Creates rental and syncs equipment
 - `updateRentalStatus()` - Updates rental and syncs equipment
 - `cancelRental()` - Cancels rental and releases equipment
 
 ### ReportsService
+
 **Location**: `lib/services/reports_service.dart`
 
 ```dart
@@ -103,6 +117,7 @@ getRentalStatistics()
 ## Firestore Collections
 
 ### rentals
+
 ```json
 {
   "id": "rental_id",
@@ -124,6 +139,7 @@ getRentalStatistics()
 ```
 
 ### equipment
+
 ```json
 {
   "id": "equipment_id",
@@ -145,7 +161,7 @@ getRentalStatistics()
 ## Status Flow Diagram
 
 ```
-User Reserves → [pending] → Admin Approves → [approved] → Admin Checks Out → [checked_out]
+User Reserves → [pending] → Admin Approves → [approved] → Admin Picks Up → [checked_out]
                     ↓                            ↓                               ↓
                 [cancelled]                  [cancelled]                    [returned]
                     ↓                            ↓                               ↓
@@ -159,24 +175,29 @@ User Reserves → [pending] → Admin Approves → [approved] → Admin Checks O
 ## Pages and Their Data
 
 ### Equipment List (User)
+
 - Shows equipment with `status: 'available'` and `availability: true`
 - Reflects real-time changes from admin actions
 
 ### My Reservations (User)
+
 - Shows user's rentals with all statuses
 - Real-time updates when admin changes status
 
 ### Reservation Management (Admin)
+
 - Shows all rentals
 - Can filter by status
 - Actions update both rental and equipment
 
 ### Maintenance Management (Admin)
+
 - Shows equipment with `status: 'maintenance'`
 - Shows rentals with `status: 'maintenance'`
 - Can mark equipment as available
 
 ### Reports Page (Admin)
+
 - Shows all rentals including:
   - Cancelled rentals (`status: 'cancelled'`)
   - Maintenance rentals (`status: 'maintenance'`)

@@ -3,7 +3,9 @@
 ## What Was Implemented
 
 ### 1. Equipment Service (`lib/services/equipment_service.dart`)
+
 Handles all equipment status synchronization:
+
 - ✅ Reserves equipment quantity when user creates rental (pending status)
 - ✅ Maintains reservation when admin approves/checks out
 - ✅ Releases equipment when rental is returned or cancelled
@@ -11,35 +13,45 @@ Handles all equipment status synchronization:
 - ✅ Marks equipment as available when maintenance is complete
 
 ### 2. Reservation Service Updates (`lib/services/reservation_service.dart`)
+
 Enhanced to automatically sync with equipment:
+
 - ✅ Calls `syncEquipmentWithRental()` on every status change
 - ✅ Handles all rental statuses: pending, approved, checked_out, returned, cancelled, maintenance
 - ✅ Sends notifications to users and admins
 
 ### 3. Reservation Management Screen (`lib/screens/admin/reservation_management.dart`)
+
 Admin interface with full control:
+
 - ✅ View all rentals with filtering
 - ✅ Approve/decline pending requests
-- ✅ Check out approved rentals
+- ✅ Pick up approved rentals
 - ✅ Mark as returned
 - ✅ Send to maintenance
 - ✅ Cancel rentals
 - ✅ Mark equipment available (from maintenance)
 
 ### 4. Maintenance Management Screen (`lib/screens/admin/maintenance_management.dart`)
+
 Dedicated maintenance interface:
+
 - ✅ Shows all equipment with status "maintenance"
 - ✅ Shows all rentals with status "maintenance"
 - ✅ Mark equipment as available button
 
 ### 5. Reports Service (`lib/services/reports_service.dart`)
+
 Comprehensive reporting:
+
 - ✅ Get all rentals including cancelled and maintenance
 - ✅ Filter by status (cancelled, maintenance, completed)
 - ✅ Rental statistics
 
 ### 6. Admin Reports Screen (`lib/screens/admin/admin_reports_screen.dart`)
+
 Visual reports interface:
+
 - ✅ Statistics dashboard
 - ✅ Filter by status
 - ✅ Shows cancelled rentals
@@ -48,6 +60,7 @@ Visual reports interface:
 ## How It Works
 
 ### User Flow
+
 ```
 1. User browses equipment → Sees available items
 2. User reserves equipment → Rental created (status: pending)
@@ -56,6 +69,7 @@ Visual reports interface:
 ```
 
 ### Admin Flow - Approval
+
 ```
 1. Admin sees pending rental
 2. Admin clicks "Approve"
@@ -64,16 +78,18 @@ Visual reports interface:
 5. User gets notification
 ```
 
-### Admin Flow - Check Out
+### Admin Flow - Pick Up
+
 ```
 1. Admin sees approved rental
-2. Admin clicks "Check Out"
+2. Admin clicks "Pick Up"
 3. Status: approved → checked_out
 4. User picks up equipment
 5. Equipment remains reserved
 ```
 
 ### Admin Flow - Return
+
 ```
 1. User returns equipment
 2. Admin clicks "Mark Returned"
@@ -83,6 +99,7 @@ Visual reports interface:
 ```
 
 ### Admin Flow - Maintenance
+
 ```
 1. Admin notices equipment needs maintenance
 2. Admin clicks "Needs Maintenance"
@@ -93,6 +110,7 @@ Visual reports interface:
 ```
 
 ### Admin Flow - Cancel
+
 ```
 1. Admin cancels rental (any reason)
 2. Status: any → cancelled
@@ -103,6 +121,7 @@ Visual reports interface:
 ## Firestore Structure
 
 ### Equipment Document
+
 ```json
 {
   "id": "equipment_id",
@@ -117,6 +136,7 @@ Visual reports interface:
 ```
 
 ### Rental Document
+
 ```json
 {
   "id": "rental_id",
@@ -137,15 +157,15 @@ Visual reports interface:
 
 All changes are automatic - no manual intervention needed:
 
-| Action | Rental Status | Equipment Status | Equipment Quantity |
-|--------|--------------|------------------|-------------------|
-| User reserves | pending | available/rented | Decreases |
-| Admin approves | approved | available/rented | Stays same |
-| Admin checks out | checked_out | available/rented | Stays same |
-| Admin returns | returned | available | Increases |
-| Admin cancels | cancelled | available | Increases |
-| Admin maintenance | maintenance | maintenance | Stays same |
-| Admin marks available | - | available | - |
+| Action                | Rental Status | Equipment Status | Equipment Quantity |
+| --------------------- | ------------- | ---------------- | ------------------ |
+| User reserves         | pending       | available/rented | Decreases          |
+| Admin approves        | approved      | available/rented | Stays same         |
+| Admin picks up        | checked_out   | available/rented | Stays same         |
+| Admin returns         | returned      | available        | Increases          |
+| Admin cancels         | cancelled     | available        | Increases          |
+| Admin maintenance     | maintenance   | maintenance      | Stays same         |
+| Admin marks available | -             | available        | -                  |
 
 ## Testing Checklist
 
@@ -153,7 +173,7 @@ All changes are automatic - no manual intervention needed:
 - [x] Rental appears in Firestore
 - [x] Equipment quantity decreases
 - [x] Admin can approve rental
-- [x] Admin can check out rental
+- [x] Admin can pick up rental
 - [x] Admin can mark as returned
 - [x] Equipment quantity increases on return
 - [x] Admin can cancel rental
@@ -168,6 +188,7 @@ All changes are automatic - no manual intervention needed:
 ## Files Created/Modified
 
 ### Created:
+
 1. `lib/services/equipment_service.dart` - Equipment sync logic
 2. `lib/services/reports_service.dart` - Reports and statistics
 3. `lib/screens/admin/maintenance_management.dart` - Maintenance UI
@@ -176,6 +197,7 @@ All changes are automatic - no manual intervention needed:
 6. `IMPLEMENTATION_COMPLETE.md` - This file
 
 ### Modified:
+
 1. `lib/services/reservation_service.dart` - Added equipment sync calls
 2. `lib/screens/admin/reservation_management.dart` - Added equipment service integration
 
@@ -184,6 +206,7 @@ All changes are automatic - no manual intervention needed:
 To use the system:
 
 1. **User Side:**
+
    - Navigate to equipment list
    - Select equipment
    - Make reservation
@@ -192,7 +215,7 @@ To use the system:
 2. **Admin Side:**
    - Open Reservation Management
    - Approve/decline requests
-   - Check out equipment
+   - Pick up equipment
    - Mark as returned
    - Send to maintenance if needed
    - View reports for analytics

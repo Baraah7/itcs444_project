@@ -7,20 +7,22 @@ import '../../utils/theme.dart';
 
 class ReservationManagementScreen extends StatefulWidget {
   const ReservationManagementScreen({super.key});
-  
+
   @override
-  State<ReservationManagementScreen> createState() => _ReservationManagementScreenState();
+  State<ReservationManagementScreen> createState() =>
+      _ReservationManagementScreenState();
 }
 
-class _ReservationManagementScreenState extends State<ReservationManagementScreen> {
+class _ReservationManagementScreenState
+    extends State<ReservationManagementScreen> {
   final ReservationService _reservationService = ReservationService();
   final EquipmentService _equipmentService = EquipmentService();
   final TextEditingController _searchController = TextEditingController();
   final Map<String, String> _selectedNotes = {};
-  
+
   String _filterStatus = 'all';
   String _searchQuery = '';
-  
+
   final List<String> _noteOptions = [
     'None',
     'Equipment in good condition',
@@ -31,7 +33,7 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
     'Approved by supervisor',
     'Urgent request',
   ];
-  
+
   final List<String> _statusFilters = [
     'all',
     'pending',
@@ -41,7 +43,7 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
     'cancelled',
     'maintenance',
   ];
-  
+
   @override
   void initState() {
     super.initState();
@@ -51,13 +53,13 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
       });
     });
   }
-  
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
-  
+
   Future<void> _updateRentalStatus({
     required String rentalId,
     required String status,
@@ -81,12 +83,10 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
       }
     }
   }
-  
 
-  
   Future<void> _showRentalDetails(Rental rental) async {
     final format = DateFormat('MMM dd, yyyy HH:mm');
-    
+
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -105,11 +105,18 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
               _detailRow('Start Date', format.format(rental.startDate)),
               _detailRow('End Date', format.format(rental.endDate)),
               if (rental.actualReturnDate != null)
-                _detailRow('Returned Date', format.format(rental.actualReturnDate!)),
+                _detailRow(
+                  'Returned Date',
+                  format.format(rental.actualReturnDate!),
+                ),
               _detailRow('Total Cost', rental.formattedCost),
-              if (rental.adminNotes != null && rental.adminNotes!.isNotEmpty) ...[
+              if (rental.adminNotes != null &&
+                  rental.adminNotes!.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                const Text('Admin Notes:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  'Admin Notes:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 Text(rental.adminNotes!),
               ],
               if (rental.isOverdue) ...[
@@ -146,7 +153,7 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
       ),
     );
   }
-  
+
   Widget _detailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
@@ -165,16 +172,14 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
       ),
     );
   }
-  
+
   Widget _buildRentalCard(Rental rental) {
     final format = DateFormat('MMM dd, yyyy');
-    
+
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -203,7 +208,10 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: rental.statusBadgeColor,
                     borderRadius: BorderRadius.circular(20),
@@ -212,7 +220,11 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(rental.statusIcon, size: 14, color: rental.statusColor),
+                      Icon(
+                        rental.statusIcon,
+                        size: 14,
+                        color: rental.statusColor,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         rental.statusText,
@@ -227,9 +239,9 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 12),
-            
+
             // Dates and details
             Row(
               children: [
@@ -266,38 +278,48 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 8),
-            
+
             // Additional info
             Row(
               children: [
                 const Icon(Icons.category, size: 14, color: Colors.grey),
                 const SizedBox(width: 4),
-                Text(rental.itemType, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                Text(
+                  rental.itemType,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
                 const SizedBox(width: 16),
                 const Icon(Icons.inventory, size: 14, color: Colors.grey),
                 const SizedBox(width: 4),
-                Text('Qty: ${rental.quantity}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                Text(
+                  'Qty: ${rental.quantity}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
                 if (rental.isOverdue) ...[
                   const SizedBox(width: 16),
                   const Icon(Icons.warning, size: 14, color: Colors.red),
                   const SizedBox(width: 4),
                   Text(
                     'Overdue',
-                    style: const TextStyle(fontSize: 12, color: Colors.red, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ],
             ),
-            
+
             const SizedBox(height: 12),
-            
+
             // Action buttons based on status
             _buildActionButtons(rental),
-            
+
             const SizedBox(height: 8),
-            
+
             // View details button
             SizedBox(
               width: double.infinity,
@@ -316,85 +338,128 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
       ),
     );
   }
-  
+
   Widget _buildActionButtons(Rental rental) {
-    
     switch (rental.status) {
       case 'pending':
         return Row(
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: () => _updateRentalStatus(rentalId: rental.id, status: 'approved'),
-                icon: const Icon(Icons.check, size: 18),
+                onPressed: () => _updateRentalStatus(
+                  rentalId: rental.id,
+                  status: 'approved',
+                ),
+                icon: const Icon(Icons.check_circle, size: 18),
                 label: const Text('Approve'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: () => _updateRentalStatus(rentalId: rental.id, status: 'cancelled'),
-                icon: const Icon(Icons.close, size: 18),
+                onPressed: () => _updateRentalStatus(
+                  rentalId: rental.id,
+                  status: 'cancelled',
+                ),
+                icon: const Icon(Icons.cancel, size: 18),
                 label: const Text('Decline'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
             ),
           ],
         );
-        
+
       case 'approved':
         return Row(
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: () => _updateRentalStatus(rentalId: rental.id, status: 'checked_out'),
-                icon: const Icon(Icons.inventory, size: 18),
-                label: const Text('Check Out'),
+                onPressed: () => _updateRentalStatus(
+                  rentalId: rental.id,
+                  status: 'checked_out',
+                ),
+                icon: const Icon(Icons.shopping_bag, size: 18),
+                label: const Text('Pick Up'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () => _updateRentalStatus(rentalId: rental.id, status: 'cancelled'),
-                icon: const Icon(Icons.cancel, size: 18),
+                onPressed: () => _updateRentalStatus(
+                  rentalId: rental.id,
+                  status: 'cancelled',
+                ),
+                icon: const Icon(Icons.close, size: 18),
                 label: const Text('Cancel'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.red,
-                  side: const BorderSide(color: Colors.red),
+                  side: const BorderSide(color: Colors.red, width: 1.5),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
             ),
           ],
         );
-        
+
       case 'checked_out':
         return Column(
           children: [
             if (rental.isOverdue)
               Container(
-                padding: const EdgeInsets.all(8),
-                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red),
+                  gradient: LinearGradient(
+                    colors: [Colors.red.shade50, Colors.red.shade100],
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.red, width: 1.5),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.warning, color: Colors.red, size: 20),
-                    const SizedBox(width: 8),
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.red,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         'Overdue by ${DateTime.now().difference(rental.endDate).inDays} days',
-                        style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w500),
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ],
@@ -404,11 +469,20 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () => _updateRentalStatus(rentalId: rental.id, status: 'returned'),
-                    icon: const Icon(Icons.check_circle, size: 18),
+                    onPressed: () => _updateRentalStatus(
+                      rentalId: rental.id,
+                      status: 'returned',
+                    ),
+                    icon: const Icon(Icons.assignment_turned_in, size: 18),
                     label: const Text('Mark Returned'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                 ),
@@ -420,7 +494,14 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
                     label: const Text('Extend'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primaryBlue,
-                      side: const BorderSide(color: AppColors.primaryBlue),
+                      side: const BorderSide(
+                        color: AppColors.primaryBlue,
+                        width: 1.5,
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                 ),
@@ -428,18 +509,19 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
             ),
           ],
         );
-        
+
       case 'returned':
         return Row(
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: () => _updateRentalStatus(rentalId: rental.id, status: 'maintenance'),
+                onPressed: () => _updateRentalStatus(
+                  rentalId: rental.id,
+                  status: 'maintenance',
+                ),
                 icon: const Icon(Icons.build, size: 18),
                 label: const Text('Needs Maintenance'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple,
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
               ),
             ),
             const SizedBox(width: 8),
@@ -456,7 +538,7 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
             ),
           ],
         );
-        
+
       case 'maintenance':
         return SizedBox(
           width: double.infinity,
@@ -464,22 +546,22 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
             onPressed: () => _markEquipmentAvailable(rental),
             icon: const Icon(Icons.check, size: 18),
             label: const Text('Mark Available'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
           ),
         );
-        
+
       default:
         return const SizedBox();
     }
   }
-  
+
   Future<void> _showExtendDialog(Rental rental) async {
     final newEndDateController = TextEditingController(
-      text: DateFormat('yyyy-MM-dd').format(rental.endDate.add(const Duration(days: 7))),
+      text: DateFormat(
+        'yyyy-MM-dd',
+      ).format(rental.endDate.add(const Duration(days: 7))),
     );
-    
+
     return showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -490,7 +572,9 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Current end date: ${DateFormat('MMM dd, yyyy').format(rental.endDate)}'),
+                  Text(
+                    'Current end date: ${DateFormat('MMM dd, yyyy').format(rental.endDate)}',
+                  ),
                   const SizedBox(height: 16),
                   const Text('New end date:'),
                   const SizedBox(height: 8),
@@ -506,12 +590,16 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
                         onPressed: () async {
                           final DateTime? picked = await showDatePicker(
                             context: context,
-                            initialDate: rental.endDate.add(const Duration(days: 7)),
+                            initialDate: rental.endDate.add(
+                              const Duration(days: 7),
+                            ),
                             firstDate: rental.endDate,
                             lastDate: DateTime(2100),
                           );
                           if (picked != null) {
-                            newEndDateController.text = DateFormat('yyyy-MM-dd').format(picked);
+                            newEndDateController.text = DateFormat(
+                              'yyyy-MM-dd',
+                            ).format(picked);
                           }
                         },
                       ),
@@ -519,25 +607,34 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
                   ),
                   const SizedBox(height: 12),
                   FutureBuilder<bool>(
-                    future: _checkExtensionAvailability(rental, newEndDateController.text),
+                    future: _checkExtensionAvailability(
+                      rental,
+                      newEndDateController.text,
+                    ),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const CircularProgressIndicator();
                       }
-                      
+
                       if (snapshot.hasError || snapshot.data == false) {
                         return Text(
                           'Cannot extend: ${snapshot.hasError ? snapshot.error.toString() : 'Not available'}',
                           style: const TextStyle(color: Colors.red),
                         );
                       }
-                      
-                      final newEndDate = DateTime.tryParse(newEndDateController.text);
+
+                      final newEndDate = DateTime.tryParse(
+                        newEndDateController.text,
+                      );
                       if (newEndDate != null) {
-                        final extraDays = newEndDate.difference(rental.endDate).inDays;
-                        final dailyRate = rental.totalCost / rental.durationInDays;
-                        final additionalCost = extraDays * dailyRate * rental.quantity;
-                        
+                        final extraDays = newEndDate
+                            .difference(rental.endDate)
+                            .inDays;
+                        final dailyRate =
+                            rental.totalCost / rental.durationInDays;
+                        final additionalCost =
+                            extraDays * dailyRate * rental.quantity;
+
                         return Text(
                           'Additional cost: \$${additionalCost.toStringAsFixed(2)}',
                           style: const TextStyle(
@@ -546,7 +643,7 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
                           ),
                         );
                       }
-                      
+
                       return const SizedBox();
                     },
                   ),
@@ -560,8 +657,11 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
               ),
               ElevatedButton(
                 onPressed: () async {
-                  final newEndDate = DateTime.tryParse(newEndDateController.text);
-                  if (newEndDate == null || newEndDate.isBefore(rental.endDate)) {
+                  final newEndDate = DateTime.tryParse(
+                    newEndDateController.text,
+                  );
+                  if (newEndDate == null ||
+                      newEndDate.isBefore(rental.endDate)) {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -572,13 +672,13 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
                     }
                     return;
                   }
-                  
+
                   try {
                     await _reservationService.extendRental(
                       rentalId: rental.id,
                       newEndDate: newEndDate,
                     );
-                    
+
                     if (mounted) {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -607,12 +707,15 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
       ),
     );
   }
-  
-  Future<bool> _checkExtensionAvailability(Rental rental, String newEndDateString) async {
+
+  Future<bool> _checkExtensionAvailability(
+    Rental rental,
+    String newEndDateString,
+  ) async {
     try {
       final newEndDate = DateTime.tryParse(newEndDateString);
       if (newEndDate == null) return false;
-      
+
       return await _reservationService.checkAvailability(
         equipmentId: rental.equipmentId,
         startDate: rental.startDate,
@@ -623,22 +726,19 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
       return false;
     }
   }
-  
+
   Future<void> _markEquipmentAvailable(Rental rental) async {
     try {
       await _equipmentService.markEquipmentAvailable(rental.equipmentId);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
   }
-  
+
   Widget _buildStatisticsCard() {
     return StreamBuilder<List<Rental>>(
       stream: _reservationService.getAllRentals(),
@@ -651,14 +751,16 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
             ),
           );
         }
-        
+
         final rentals = snapshot.data!;
         final pending = rentals.where((r) => r.status == 'pending').length;
         final approved = rentals.where((r) => r.status == 'approved').length;
-        final checkedOut = rentals.where((r) => r.status == 'checked_out').length;
+        final checkedOut = rentals
+            .where((r) => r.status == 'checked_out')
+            .length;
         final overdue = rentals.where((r) => r.isOverdue).length;
         final returned = rentals.where((r) => r.status == 'returned').length;
-        
+
         return Card(
           elevation: 2,
           child: Padding(
@@ -678,7 +780,7 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
                     _statChip('Total', rentals.length.toString(), Colors.blue),
                     _statChip('Pending', pending.toString(), Colors.orange),
                     _statChip('Approved', approved.toString(), Colors.blue),
-                    _statChip('Checked Out', checkedOut.toString(), Colors.green),
+                    _statChip('Picked Up', checkedOut.toString(), Colors.green),
                     _statChip('Overdue', overdue.toString(), Colors.red),
                     _statChip('Returned', returned.toString(), Colors.grey),
                   ],
@@ -690,7 +792,7 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
       },
     );
   }
-  
+
   Widget _statChip(String label, String value, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -705,27 +807,20 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
           Container(
             width: 8,
             height: 8,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: color,
-            ),
+            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
           ),
           const SizedBox(width: 6),
           Text(
             '$label: $value',
-            style: TextStyle(
-              fontWeight: FontWeight.w500,
-              color: color,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w500, color: color),
           ),
         ],
       ),
     );
   }
-  
+
   @override
   Widget build(BuildContext context) {
-    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reservation Management'),
@@ -741,13 +836,15 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
                   _filterStatus = newValue ?? 'all';
                 });
               },
-              items: _statusFilters.map<DropdownMenuItem<String>>((String value) {
+              items: _statusFilters.map<DropdownMenuItem<String>>((
+                String value,
+              ) {
                 return DropdownMenuItem<String>(
                   value: value,
                   child: Text(
-                    value == 'all' 
-                      ? 'All Status' 
-                      : value.replaceAll('_', ' ').toUpperCase(),
+                    value == 'all'
+                        ? 'All Status'
+                        : value.replaceAll('_', ' ').toUpperCase(),
                   ),
                 );
               }).toList(),
@@ -779,15 +876,15 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
               ),
             ),
           ),
-          
+
           // Statistics Card
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: _buildStatisticsCard(),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Reservations List
           Expanded(
             child: StreamBuilder<List<Rental>>(
@@ -796,7 +893,7 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                
+
                 if (snapshot.hasError) {
                   return Center(
                     child: Column(
@@ -813,29 +910,37 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
                     ),
                   );
                 }
-                
+
                 final allRentals = snapshot.data ?? [];
-                
+
                 // Apply filters
                 List<Rental> filteredRentals = allRentals;
-                
+
                 // Apply status filter
                 if (_filterStatus != 'all') {
                   filteredRentals = filteredRentals
                       .where((r) => r.status == _filterStatus)
                       .toList();
                 }
-                
+
                 // Apply search filter
                 if (_searchQuery.isNotEmpty) {
                   filteredRentals = filteredRentals.where((rental) {
-                    return rental.userFullName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                           rental.equipmentName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                           rental.itemType.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                           rental.id.toLowerCase().contains(_searchQuery.toLowerCase());
+                    return rental.userFullName.toLowerCase().contains(
+                          _searchQuery.toLowerCase(),
+                        ) ||
+                        rental.equipmentName.toLowerCase().contains(
+                          _searchQuery.toLowerCase(),
+                        ) ||
+                        rental.itemType.toLowerCase().contains(
+                          _searchQuery.toLowerCase(),
+                        ) ||
+                        rental.id.toLowerCase().contains(
+                          _searchQuery.toLowerCase(),
+                        );
                   }).toList();
                 }
-                
+
                 // Sort: overdue first, then pending, then by date
                 filteredRentals.sort((a, b) {
                   if (a.isOverdue && !b.isOverdue) return -1;
@@ -844,7 +949,7 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
                   if (a.status != 'pending' && b.status == 'pending') return 1;
                   return b.createdAt.compareTo(a.createdAt);
                 });
-                
+
                 if (filteredRentals.isEmpty) {
                   return Center(
                     child: Column(
@@ -878,7 +983,7 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
                     ),
                   );
                 }
-                
+
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: filteredRentals.length,
@@ -891,7 +996,6 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
           ),
         ],
       ),
-
     );
   }
 }

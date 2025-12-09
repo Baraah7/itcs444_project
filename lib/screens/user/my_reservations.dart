@@ -3,316 +3,413 @@ import 'package:intl/intl.dart';
 import '../../services/reservation_service.dart';
 import '../../models/rental_model.dart';
 import '../../utils/theme.dart';
+import 'equipment_detail.dart';
 
 class MyReservationsScreen extends StatefulWidget {
   const MyReservationsScreen({Key? key}) : super(key: key);
-  
+
   @override
   State<MyReservationsScreen> createState() => _MyReservationsScreenState();
 }
 
-class _MyReservationsScreenState extends State<MyReservationsScreen> {
+class _MyReservationsScreenState extends State<MyReservationsScreen>
+    with SingleTickerProviderStateMixin {
   final ReservationService _reservationService = ReservationService();
-  
+  late TabController _tabController;
+
+  // 🔵 Search + Filter Variables
+  String _searchQuery = "";
+  String _selectedStatus = "All";
+  DateTime? _startDate;
+  DateTime? _endDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Reservations'),
-        actions: [
-          StreamBuilder<List<Rental>>(
-            stream: _reservationService.getUserRentals(),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) return const SizedBox();
-              final completedRentals = snapshot.data!.where((r) => r.status == 'cancelled' || r.status == 'returned').toList();
-              if (completedRentals.isEmpty) return const SizedBox();
-              return TextButton.icon(
-                onPressed: () => _deleteAllCompleted(completedRentals),
-                icon: const Icon(Icons.delete_sweep, color: Colors.red),
-                label: const Text('Clear All', style: TextStyle(color: Colors.red)),
-              );
-            },
-          ),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'Active', icon: Icon(Icons.pending_actions)),
+            Tab(text: 'History', icon: Icon(Icons.history)),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildReservationsList(isHistory: false),
+          _buildReservationsList(isHistory: true),
         ],
       ),
-      body: StreamBuilder<List<Rental>>(
-        stream: _reservationService.getUserRentals(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          
-          final rentals = snapshot.data ?? [];
-          
-          if (rentals.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.event_available,
-                    size: 80,
-                    color: Colors.grey[300],
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'No Reservations Yet',
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Start renting equipment to see your reservations here',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-            );
-          }
-          
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: rentals.length,
-            itemBuilder: (context, index) {
-              final rental = rentals[index];
-              final format = DateFormat('MMM dd, yyyy');
-              
-              return Card(
-                margin: const EdgeInsets.only(bottom: 16),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header with status
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    );
+  }
+
+  Widget _buildReservationsList({required bool isHistory}) {
+    return Column(
+      children: [
+        _buildSearchBar(),
+        _buildFilters(isHistory: isHistory),
+
+        Expanded(
+          child: StreamBuilder<List<Rental>>(
+            stream: _reservationService.getUserRentals(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              }
+
+              List<Rental> rentals = snapshot.data ?? [];
+
+              // 🔵 FILTER BY TAB (Active vs History)
+              rentals = rentals.where((r) {
+                if (isHistory) {
+                  // History includes: returned, cancelled (maintenance hidden from users)
+                  return r.status == 'returned' || r.status == 'cancelled';
+                } else {
+                  // Active includes: pending, approved, checked_out
+                  return r.status == 'pending' ||
+                      r.status == 'approved' ||
+                      r.status == 'checked_out';
+                }
+              }).toList();
+
+              // 🔵 APPLY FILTERING
+              rentals = _applyFilters(rentals, isHistory: isHistory);
+
+              if (rentals.isEmpty) {
+                return _buildEmptyState(isHistory: isHistory);
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: rentals.length,
+                itemBuilder: (context, index) {
+                  final rental = rentals[index];
+                  final format = DateFormat('MMM dd, yyyy');
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: rental.statusColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  rental.statusIcon,
-                                  size: 16,
-                                  color: rental.statusColor,
+                          // STATUS HEADER
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
                                 ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  rental.statusText.toUpperCase(),
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: rental.statusColor,
+                                decoration: BoxDecoration(
+                                  color: rental.statusColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      rental.statusIcon,
+                                      size: 16,
+                                      color: rental.statusColor,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      rental.statusText.toUpperCase(),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: rental.statusColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (rental.canBeCancelled && !isHistory)
+                                TextButton(
+                                  onPressed: () => _cancelRental(rental.id),
+                                  child: const Text(
+                                    'Cancel',
+                                    style: TextStyle(color: Colors.red),
                                   ),
                                 ),
-                              ],
-                            ),
+                            ],
                           ),
-                          if (rental.canBeCancelled)
-                            TextButton(
-                              onPressed: () => _cancelRental(rental.id),
-                              child: const Text(
-                                'Cancel',
-                                style: TextStyle(color: Colors.red),
-                              ),
-                            ),
-                          if (rental.status == 'cancelled' || rental.status == 'returned')
-                            IconButton(
-                              onPressed: () => _deleteRental(rental.id),
-                              icon: const Icon(Icons.delete_outline, color: Colors.red),
-                              tooltip: 'Remove',
-                            ),
-                        ],
-                      ),
-                      
-                      const SizedBox(height: 12),
-                      
-                      // Equipment info
-                      Text(
-                        rental.equipmentName,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        rental.itemType,
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      // Dates and details
-                      Row(
-                        children: [
-                          Expanded(
+
+                          const SizedBox(height: 12),
+
+                          // EQUIPMENT NAME
+                          InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EquipmentDetailPage(
+                                    equipmentId: rental.equipmentId,
+                                  ),
+                                ),
+                              );
+                            },
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'From',
-                                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                                ),
                                 Text(
-                                  format.format(rental.startDate),
-                                  style: const TextStyle(fontWeight: FontWeight.w500),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(Icons.arrow_forward, color: Colors.grey),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                const Text(
-                                  'To',
-                                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                                ),
-                                Text(
-                                  format.format(rental.endDate),
-                                  style: const TextStyle(fontWeight: FontWeight.w500),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      
-                      const SizedBox(height: 12),
-                      
-                      // Duration and quantity
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.calendar_today, size: 16),
-                              const SizedBox(width: 6),
-                              Text('${rental.durationInDays} days'),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              const Icon(Icons.inventory, size: 16),
-                              const SizedBox(width: 6),
-                              Text('Qty: ${rental.quantity}'),
-                            ],
-                          ),
-                        ],
-                      ),
-                      
-                      const SizedBox(height: 12),
-                      
-                      // Progress tracker based on status
-                      _buildProgressTracker(rental),
-                      
-                      const SizedBox(height: 16),
-                      
-                      // Cost
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Total Cost',
-                              style: TextStyle(fontWeight: FontWeight.w500),
-                            ),
-                            Text(
-                              rental.formattedCost,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      // Next action
-                      if (rental.nextAction.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: rental.statusColor.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.info_outline,
-                                size: 16,
-                                color: rental.statusColor,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  rental.nextAction,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: rental.statusColor,
+                                  rental.equipmentName,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue,
+                                    decoration: TextDecoration.underline,
                                   ),
                                 ),
+                                Text(
+                                  rental.itemType,
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // DATES
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'From',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                    Text(
+                                      format.format(rental.startDate),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(
+                                Icons.arrow_forward,
+                                color: Colors.grey,
+                              ),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    const Text(
+                                      'To',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                    Text(
+                                      format.format(rental.endDate),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
-                      
-                      // Admin notes if any
-                      if (rental.adminNotes != null && rental.adminNotes!.isNotEmpty)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 12),
-                            const Text(
-                              'Admin Notes:',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            Text(rental.adminNotes!),
-                          ],
-                        ),
-                    ],
-                  ),
-                ),
+
+                          const SizedBox(height: 12),
+
+                          // PROGRESS
+                          if (!isHistory) _buildProgressTracker(rental),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               );
             },
-          );
+          ),
+        ),
+      ],
+    );
+  }
+
+  // -------------------------------------------------------------
+  // 🔵 SEARCH BAR
+  // -------------------------------------------------------------
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: TextField(
+        decoration: InputDecoration(
+          hintText: "Search by equipment name...",
+          prefixIcon: const Icon(Icons.search),
+          filled: true,
+          fillColor: Colors.grey[200],
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+        ),
+        onChanged: (v) {
+          setState(() => _searchQuery = v.trim().toLowerCase());
         },
       ),
     );
   }
-  
+
+  // -------------------------------------------------------------
+  // 🔵 FILTER CHIPS (STATUS + DATE RANGE)
+  // -------------------------------------------------------------
+  Widget _buildFilters({required bool isHistory}) {
+    return SizedBox(
+      height: 48,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        children: [
+          _filterChip("All"),
+          if (!isHistory) ...[
+            _filterChip("pending"),
+            _filterChip("approved"),
+            _filterChip("Picked Up"),
+          ],
+          if (isHistory) ...[_filterChip("returned"), _filterChip("cancelled")],
+
+          const SizedBox(width: 10),
+
+          // 🔵 Date Range Button
+          ElevatedButton.icon(
+            onPressed: _pickDateRange,
+            icon: const Icon(Icons.date_range),
+            label: const Text("Dates"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey[200],
+              elevation: 0,
+              foregroundColor: Colors.black,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _filterChip(String status) {
+    final isSelected = _selectedStatus == status;
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: ChoiceChip(
+        label: Text(status == "All" ? "All" : status.capitalize()),
+        selected: isSelected,
+        onSelected: (_) {
+          setState(() {
+            _selectedStatus = status;
+          });
+        },
+      ),
+    );
+  }
+
+  // -------------------------------------------------------------
+  // 🔵 DATE RANGE PICKER
+  // -------------------------------------------------------------
+  Future<void> _pickDateRange() async {
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2022),
+      lastDate: DateTime(2030),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _startDate = picked.start;
+        _endDate = picked.end;
+      });
+    }
+  }
+
+  // -------------------------------------------------------------
+  // 🔵 FILTER LOGIC
+  // -------------------------------------------------------------
+  List<Rental> _applyFilters(List<Rental> rentals, {required bool isHistory}) {
+    return rentals.where((r) {
+      // Search filter
+      final matchesSearch =
+          r.equipmentName.toLowerCase().contains(_searchQuery) ||
+          r.itemType.toLowerCase().contains(_searchQuery);
+
+      // Status filter
+      final matchesStatus =
+          _selectedStatus == "All" || r.status == _selectedStatus;
+
+      // Date filter
+      final matchesDate =
+          (_startDate == null || r.startDate.isAfter(_startDate!)) &&
+          (_endDate == null || r.endDate.isBefore(_endDate!));
+
+      return matchesSearch && matchesStatus && matchesDate;
+    }).toList();
+  }
+
+  // -------------------------------------------------------------
+  // 🔵 EMPTY STATE
+  // -------------------------------------------------------------
+  Widget _buildEmptyState({required bool isHistory}) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            isHistory ? Icons.history : Icons.event_busy,
+            size: 80,
+            color: Colors.grey[300],
+          ),
+          const SizedBox(height: 20),
+          Text(
+            isHistory ? "No rental history" : "No active reservations",
+            style: const TextStyle(fontSize: 18, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // -------------------------------------------------------------
+  // 🔵 PROGRESS TRACKER (your original code)
+  // -------------------------------------------------------------
   Widget _buildProgressTracker(Rental rental) {
-    final steps = ['Requested', 'Approved', 'Checked Out', 'Returned'];
-    final currentStep = rental.status == 'pending' ? 0
-        : rental.status == 'approved' ? 1
-        : rental.status == 'checked_out' ? 2
-        : rental.status == 'returned' ? 3
-        : rental.status == 'maintenance' ? 3  // Maintenance shows as returned
+    final steps = ['Requested', 'Approved', 'Picked Up', 'Returned'];
+    final currentStep = rental.status == 'pending'
+        ? 0
+        : rental.status == 'approved'
+        ? 1
+        : rental.status == 'checked_out'
+        ? 2
         : 3;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -326,40 +423,18 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
             final index = entry.key;
             final step = entry.value;
             final isActive = index <= currentStep;
-            
+
             return Expanded(
               child: Column(
                 children: [
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Container(
-                        height: 24,
-                        width: 24,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isActive ? AppColors.primaryBlue : Colors.grey[300]!,
-                          border: Border.all(
-                            color: isActive ? AppColors.primaryBlue : Colors.grey[300]!,
-                            width: 2,
-                          ),
-                        ),
-                        child: isActive
-                            ? const Icon(Icons.check, size: 14, color: Colors.white)
-                            : null,
-                      ),
-                      if (index < steps.length - 1)
-                        Positioned(
-                          right: -20,
-                          child: Container(
-                            height: 2,
-                            width: 40,
-                            color: index < currentStep 
-                                ? AppColors.primaryBlue 
-                                : Colors.grey[300]!,
-                          ),
-                        ),
-                    ],
+                  CircleAvatar(
+                    radius: 12,
+                    backgroundColor: isActive
+                        ? AppColors.primaryBlue
+                        : Colors.grey[300],
+                    child: isActive
+                        ? const Icon(Icons.check, size: 14, color: Colors.white)
+                        : null,
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -367,57 +442,28 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
                     style: TextStyle(
                       fontSize: 10,
                       color: isActive ? AppColors.primaryBlue : Colors.grey,
-                      fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
                     ),
-                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
             );
           }).toList(),
         ),
-        
-        // Progress percentage
-        const SizedBox(height: 12),
-        LinearProgressIndicator(
-          value: rental.progressPercentage / 100.0,
-          backgroundColor: Colors.grey[200],
-          color: AppColors.primaryBlue,
-          minHeight: 6,
-          borderRadius: BorderRadius.circular(3),
-        ),
-        const SizedBox(height: 4),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '${rental.progressPercentage.toStringAsFixed(0)}% Complete',
-              style: const TextStyle(
-                fontSize: 11,
-                color: Colors.grey,
-              ),
-            ),
-            if (rental.status == 'checked_out' && rental.daysRemaining != null)
-              Text(
-                '${rental.daysRemaining} days remaining',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: rental.isOverdue ? Colors.red : Colors.green,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-          ],
-        ),
       ],
     );
   }
-  
+
+  // -------------------------------------------------------------
+  // 🔵 CANCEL RESERVATION
+  // -------------------------------------------------------------
   Future<void> _cancelRental(String rentalId) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Cancel Reservation'),
-        content: const Text('Are you sure you want to cancel this reservation?'),
+        content: const Text(
+          'Are you sure you want to cancel this reservation?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -430,116 +476,27 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
         ],
       ),
     );
-    
+
     if (confirmed == true) {
       try {
         await _reservationService.cancelRental(rentalId);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Reservation cancelled successfully'),
+            content: Text('Reservation cancelled'),
             backgroundColor: Colors.green,
           ),
         );
       } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
       }
     }
   }
+}
 
-  Future<void> _deleteRental(String rentalId) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Remove Reservation'),
-        content: const Text('Are you sure you want to remove this reservation from your list?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('No'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Yes, Remove'),
-          ),
-        ],
-      ),
-    );
-    
-    if (confirmed == true) {
-      try {
-        await _reservationService.deleteRental(rentalId);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Reservation removed successfully'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-  }
-
-  Future<void> _deleteAllCompleted(List<Rental> rentals) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clear All Completed'),
-        content: Text('Remove all ${rentals.length} completed reservations?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Clear All'),
-          ),
-        ],
-      ),
-    );
-    
-    if (confirmed == true) {
-      try {
-        for (final rental in rentals) {
-          await _reservationService.deleteRental(rental.id);
-        }
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${rentals.length} reservations removed'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-  }
+// 🔵 Helper capitalize
+extension StringX on String {
+  String capitalize() =>
+      isEmpty ? this : "${this[0].toUpperCase()}${substring(1)}";
 }
