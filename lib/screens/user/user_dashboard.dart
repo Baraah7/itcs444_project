@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/theme.dart';
 import '../shared/profile_screen.dart';
-import '../test_notification_screen.dart';
+import '../shared/notifications_screen.dart';
 import 'settings.dart';
 import 'help&support.dart';
 import 'equipment_detail.dart';
@@ -49,7 +49,7 @@ class _UserDashboardState extends State<UserDashboard> {
             icon: const Icon(Icons.notifications_outlined, color: Color(0xFF2B6C67)),
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => TestNotificationScreen()),
+              MaterialPageRoute(builder: (context) => const NotificationsScreen()),
             ),
           ),
            IconButton(
@@ -752,7 +752,7 @@ class _UserDashboardState extends State<UserDashboard> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
-                childAspectRatio: 0.78,
+                childAspectRatio: 0.65,
               ),
               itemBuilder: (context, index) {
                 final doc = equipmentDocs[index];
