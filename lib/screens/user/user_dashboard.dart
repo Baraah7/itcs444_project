@@ -6,11 +6,8 @@ import 'package:itcs444_project/screens/user/equipment_list.dart';
 import 'package:itcs444_project/screens/user/my_reservations.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../utils/theme.dart';
-import '../shared/profile_screen.dart';
 import '../shared/notifications_screen.dart';
 import 'settings.dart';
-import 'help&support.dart';
 import 'equipment_detail.dart';
 
 class UserDashboard extends StatefulWidget {
