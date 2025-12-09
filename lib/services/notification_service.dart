@@ -11,6 +11,10 @@ class NotificationService {
     required String type,
     Map<String, dynamic>? data,
   }) async {
+    print('📧 Creating notification for user: $userId');
+    print('📧 Title: $title');
+    print('📧 Message: $message');
+    
     final notification = NotificationModel(
       id: _firestore.collection('notifications').doc().id,
       userId: userId,
@@ -22,6 +26,7 @@ class NotificationService {
     );
 
     await _firestore.collection('notifications').doc(notification.id).set(notification.toMap());
+    print('✅ Notification saved to Firestore with ID: ${notification.id}');
   }
 
   Stream<List<NotificationModel>> getUserNotifications(String userId) {
