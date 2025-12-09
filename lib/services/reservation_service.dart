@@ -183,7 +183,9 @@ class ReservationService {
           final rentals = snapshot.docs
               .map((doc) {
                 try {
-                  return Rental.fromMap(doc.data() as Map<String, dynamic>);
+                  final data = doc.data() as Map<String, dynamic>;
+                  if (data['hiddenFromUser'] == true) return null;
+                  return Rental.fromMap(data);
                 } catch (e) {
                   print('Error parsing rental: $e');
                   return null;
@@ -347,7 +349,7 @@ class ReservationService {
     }
   }
   
-  // DELETE RENTAL (USER)
+  // HIDE RENTAL FROM MY RESERVATIONS (USER)
   Future<void> deleteRental(String rentalId) async {
     try {
       final rentalDoc = await rentalsCollection.doc(rentalId).get();
@@ -370,8 +372,8 @@ class ReservationService {
         throw Exception('Can only delete cancelled or returned reservations');
       }
       
-      // Delete rental document
-      await rentalsCollection.doc(rentalId).delete();
+      // Mark as hidden instead of deleting
+      await rentalsCollection.doc(rentalId).update({'hiddenFromUser': true});
       
     } catch (e) {
       throw Exception('Failed to delete rental: $e');
