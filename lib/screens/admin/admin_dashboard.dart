@@ -11,9 +11,8 @@ import 'equipment_management.dart';
 import 'add_edit_equipment.dart';
 import '../admin/reservation_management.dart';
 import '../shared/notifications_screen.dart';
-import '../debug_rentals_screen.dart';
 import '../admin/settings.dart';
-
+import 'admin_reports_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -175,7 +174,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       case 2: return ReservationManagementScreen();
       case 3: return DonationList();
       case 4: return MaintenanceManagementScreen();
-      case 5: return _buildReportsBody(context);
+      case 5: return AdminReportsScreen();
       case 6: return UsersManagement();
       case 7: return ProfileScreen();
       default: return _buildDashboardBody(context, auth, admin);
