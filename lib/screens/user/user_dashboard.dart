@@ -45,12 +45,51 @@ class _UserDashboardState extends State<UserDashboard> {
         backgroundColor: Colors.white,
 
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Color(0xFF2B6C67)),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const NotificationsScreen()),
-            ),
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('notifications')
+                .where('userId', isEqualTo: user?.docId)
+                .where('isRead', isEqualTo: false)
+                .snapshots(),
+            builder: (context, snapshot) {
+              final unreadCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications_outlined, color: Color(0xFF2B6C67)),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                    ),
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          unreadCount > 9 ? '9+' : '$unreadCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
            IconButton(
              icon: const Icon(Icons.settings_outlined, color: Color(0xFF2B6C67)),
@@ -412,7 +451,6 @@ class _UserDashboardState extends State<UserDashboard> {
                       stream: FirebaseFirestore.instance
                           .collection('reservations')
                           .where('userId', isEqualTo: userId)
-                          .orderBy('createdAt', descending: true)
                           .limit(2)
                           .snapshots(),
                       builder: (context, snap) {
@@ -465,7 +503,6 @@ class _UserDashboardState extends State<UserDashboard> {
                       stream: FirebaseFirestore.instance
                           .collection('donations')
                           .where('userId', isEqualTo: userId)
-                          .orderBy('createdAt', descending: true)
                           .limit(2)
                           .snapshots(),
                       builder: (context, snap) {

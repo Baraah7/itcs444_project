@@ -491,12 +491,16 @@ class ReservationService {
   // NOTIFY ADMINS
   Future<void> _notifyAdmins(String title, String message, String type, [Map<String, dynamic>? data]) async {
     try {
+      print('🔔 Attempting to notify admins...');
       final admins = await _firestore
           .collection('users')
           .where('role', isEqualTo: 'admin')
           .get();
 
+      print('🔔 Found ${admins.docs.length} admin(s)');
+      
       for (var admin in admins.docs) {
+        print('🔔 Sending notification to admin: ${admin.id}');
         await _notificationService.sendNotification(
           userId: admin.id,
           title: title,
@@ -504,9 +508,10 @@ class ReservationService {
           type: type,
           data: data,
         );
+        print('🔔 Notification sent successfully to ${admin.id}');
       }
     } catch (e) {
-      print('Error notifying admins: $e');
+      print('❌ Error notifying admins: $e');
     }
   }
 }
