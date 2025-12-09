@@ -199,10 +199,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildProfileView(BuildContext context, AppUser? user) {
     return SingleChildScrollView(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Profile Header with Gradient
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(30),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
