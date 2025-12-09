@@ -26,8 +26,7 @@ class _UserDashboardState extends State<UserDashboard> {
     SidebarItem(icon: Icons.event_available, label: 'Equipment', index: 1),
     SidebarItem(icon: Icons.shopping_cart, label: 'Reservations', index: 2),
     SidebarItem(icon: Icons.favorite_border, label: 'Donations', index: 3),
-    SidebarItem(icon: Icons.history, label: 'History', index: 4),
-    SidebarItem(icon: Icons.settings, label: 'Settings', index: 5),
+    SidebarItem(icon: Icons.settings, label: 'Settings', index: 4),
   ];
 
   @override
@@ -108,8 +107,7 @@ class _UserDashboardState extends State<UserDashboard> {
       case 1: return UserEquipmentPage();
       case 2: return MyReservationsScreen();
       case 3: return DonationHistory();
-      case 4: return _buildHistoryBody(context);
-      case 5: return Settings();
+      case 4: return Settings();
       default: return _buildDashboardBody(context, auth, user);
     }
   }
@@ -365,31 +363,30 @@ class _UserDashboardState extends State<UserDashboard> {
   Widget _buildRecentActivity(dynamic user) {
     final userId = user?.docId;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE8ECEF),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Recent Activity",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF1E293B),
+            letterSpacing: -0.3,
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Recent Activity",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1E293B),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: const Color(0xFFE8ECEF),
             ),
           ),
-          const SizedBox(height: 16),
-
-          // We'll show a horizontal row that contains two stacked columns:
-          // Left: Last 2 Reservations, Right: Last 2 Donations
-          Row(
+          child: Row(
             children: [
               // Reservations Column
               Expanded(
@@ -440,9 +437,9 @@ class _UserDashboardState extends State<UserDashboard> {
                   ],
                 ),
               ),
-
+                  
               const SizedBox(width: 16),
-
+                  
               // Donations Column
               Expanded(
                 child: Column(
@@ -494,8 +491,8 @@ class _UserDashboardState extends State<UserDashboard> {
               ),
             ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
