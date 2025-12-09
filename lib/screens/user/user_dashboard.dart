@@ -379,10 +379,76 @@ class _UserDashboardState extends State<UserDashboard> {
             color: const Color(0xFF1E293B),
             letterSpacing: -0.3,
           ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(16),
+
+          const SizedBox(height: 16),
+
+          // We'll show equipment types, but availability will be determined differently
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: equipmentDocs.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 0.65,
+            ),
+            itemBuilder: (context, index) {
+              final doc = equipmentDocs[index];
+              final equipment = doc.data();
+
+              return _medicalEquipmentCard(
+                context,
+                id: doc.id,
+                name: equipment['name'] ?? "Unknown",
+                category: equipment['type'] ?? "n/a",
+                // We'll check availability differently - maybe show first item's availability
+                // or fetch items to check availability
+                imageColor: AppColors.primaryBlue.withOpacity(0.1),
+              );
+            },
+          )
+        ],
+      );
+    },
+  );
+}
+
+Widget _medicalEquipmentCard(
+  BuildContext context, {
+  required String id,
+  required String name,
+  required String category,
+  required Color imageColor,
+}) {
+  // We'll use a StreamBuilder to fetch items for this equipment
+  return StreamBuilder<QuerySnapshot>(
+    stream: FirebaseFirestore.instance
+        .collection('equipment')
+        .doc(id)
+        .collection('Items')
+        .where('availability', isEqualTo: true) // Only available items
+        .limit(1) // Just check if at least one is available
+        .snapshots(),
+    builder: (context, itemsSnapshot) {
+      bool isAvailable = false;
+      int availableCount = 0;
+
+      if (itemsSnapshot.hasData && itemsSnapshot.data!.docs.isNotEmpty) {
+        isAvailable = true;
+        availableCount = itemsSnapshot.data!.docs.length;
+      }
+
+      return GestureDetector(
+        // onTap: () {
+        //   Navigator.push(
+        //     context,
+        //     MaterialPageRoute(
+        //       builder: (_) => EquipmentDetailPage(id: id),
+        //     ),
+        //   );
+        // },
+        child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),

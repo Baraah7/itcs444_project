@@ -79,53 +79,86 @@ class EquipmentDetailPage extends StatelessWidget {
                   ),
                 ),
 
+                const SizedBox(height: 12),
+
+                // AVAILABILITY STATUS
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('equipment')
+                      .doc(equipmentId)
+                      .collection('Items')
+                      .where('availability', isEqualTo: true)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    final isAvailable = snapshot.hasData && snapshot.data!.docs.isNotEmpty;
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isAvailable ? AppColors.success.withOpacity(0.1) : AppColors.error.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isAvailable ? Icons.check_circle : Icons.cancel,
+                            size: 16,
+                            color: isAvailable ? AppColors.success : AppColors.error,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            isAvailable ? "Available" : "Unavailable",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isAvailable ? AppColors.success : AppColors.error,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+
                 const SizedBox(height: 20),
 
                 // EQUIPMENT DESCRIPTION CARD
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Description",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
+                SizedBox(
+                  width: double.infinity,
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Description",
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
                           ),
-                        ),
 
-                        const SizedBox(height: 8),
+                          const SizedBox(height: 8),
 
-                        Text(
-                          equipmentData["description"] ?? "No description available.",
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ],
+                          Text(
+                            equipmentData["description"] ?? "No description available.",
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
 
                 const SizedBox(height: 24),
 
-                // ITEMS LIST SECTION
-                const Text(
-                  "Available Items",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // ITEMS LIST - FETCH FROM SUBCOLLECTION
-                _buildItemsList(context, equipmentData),
+                // RESERVE BUTTON
+                _buildReserveButton(context, equipmentData),
 
                 const SizedBox(height: 30),
               ],
@@ -136,254 +169,35 @@ class EquipmentDetailPage extends StatelessWidget {
     );
   }
 
-  // Method to build the items list from the Items subcollection
-  Widget _buildItemsList(BuildContext context, Map<String, dynamic> equipmentData) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('equipment')
-          .doc(equipmentId)
-          .collection('Items')
-          .snapshots(),
-      builder: (context, itemsSnapshot) {
-        if (itemsSnapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (!itemsSnapshot.hasData || itemsSnapshot.data!.docs.isEmpty) {
-          return Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.inventory_2_outlined,
-                    size: 50,
-                    color: AppColors.neutralGray.withOpacity(0.5),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    "No items available",
-                    style: TextStyle(
-                      color: AppColors.neutralGray,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Check back later for available items",
-                    style: TextStyle(
-                      color: AppColors.neutralGray.withOpacity(0.8),
-                      fontSize: 12,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+  Widget _buildReserveButton(BuildContext context, Map<String, dynamic> equipmentData) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ReservationScreen(
+                equipment: {
+                  'id': equipmentId,
+                  'name': equipmentData['name'] ?? 'Equipment',
+                  'type': equipmentData['type'] ?? equipmentData['category'] ?? 'Unknown',
+                  'rentalPrice': equipmentData['rentalPrice'] ?? 0,
+                },
               ),
             ),
           );
-        }
-
-        final items = itemsSnapshot.data!.docs;
-
-        return ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: items.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final itemDoc = items[index];
-            final itemData = itemDoc.data() as Map<String, dynamic>;
-            final isAvailable = itemData['availability'] ?? false;
-
-            return _buildItemCard(
-              context,
-              equipmentData: equipmentData,
-              itemId: itemDoc.id,
-              itemData: itemData,
-              isAvailable: isAvailable,
-            );
-          },
-        );
-      },
-    );
-  }
-
-  // Build individual item card
-  Widget _buildItemCard(
-    BuildContext context, {
-    required Map<String, dynamic> equipmentData,
-    required String itemId,
-    required Map<String, dynamic> itemData,
-    required bool isAvailable,
-  }) {
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // HEADER WITH AVAILABILITY BADGE
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    itemData['name'] ?? equipmentData['name'] ?? "Unnamed Item",
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isAvailable 
-                        ? AppColors.success.withOpacity(0.1)
-                        : AppColors.error.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    // border: Border.all(
-                    //   color: isAvailable ? AppColors.success : AppColors.error,
-                    //   width: 1,
-                    // ),
-                  ),
-                  child: Text(
-                    isAvailable ? "Available" : "Unavailable",
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: isAvailable ? AppColors.success : AppColors.error,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            // ITEM DETAILS
-            if (itemData['serial'] != null)
-              _itemDetailRow("Serial Number", itemData['serial']!),
-
-            if (itemData['condition'] != null)
-              _itemDetailRow("Condition", itemData['condition']!),
-
-            if (itemData['description'] != null && itemData['description']!.isNotEmpty)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 8),
-                  Text(
-                    "Item Description:",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.neutralGray,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    itemData['description']!,
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                ],
-              ),
-
-            // ACTION BUTTONS
-            const SizedBox(height: 16),
-
-            if (isAvailable) 
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ReservationScreen(
-                              equipment: {
-                                'id': equipmentId,
-                                'itemId': itemId,
-                                'name': equipmentData['name'] ?? 'Equipment',
-                                'itemName': itemData['name'] ?? equipmentData['name'] ?? 'Item',
-                                'type': equipmentData['type'] ?? equipmentData['category'] ?? 'Unknown',
-                                'serial': itemData['serial'] ?? 'N/A',
-                                'condition': itemData['condition'] ?? 'N/A',
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.handshake, size: 18),
-                      label: const Text("Reserve This Item"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.success,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                ],
-              )
-            else
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.neutralGray.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Center(
-                  child: Text(
-                    "Currently unavailable for reservation",
-                    style: TextStyle(
-                      color: AppColors.neutralGray,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-          ],
+        },
+        icon: const Icon(Icons.handshake, size: 20),
+        label: const Text("Reserve"),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primaryBlue,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _itemDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              "$label:",
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.neutralGray,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 13),
-            ),
-          ),
-        ],
       ),
     );
   }

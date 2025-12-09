@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/reservation_service.dart';
+import '../../services/equipment_service.dart';
 import '../../models/rental_model.dart';
 import '../../utils/theme.dart';
 
@@ -13,12 +14,23 @@ class ReservationManagementScreen extends StatefulWidget {
 
 class _ReservationManagementScreenState extends State<ReservationManagementScreen> {
   final ReservationService _reservationService = ReservationService();
+  final EquipmentService _equipmentService = EquipmentService();
   final TextEditingController _searchController = TextEditingController();
-  final Map<String, TextEditingController> _notesControllers = {};
+  final Map<String, String> _selectedNotes = {};
   
   String _filterStatus = 'all';
   String _searchQuery = '';
-  bool _isLoading = false;
+  
+  final List<String> _noteOptions = [
+    'None',
+    'Equipment in good condition',
+    'Equipment needs cleaning',
+    'Minor damage detected',
+    'Late return',
+    'User notified',
+    'Approved by supervisor',
+    'Urgent request',
+  ];
   
   final List<String> _statusFilters = [
     'all',
@@ -43,10 +55,6 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
   @override
   void dispose() {
     _searchController.dispose();
-    // Dispose all notes controllers
-    for (var controller in _notesControllers.values) {
-      controller.dispose();
-    }
     super.dispose();
   }
   
@@ -55,26 +63,12 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
     required String status,
     String? notes,
   }) async {
-    setState(() {
-      _isLoading = true;
-    });
-    
     try {
       await _reservationService.updateRentalStatus(
         rentalId: rentalId,
         status: status,
         adminNotes: notes,
       );
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Rental status updated to ${status.replaceAll('_', ' ')}'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -85,69 +79,10 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
           ),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
   
-  Future<void> _showStatusUpdateDialog({
-    required Rental rental,
-    required String newStatus,
-    required String title,
-  }) async {
-    final notesController = _notesControllers[rental.id] ?? TextEditingController();
-    _notesControllers[rental.id] = notesController;
-    
-    return showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Rental ID: ${rental.id.substring(0, 8)}...'),
-              const SizedBox(height: 12),
-              const Text('Add notes (optional):'),
-              const SizedBox(height: 8),
-              TextField(
-                controller: notesController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: 'Enter notes...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final notes = notesController.text.trim();
-              await _updateRentalStatus(
-                rentalId: rental.id,
-                status: newStatus,
-                notes: notes.isNotEmpty ? notes : null,
-              );
-              if (mounted) Navigator.pop(context);
-            },
-            child: const Text('Confirm'),
-          ),
-        ],
-      ),
-    );
-  }
+
   
   Future<void> _showRentalDetails(Rental rental) async {
     final format = DateFormat('MMM dd, yyyy HH:mm');
@@ -383,17 +318,14 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
   }
   
   Widget _buildActionButtons(Rental rental) {
+    
     switch (rental.status) {
       case 'pending':
         return Row(
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: () => _showStatusUpdateDialog(
-                  rental: rental,
-                  newStatus: 'approved',
-                  title: 'Approve Rental',
-                ),
+                onPressed: () => _updateRentalStatus(rentalId: rental.id, status: 'approved'),
                 icon: const Icon(Icons.check, size: 18),
                 label: const Text('Approve'),
                 style: ElevatedButton.styleFrom(
@@ -404,11 +336,7 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
             const SizedBox(width: 8),
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: () => _showStatusUpdateDialog(
-                  rental: rental,
-                  newStatus: 'cancelled',
-                  title: 'Decline Rental',
-                ),
+                onPressed: () => _updateRentalStatus(rentalId: rental.id, status: 'cancelled'),
                 icon: const Icon(Icons.close, size: 18),
                 label: const Text('Decline'),
                 style: ElevatedButton.styleFrom(
@@ -424,11 +352,7 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: () => _showStatusUpdateDialog(
-                  rental: rental,
-                  newStatus: 'checked_out',
-                  title: 'Check Out Equipment',
-                ),
+                onPressed: () => _updateRentalStatus(rentalId: rental.id, status: 'checked_out'),
                 icon: const Icon(Icons.inventory, size: 18),
                 label: const Text('Check Out'),
                 style: ElevatedButton.styleFrom(
@@ -439,11 +363,7 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
             const SizedBox(width: 8),
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () => _showStatusUpdateDialog(
-                  rental: rental,
-                  newStatus: 'cancelled',
-                  title: 'Cancel Rental',
-                ),
+                onPressed: () => _updateRentalStatus(rentalId: rental.id, status: 'cancelled'),
                 icon: const Icon(Icons.cancel, size: 18),
                 label: const Text('Cancel'),
                 style: OutlinedButton.styleFrom(
@@ -484,11 +404,7 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () => _showStatusUpdateDialog(
-                      rental: rental,
-                      newStatus: 'returned',
-                      title: 'Mark as Returned',
-                    ),
+                    onPressed: () => _updateRentalStatus(rentalId: rental.id, status: 'returned'),
                     icon: const Icon(Icons.check_circle, size: 18),
                     label: const Text('Mark Returned'),
                     style: ElevatedButton.styleFrom(
@@ -518,11 +434,7 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: () => _showStatusUpdateDialog(
-                  rental: rental,
-                  newStatus: 'maintenance',
-                  title: 'Send for Maintenance',
-                ),
+                onPressed: () => _updateRentalStatus(rentalId: rental.id, status: 'maintenance'),
                 icon: const Icon(Icons.build, size: 18),
                 label: const Text('Needs Maintenance'),
                 style: ElevatedButton.styleFrom(
@@ -713,22 +625,8 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
   }
   
   Future<void> _markEquipmentAvailable(Rental rental) async {
-    setState(() {
-      _isLoading = true;
-    });
-    
     try {
-      // This would typically update the equipment status in your database
-      // For now, we'll just show a success message
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${rental.equipmentName} marked as available'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
+      await _equipmentService.markEquipmentAvailable(rental.equipmentId);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -737,12 +635,6 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
             backgroundColor: Colors.red,
           ),
         );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
       }
     }
   }
@@ -901,13 +793,6 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
             child: StreamBuilder<List<Rental>>(
               stream: _reservationService.getAllRentals(),
               builder: (context, snapshot) {
-                print('=== RESERVATION MANAGEMENT DEBUG ===');
-                print('Connection State: ${snapshot.connectionState}');
-                print('Has Error: ${snapshot.hasError}');
-                print('Error: ${snapshot.error}');
-                print('Has Data: ${snapshot.hasData}');
-                print('Data Length: ${snapshot.data?.length ?? 0}');
-                
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -930,7 +815,6 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
                 }
                 
                 final allRentals = snapshot.data ?? [];
-                print('All Rentals Count: ${allRentals.length}');
                 
                 // Apply filters
                 List<Rental> filteredRentals = allRentals;
@@ -1007,13 +891,7 @@ class _ReservationManagementScreenState extends State<ReservationManagementScree
           ),
         ],
       ),
-      floatingActionButton: _isLoading
-          ? FloatingActionButton(
-              onPressed: null,
-              backgroundColor: Colors.grey,
-              child: const CircularProgressIndicator(color: Colors.white),
-            )
-          : null,
+
     );
   }
 }

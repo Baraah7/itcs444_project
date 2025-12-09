@@ -2,11 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/rental_model.dart';
 import 'notification_service.dart';
+import 'equipment_service.dart';
 
 class ReservationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final NotificationService _notificationService = NotificationService();
+  final EquipmentService _equipmentService = EquipmentService();
   
   // Collection references
   CollectionReference get rentalsCollection => _firestore.collection('rentals');
@@ -54,6 +56,12 @@ class ReservationService {
         throw Exception('Maximum rental period is $maxDays days for $itemType');
       }
       
+      // Check available quantity
+      final availableQty = await _equipmentService.getAvailableQuantity(equipmentId);
+      if (quantity > availableQty) {
+        throw Exception('Only $availableQty item(s) available. You requested $quantity.');
+      }
+      
       // Calculate total cost
       final double totalCost = dailyRate * duration * quantity;
       
@@ -78,6 +86,8 @@ class ReservationService {
       
       // Save rental
       await rentalRef.set(rental.toMap());
+      
+      // Don't sync equipment on pending - wait for admin approval
       
       // Send notification to user
       await _notificationService.sendNotification(
@@ -191,13 +201,11 @@ class ReservationService {
   // 4. GET ALL RENTALS (FOR ADMIN)
   Stream<List<Rental>> getAllRentals() {
     return rentalsCollection.snapshots().map((snapshot) {
-      print('getAllRentals: Got ${snapshot.docs.length} documents');
       final rentals = <Rental>[];
       
       for (var doc in snapshot.docs) {
         try {
           final data = doc.data() as Map<String, dynamic>;
-          print('Processing rental: ${doc.id}');
           final rental = Rental.fromMap(data);
           rentals.add(rental);
         } catch (e) {
@@ -205,7 +213,6 @@ class ReservationService {
         }
       }
       
-      print('getAllRentals: Returning ${rentals.length} rentals');
       rentals.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return rentals;
     });
@@ -227,40 +234,34 @@ class ReservationService {
         updateData['adminNotes'] = adminNotes;
       }
       
+      // Get rental data for equipment sync
+      final rentalDoc = await rentalsCollection.doc(rentalId).get();
+      if (!rentalDoc.exists) {
+        throw Exception('Rental not found');
+      }
+      
+      final rentalData = rentalDoc.data() as Map<String, dynamic>;
+      final equipmentId = rentalData['equipmentId'] as String;
+      final quantity = (rentalData['quantity'] ?? 1) as int;
+      
       // If marking as returned, release the equipment quantity
       if (status == 'returned') {
-        final rentalDoc = await rentalsCollection.doc(rentalId).get();
-        if (rentalDoc.exists) {
-          final rentalData = rentalDoc.data() as Map<String, dynamic>;
-          final equipmentId = rentalData['equipmentId'] as String;
-          final quantity = (rentalData['quantity'] ?? 1) as int;
-          
-          // Get current available quantity
-          final equipmentDoc = await equipmentCollection.doc(equipmentId).get();
-          if (equipmentDoc.exists) {
-            final equipmentData = equipmentDoc.data() as Map<String, dynamic>;
-            final currentAvailable = (equipmentData['availableQuantity'] ?? 0) as int;
-            
-            // Add back the returned quantity
-            await equipmentCollection.doc(equipmentId).update({
-              'availableQuantity': currentAvailable + quantity,
-              'updatedAt': FieldValue.serverTimestamp(),
-            });
-          }
-          
-          // Add return date
-          updateData['actualReturnDate'] = DateTime.now().toIso8601String();
-        }
+        // Add return date
+        updateData['actualReturnDate'] = DateTime.now().toIso8601String();
       }
       
       await rentalsCollection.doc(rentalId).update(updateData);
       
+      // Sync equipment status
+      await _equipmentService.syncEquipmentWithRental(
+        equipmentId: equipmentId,
+        rentalStatus: status,
+        quantity: quantity,
+      );
+      
       // Send notification to user
-      final rentalDoc = await rentalsCollection.doc(rentalId).get();
-      if (rentalDoc.exists) {
-        final rentalData = rentalDoc.data() as Map<String, dynamic>;
-        final userId = rentalData['userId'] as String;
-        final equipmentName = rentalData['equipmentName'] as String;
+      final userId = rentalData['userId'] as String;
+      final equipmentName = rentalData['equipmentName'] as String;
         
         String title = '';
         String message = '';
@@ -282,6 +283,10 @@ class ReservationService {
             title = 'Rental Cancelled';
             message = 'Your rental for "$equipmentName" has been cancelled.';
             break;
+          case 'maintenance':
+            title = 'Equipment Under Maintenance';
+            message = 'The equipment "$equipmentName" is now under maintenance.';
+            break;
         }
         
         if (title.isNotEmpty) {
@@ -293,7 +298,6 @@ class ReservationService {
             data: {'rentalId': rentalId},
           );
         }
-      }
       
     } catch (e) {
       throw Exception('Failed to update rental status: $e');
@@ -323,26 +327,21 @@ class ReservationService {
         throw Exception('Cannot cancel rental with status: $status');
       }
       
-      // Release equipment quantity
-      final equipmentId = rentalData['equipmentId'] as String;
-      final quantity = (rentalData['quantity'] ?? 1) as int;
-      
-      final equipmentDoc = await equipmentCollection.doc(equipmentId).get();
-      if (equipmentDoc.exists) {
-        final equipmentData = equipmentDoc.data() as Map<String, dynamic>;
-        final currentAvailable = (equipmentData['availableQuantity'] ?? 0) as int;
-        
-        await equipmentCollection.doc(equipmentId).update({
-          'availableQuantity': currentAvailable + quantity,
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-      }
-      
       // Update rental status
       await rentalsCollection.doc(rentalId).update({
         'status': 'cancelled',
         'updatedAt': DateTime.now().toIso8601String(),
       });
+      
+      // Release equipment quantity
+      final equipmentId = rentalData['equipmentId'] as String;
+      final quantity = (rentalData['quantity'] ?? 1) as int;
+      
+      await _equipmentService.syncEquipmentWithRental(
+        equipmentId: equipmentId,
+        rentalStatus: 'cancelled',
+        quantity: quantity,
+      );
       
     } catch (e) {
       throw Exception('Failed to cancel rental: $e');
