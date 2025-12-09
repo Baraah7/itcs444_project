@@ -1002,30 +1002,105 @@ class _UserDashboardState extends State<UserDashboard> {
 
   // ------------------- HISTORY -------------------
   Widget _buildHistoryBody(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.history_outlined,
-              size: 80, color: const Color(0xFFE8ECEF)),
-          const SizedBox(height: 20),
-          Text(
-            "No rental history",
-            style: const TextStyle(
-                fontSize: 18,
-                color: Color(0xFF475569),
-                fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            "Your past rentals will appear here",
-            style: const TextStyle(
-              color: Color(0xFF64748B),
-              fontSize: 14,
+    final auth = Provider.of<AuthProvider>(context);
+    final userId = auth.currentUser?.docId;
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('rentals')
+          .where('userId', isEqualTo: userId)
+          .where('status', whereIn: ['returned', 'cancelled'])
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(color: Color(0xFF2B6C67)));
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.history_outlined, size: 80, color: const Color(0xFFE8ECEF)),
+                const SizedBox(height: 20),
+                Text(
+                  "No rental history",
+                  style: const TextStyle(
+                      fontSize: 18,
+                      color: Color(0xFF475569),
+                      fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  "Your past rentals will appear here",
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(20),
+          itemCount: snapshot.data!.docs.length,
+          itemBuilder: (context, index) {
+            final doc = snapshot.data!.docs[index];
+            final data = doc.data() as Map<String, dynamic>;
+            final equipmentName = data['equipmentName'] ?? 'Equipment';
+            final status = data['status'] ?? '';
+            final startDate = data['startDate'] != null ? DateTime.parse(data['startDate']) : null;
+            final endDate = data['endDate'] != null ? DateTime.parse(data['endDate']) : null;
+            final totalCost = data['totalCost'] ?? 0.0;
+
+            return Card(
+              margin: const EdgeInsets.only(bottom: 16),
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: status == 'returned' 
+                      ? const Color(0xFF10B981).withOpacity(0.1)
+                      : const Color(0xFFEF4444).withOpacity(0.1),
+                  child: Icon(
+                    status == 'returned' ? Icons.check_circle : Icons.cancel,
+                    color: status == 'returned' ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                  ),
+                ),
+                title: Text(
+                  equipmentName,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (startDate != null && endDate != null)
+                      Text('${startDate.day}/${startDate.month}/${startDate.year} - ${endDate.day}/${endDate.month}/${endDate.year}'),
+                    Text('Total: \$${totalCost.toStringAsFixed(2)}'),
+                  ],
+                ),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: status == 'returned' 
+                        ? const Color(0xFF10B981).withOpacity(0.1)
+                        : const Color(0xFFEF4444).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    status == 'returned' ? 'Returned' : 'Cancelled',
+                    style: TextStyle(
+                      color: status == 'returned' ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

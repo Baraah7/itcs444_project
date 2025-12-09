@@ -183,13 +183,15 @@ class ReservationService {
           final rentals = snapshot.docs
               .map((doc) {
                 try {
-                  return Rental.fromMap(doc.data() as Map<String, dynamic>);
+                  final data = doc.data() as Map<String, dynamic>;
+                  if (data['hiddenFromUser'] == true) return null;
+                  return Rental.fromMap(data);
                 } catch (e) {
                   print('Error parsing rental: $e');
                   return null;
                 }
               })
-              .where((rental) => rental != null && rental.id.isNotEmpty)
+              .where((rental) => rental != null && rental.id.isNotEmpty && rental.status != 'maintenance')
               .cast<Rental>()
               .toList();
           
@@ -284,8 +286,7 @@ class ReservationService {
             message = 'Your rental for "$equipmentName" has been cancelled.';
             break;
           case 'maintenance':
-            title = 'Equipment Under Maintenance';
-            message = 'The equipment "$equipmentName" is now under maintenance.';
+            // No notification sent to user for maintenance
             break;
         }
         
@@ -345,6 +346,37 @@ class ReservationService {
       
     } catch (e) {
       throw Exception('Failed to cancel rental: $e');
+    }
+  }
+  
+  // HIDE RENTAL FROM MY RESERVATIONS (USER)
+  Future<void> deleteRental(String rentalId) async {
+    try {
+      final rentalDoc = await rentalsCollection.doc(rentalId).get();
+      if (!rentalDoc.exists) {
+        throw Exception('Rental not found');
+      }
+      
+      final rentalData = rentalDoc.data() as Map<String, dynamic>;
+      final status = rentalData['status'] as String;
+      final userId = rentalData['userId'] as String;
+      final user = _auth.currentUser;
+      
+      // Check ownership
+      if (user?.uid != userId) {
+        throw Exception('Not authorized to delete this rental');
+      }
+      
+      // Only allow deletion if status is cancelled or returned
+      if (status != 'cancelled' && status != 'returned') {
+        throw Exception('Can only delete cancelled or returned reservations');
+      }
+      
+      // Mark as hidden instead of deleting
+      await rentalsCollection.doc(rentalId).update({'hiddenFromUser': true});
+      
+    } catch (e) {
+      throw Exception('Failed to delete rental: $e');
     }
   }
   

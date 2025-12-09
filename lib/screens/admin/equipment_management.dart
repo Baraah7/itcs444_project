@@ -467,25 +467,27 @@ Widget _buildGridView(List<QueryDocumentSnapshot> equipmentDocs) {
                   );
                 },
                 child: Padding(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(4),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         name,
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                          fontSize: 12,
                         ),
                       ),
-                      const SizedBox(height: 4),
                       Text(
                         type,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 4),
                       StreamBuilder<QuerySnapshot>(
                         stream: FirebaseFirestore.instance
                             .collection('equipment')
@@ -501,28 +503,23 @@ Widget _buildGridView(List<QueryDocumentSnapshot> equipmentDocs) {
                           final availabilityPercent =
                               totalItems > 0 ? (availableItems / totalItems) * 100 : 0.0;
 
-                          return Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
+                          return LayoutBuilder(
+                            builder: (context, constraints) {
+                              return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.inventory, size: 12),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '$availableItems/$totalItems',
-                                        style: const TextStyle(fontSize: 12),
-                                      ),
-                                    ],
+                                  Text(
+                                    '$availableItems/$totalItems',
+                                    style: const TextStyle(fontSize: 9),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 4),
+                                  const SizedBox(height: 2),
                                   Container(
-                                    width: 60,
-                                    height: 6,
+                                    width: constraints.maxWidth,
+                                    height: 3,
                                     decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(3),
+                                      borderRadius: BorderRadius.circular(2),
                                       color: Colors.grey[300],
                                     ),
                                     child: FractionallySizedBox(
@@ -530,16 +527,15 @@ Widget _buildGridView(List<QueryDocumentSnapshot> equipmentDocs) {
                                       widthFactor: availabilityPercent / 100,
                                       child: Container(
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(3),
+                                          borderRadius: BorderRadius.circular(2),
                                           color: _getAvailabilityColor(availabilityPercent),
                                         ),
                                       ),
                                     ),
                                   ),
                                 ],
-                              ),
-                              _buildAvailabilityIcon(availableItems, totalItems),
-                            ],
+                              );
+                            },
                           );
                         },
                       ),
@@ -769,6 +765,16 @@ Widget _buildGridView(List<QueryDocumentSnapshot> equipmentDocs) {
         ),
       ),
       const PopupMenuItem(
+        value: 'maintenance',
+        child: Row(
+          children: [
+            Icon(Icons.build, color: Colors.purple, size: 20),
+            SizedBox(width: 8),
+            Text('Mark for Maintenance', style: TextStyle(color: Colors.purple)),
+          ],
+        ),
+      ),
+      const PopupMenuItem(
         value: 'delete',
         child: Row(
           children: [
@@ -800,9 +806,88 @@ Widget _buildGridView(List<QueryDocumentSnapshot> equipmentDocs) {
           ),
         ),
       );
+    } else if (value == 'maintenance') {
+      await _showMaintenanceDialog(context, equipmentDoc.id, name);
     } else if (value == 'delete') {
       await _showDeleteDialog(context, equipmentDoc.id, name);
     }
+  }
+
+  Future<void> _showMaintenanceDialog(
+    BuildContext context,
+    String equipmentId,
+    String name,
+  ) async {
+    final notesController = TextEditingController();
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Mark for Maintenance'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Mark "$name" as under maintenance?'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: notesController,
+              decoration: const InputDecoration(
+                labelText: 'Maintenance Notes',
+                hintText: 'Enter reason or notes...',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await FirebaseFirestore.instance
+                    .collection('equipment')
+                    .doc(equipmentId)
+                    .update({
+                  'status': 'maintenance',
+                  'availability': false,
+                  'updatedAt': FieldValue.serverTimestamp(),
+                });
+
+                await FirebaseFirestore.instance.collection('maintenance_logs').add({
+                  'equipmentId': equipmentId,
+                  'action': 'started',
+                  'notes': notesController.text,
+                  'timestamp': FieldValue.serverTimestamp(),
+                });
+
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Equipment marked for maintenance'),
+                      backgroundColor: Colors.purple,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e')),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _showDeleteDialog(
