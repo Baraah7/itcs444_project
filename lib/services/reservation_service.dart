@@ -189,7 +189,7 @@ class ReservationService {
                   return null;
                 }
               })
-              .where((rental) => rental != null && rental.id.isNotEmpty)
+              .where((rental) => rental != null && rental.id.isNotEmpty && rental.status != 'maintenance')
               .cast<Rental>()
               .toList();
           
@@ -345,6 +345,37 @@ class ReservationService {
       
     } catch (e) {
       throw Exception('Failed to cancel rental: $e');
+    }
+  }
+  
+  // DELETE RENTAL (USER)
+  Future<void> deleteRental(String rentalId) async {
+    try {
+      final rentalDoc = await rentalsCollection.doc(rentalId).get();
+      if (!rentalDoc.exists) {
+        throw Exception('Rental not found');
+      }
+      
+      final rentalData = rentalDoc.data() as Map<String, dynamic>;
+      final status = rentalData['status'] as String;
+      final userId = rentalData['userId'] as String;
+      final user = _auth.currentUser;
+      
+      // Check ownership
+      if (user?.uid != userId) {
+        throw Exception('Not authorized to delete this rental');
+      }
+      
+      // Only allow deletion if status is cancelled or returned
+      if (status != 'cancelled' && status != 'returned') {
+        throw Exception('Can only delete cancelled or returned reservations');
+      }
+      
+      // Delete rental document
+      await rentalsCollection.doc(rentalId).delete();
+      
+    } catch (e) {
+      throw Exception('Failed to delete rental: $e');
     }
   }
   

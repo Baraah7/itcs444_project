@@ -26,6 +26,7 @@ class NotificationsScreen extends StatelessWidget {
         stream: FirebaseFirestore.instance
             .collection('notifications')
             .where('userId', isEqualTo: userId)
+            .where('isRead', isEqualTo: false)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -169,12 +170,10 @@ class NotificationsScreen extends StatelessWidget {
   }
 
   void _markAsRead(String notificationId, bool isRead) {
-    if (!isRead) {
-      FirebaseFirestore.instance
-          .collection('notifications')
-          .doc(notificationId)
-          .update({'isRead': true});
-    }
+    FirebaseFirestore.instance
+        .collection('notifications')
+        .doc(notificationId)
+        .update({'isRead': true});
   }
 
   void _markAllAsRead(String? userId) {

@@ -467,25 +467,27 @@ Widget _buildGridView(List<QueryDocumentSnapshot> equipmentDocs) {
                   );
                 },
                 child: Padding(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(4),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         name,
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                          fontSize: 12,
                         ),
                       ),
-                      const SizedBox(height: 4),
                       Text(
                         type,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 4),
                       StreamBuilder<QuerySnapshot>(
                         stream: FirebaseFirestore.instance
                             .collection('equipment')
@@ -501,28 +503,23 @@ Widget _buildGridView(List<QueryDocumentSnapshot> equipmentDocs) {
                           final availabilityPercent =
                               totalItems > 0 ? (availableItems / totalItems) * 100 : 0.0;
 
-                          return Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
+                          return LayoutBuilder(
+                            builder: (context, constraints) {
+                              return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.inventory, size: 12),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '$availableItems/$totalItems',
-                                        style: const TextStyle(fontSize: 12),
-                                      ),
-                                    ],
+                                  Text(
+                                    '$availableItems/$totalItems',
+                                    style: const TextStyle(fontSize: 9),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 4),
+                                  const SizedBox(height: 2),
                                   Container(
-                                    width: 60,
-                                    height: 6,
+                                    width: constraints.maxWidth,
+                                    height: 3,
                                     decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(3),
+                                      borderRadius: BorderRadius.circular(2),
                                       color: Colors.grey[300],
                                     ),
                                     child: FractionallySizedBox(
@@ -530,16 +527,15 @@ Widget _buildGridView(List<QueryDocumentSnapshot> equipmentDocs) {
                                       widthFactor: availabilityPercent / 100,
                                       child: Container(
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(3),
+                                          borderRadius: BorderRadius.circular(2),
                                           color: _getAvailabilityColor(availabilityPercent),
                                         ),
                                       ),
                                     ),
                                   ),
                                 ],
-                              ),
-                              _buildAvailabilityIcon(availableItems, totalItems),
-                            ],
+                              );
+                            },
                           );
                         },
                       ),

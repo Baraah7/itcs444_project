@@ -19,6 +19,21 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Reservations'),
+        actions: [
+          StreamBuilder<List<Rental>>(
+            stream: _reservationService.getUserRentals(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const SizedBox();
+              final completedRentals = snapshot.data!.where((r) => r.status == 'cancelled' || r.status == 'returned').toList();
+              if (completedRentals.isEmpty) return const SizedBox();
+              return TextButton.icon(
+                onPressed: () => _deleteAllCompleted(completedRentals),
+                icon: const Icon(Icons.delete_sweep, color: Colors.red),
+                label: const Text('Clear All', style: TextStyle(color: Colors.red)),
+              );
+            },
+          ),
+        ],
       ),
       body: StreamBuilder<List<Rental>>(
         stream: _reservationService.getUserRentals(),
@@ -111,6 +126,12 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
                                 'Cancel',
                                 style: TextStyle(color: Colors.red),
                               ),
+                            ),
+                          if (rental.status == 'cancelled' || rental.status == 'returned')
+                            IconButton(
+                              onPressed: () => _deleteRental(rental.id),
+                              icon: const Icon(Icons.delete_outline, color: Colors.red),
+                              tooltip: 'Remove',
                             ),
                         ],
                       ),
@@ -419,6 +440,96 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
             backgroundColor: Colors.green,
           ),
         );
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _deleteRental(String rentalId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove Reservation'),
+        content: const Text('Are you sure you want to remove this reservation from your list?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Yes, Remove'),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirmed == true) {
+      try {
+        await _reservationService.deleteRental(rentalId);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Reservation removed successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _deleteAllCompleted(List<Rental> rentals) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear All Completed'),
+        content: Text('Remove all ${rentals.length} completed reservations?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Clear All'),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirmed == true) {
+      try {
+        for (final rental in rentals) {
+          await _reservationService.deleteRental(rental.id);
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${rentals.length} reservations removed'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
