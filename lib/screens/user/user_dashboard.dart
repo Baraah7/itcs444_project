@@ -791,7 +791,7 @@ class _UserDashboardState extends State<UserDashboard> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
-                childAspectRatio: 0.78,
+                childAspectRatio: 0.65,
               ),
               itemBuilder: (context, index) {
                 final doc = equipmentDocs[index];
