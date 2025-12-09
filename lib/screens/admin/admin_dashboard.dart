@@ -10,6 +10,7 @@ import 'add_edit_equipment.dart';
 import '../admin/reservation_management.dart';
 import '../shared/notifications_screen.dart';
 import '../debug_rentals_screen.dart';
+import 'users_managment.dart';
 
 
 class AdminDashboard extends StatefulWidget {
@@ -887,27 +888,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Widget _buildUsersBody(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.people,
-            size: 80,
-            color: AppColors.neutralGray.withOpacity(0.3),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            "User Management",
-            style: TextStyle(
-              fontSize: 24,
-              color: AppColors.neutralGray,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
+    return const UsersManagementScreen();
   }
 
   // ============ NAVIGATION METHODS ============

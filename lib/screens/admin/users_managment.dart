@@ -78,7 +78,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                 user.firstName.toLowerCase().contains(_searchQuery) ||
                 user.lastName.toLowerCase().contains(_searchQuery) ||
                 user.email.toLowerCase().contains(_searchQuery) ||
-                user.cpr.toLowerCase().contains(_searchQuery);
+                user.cpr.toString().toLowerCase().contains(_searchQuery);
 
             final matchesRole = _roleFilter == 'all' ||
                 user.role.toLowerCase() == _roleFilter;
@@ -117,7 +117,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
         leading: CircleAvatar(
           backgroundColor: user.role == 'admin' ? Colors.red : Colors.blue,
           child: Text(
-            user.firstName[0].toUpperCase(),
+            user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : '?',
             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),

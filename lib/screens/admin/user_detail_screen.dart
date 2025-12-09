@@ -65,7 +65,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> with SingleTickerPr
             radius: 40,
             backgroundColor: widget.user.role == 'admin' ? Colors.red : Colors.blue,
             child: Text(
-              widget.user.firstName[0].toUpperCase(),
+              widget.user.firstName.isNotEmpty ? widget.user.firstName[0].toUpperCase() : '?',
               style: const TextStyle(fontSize: 32, color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ),
@@ -131,11 +131,14 @@ class _UserDetailScreenState extends State<UserDetailScreen> with SingleTickerPr
       stream: FirebaseFirestore.instance
           .collection('rentals')
           .where('userId', isEqualTo: widget.user.docId)
-          .orderBy('createdAt', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -146,8 +149,12 @@ class _UserDetailScreenState extends State<UserDetailScreen> with SingleTickerPr
             .map((doc) => Rental.fromMap(doc.data() as Map<String, dynamic>))
             .toList();
 
-        final active = rentals.where((r) => r.status == 'approved' || r.status == 'checked_out').toList();
+        final active = rentals.where((r) => r.status == 'pending' || r.status == 'approved' || r.status == 'checked_out').toList();
         final history = rentals.where((r) => r.status == 'returned' || r.status == 'cancelled').toList();
+
+        if (active.isEmpty && history.isEmpty) {
+          return const Center(child: Text('No reservations found'));
+        }
 
         return ListView(
           padding: const EdgeInsets.all(16),
@@ -174,11 +181,14 @@ class _UserDetailScreenState extends State<UserDetailScreen> with SingleTickerPr
       stream: FirebaseFirestore.instance
           .collection('donations')
           .where('donorID', isEqualTo: widget.user.docId)
-          .orderBy('submissionDate', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -214,7 +224,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> with SingleTickerPr
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, dynamic value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -224,7 +234,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> with SingleTickerPr
             width: 140,
             child: Text(label, style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w500)),
           ),
-          Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w500))),
+          Expanded(child: Text(value.toString(), style: const TextStyle(fontWeight: FontWeight.w500))),
         ],
       ),
     );
