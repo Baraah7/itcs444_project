@@ -1,6 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' hide Settings;
 import 'package:flutter/material.dart';
 import 'package:itcs444_project/screens/admin/donation_management.dart';
+import 'package:itcs444_project/screens/admin/users_managment.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/theme.dart';
@@ -10,6 +11,7 @@ import 'add_edit_equipment.dart';
 import '../admin/reservation_management.dart';
 import '../shared/notifications_screen.dart';
 import '../debug_rentals_screen.dart';
+import '../admin/settings.dart';
 
 
 class AdminDashboard extends StatefulWidget {
@@ -22,24 +24,55 @@ class AdminDashboard extends StatefulWidget {
 class _AdminDashboardState extends State<AdminDashboard> {
   int _selectedIndex = 0;
 
+  // Function to get total items count from Firestore
   Future<int> getTotalItemsCount() async {
   int total = 0;
 
-  final equipmentSnapshot =
+  try{
+    final equipmentSnapshot =
       await FirebaseFirestore.instance.collection('equipment').get();
+    for (var equipmentDoc in equipmentSnapshot.docs) {
+      final itemsSnapshot = await equipmentDoc.reference
+          .collection('Items')
+          .get();
 
-  for (var equipmentDoc in equipmentSnapshot.docs) {
-    final itemsSnapshot = await equipmentDoc.reference
-        .collection('Items') // ✅ اسم السبكوليكشن الصحيح
-        .get();
-
-    total += itemsSnapshot.docs.length;
+      total += itemsSnapshot.docs.length;
+    }
+  } catch (e) {
+    print('Error fetching total items count: $e');
   }
 
     return total;
   }
 
-  
+  // Function to get pending reservations count from Firestore
+  Future<int> getPendingReservationsCount() async {
+    try {
+      final reservationSnapshot = await FirebaseFirestore.instance
+          .collection('reservations')
+          .where('status', isEqualTo: 'pending')
+          .get();
+      return reservationSnapshot.docs.length;
+    } catch (e) {
+      print('Error fetching pending reservations count: $e');
+      return 0;
+    }
+  }
+
+  // Function to get pending donations count from Firestore
+  Future<int> getPendingDonationsCount() async {
+    try {
+      final donationSnapshot = await FirebaseFirestore.instance
+          .collection('donations')
+          .where('status', isEqualTo: 'pending')
+          .get();
+      return donationSnapshot.docs.length;
+    } catch (e) {
+      print('Error fetching pending donations count: $e');
+      return 0;
+    }
+  }
+
   // Sidebar menu items
   final List<SidebarItem> _sidebarItems = [
     SidebarItem(icon: Icons.dashboard, label: 'Dashboard', index: 0),
@@ -59,12 +92,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          _getTitleForIndex(_selectedIndex),
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
         actions: [
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
@@ -78,7 +105,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.notifications_outlined),
-                    onPressed: () => _navigateToNotifications(),
+                    onPressed: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                                     ),
                   ),
                   if (unreadCount > 0)
                     Positioned(
@@ -109,7 +139,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
               );
             },
           ),
-          _buildProfileButton(context, admin),
+          IconButton(
+                      icon: const Icon(Icons.settings_outlined, color: Color(0xFF2B6C67)),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => Settings()),
+                      ),
+                   ),
         ],
       ),
       drawer: _buildSidebarDrawer(context, admin, auth),
@@ -139,41 +175,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
       case 3: return DonationList();
       case 4: return _buildMaintenanceBody(context);
       case 5: return _buildReportsBody(context);
-      case 6: return _buildUsersBody(context);
+      case 6: return UsersManagement();
       case 7: return ProfileScreen();
       default: return _buildDashboardBody(context, auth, admin);
     }
-  }
-
-  Widget _buildProfileButton(BuildContext context, dynamic admin) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8.0),
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedIndex = 7),
-        child: CircleAvatar(
-          radius: 18,
-          backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
-          backgroundImage: admin?.profileImageUrl != null 
-              ? NetworkImage(admin.profileImageUrl) 
-              : null,
-          child: admin?.profileImageUrl == null
-              ? (admin?.firstName != null
-                  ? Text(
-                      admin.firstName[0].toUpperCase(),
-                      style: const TextStyle(
-                        color: AppColors.primaryBlue,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    )
-                  : const Icon(
-                      Icons.admin_panel_settings,
-                      size: 18,
-                      color: AppColors.primaryBlue,
-                    ))
-              : null,
-        ),
-      ),
-    );
   }
 
   Widget _buildSidebarDrawer(BuildContext context, dynamic admin, AuthProvider auth) {
@@ -187,13 +192,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
           Container(
             height: 230,
             width: double.infinity,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
                 colors: [
-                  AppColors.primaryBlue,
-                  AppColors.primaryBlue.withOpacity(0.8),
+                  Color(0xFF1A4A47),
+                  Color(0xFF2B6C67),
                 ],
               ),
             ),
@@ -205,7 +210,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 children: [
                   CircleAvatar(
                     radius: 36,
-                    backgroundColor: Colors.white.withOpacity(0.2),
+                    backgroundColor: Colors.white.withOpacity(0.15),
                     child: const Icon(
                       Icons.admin_panel_settings,
                       size: 48,
@@ -219,6 +224,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
+                      letterSpacing: 0.2,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -226,14 +232,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     admin?.email ?? 'Admin Account',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withOpacity(0.85),
                     ),
                   ),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Text(
@@ -257,18 +263,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
               padding: EdgeInsets.zero,
               children: [
                 ..._sidebarItems.map((item) => _buildSidebarMenuItem(item)),
-                const Divider(height: 20),
+                const Divider(height: 20, thickness: 0.5, color: Color(0xFFE8ECEF)),
                 
                 // Logout Button
                 ListTile(
-                  leading: Icon(
+                  leading: const Icon(
                     Icons.logout,
-                    color: AppColors.error,
+                    color: Color(0xFFE53935),
                   ),
                   title: Text(
                     'Logout',
                     style: TextStyle(
-                      color: AppColors.error,
+                      color: const Color(0xFFE53935),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -291,13 +297,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return ListTile(
       leading: Icon(
         item.icon,
-        color: _selectedIndex == item.index ? AppColors.primaryBlue : AppColors.neutralGray,
+        color: _selectedIndex == item.index ? const Color(0xFF2B6C67) : const Color(0xFF64748B),
       ),
       title: Text(
         item.label,
         style: TextStyle(
-          fontWeight: _selectedIndex == item.index ? FontWeight.w600 : FontWeight.normal,
-          color: _selectedIndex == item.index ? AppColors.primaryDark : AppColors.primaryDark,
+          fontWeight: _selectedIndex == item.index ? FontWeight.w600 : FontWeight.w500,
+          color: _selectedIndex == item.index ? const Color(0xFF1E293B) : const Color(0xFF475569),
         ),
       ),
       trailing: _selectedIndex == item.index
@@ -305,16 +311,20 @@ class _AdminDashboardState extends State<AdminDashboard> {
               width: 4,
               height: 24,
               decoration: BoxDecoration(
-                color: AppColors.primaryBlue,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF2B6C67), Color(0xFF1A4A47)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
                 borderRadius: BorderRadius.circular(2),
               ),
             )
           : null,
       selected: _selectedIndex == item.index,
-      selectedTileColor: AppColors.primaryBlue.withOpacity(0.1),
+      selectedTileColor: const Color(0xFFF0F9F8),
       onTap: () {
         setState(() => _selectedIndex = item.index);
-        Navigator.pop(context); // Close drawer
+        Navigator.pop(context);
       },
     );
   }
@@ -332,9 +342,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
             
             const SizedBox(height: 24),
 
-            // Quick Stats
+            // Admin Stats
             _buildAdminStats(context),
-            
+
             const SizedBox(height: 28),
 
             // Quick Actions Grid
@@ -343,139 +353,128 @@ class _AdminDashboardState extends State<AdminDashboard> {
             const SizedBox(height: 28),
 
             // Recent Activity
-            _buildRecentActivity(context),
+            _buildRecentActivity(context, title: '', status: ''),
             
             const SizedBox(height: 20),
 
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 15,
-              mainAxisSpacing: 15,
+            // GridView.count(
+            //   shrinkWrap: true,
+            //   physics: const NeverScrollableScrollPhysics(),
+            //   crossAxisCount: 2,
+            //   crossAxisSpacing: 15,
+            //   mainAxisSpacing: 15,
 
-              children: [
-                _dashboardTile(
-                  icon: Icons.inventory,
-                  color: Colors.blue,
-                  label: "Equipment",
-                  onTap: () => Navigator.pushNamed(context, '/equipment-management'),
-                ),
+            //   children: [
+            //     _dashboardTile(
+            //       icon: Icons.inventory,
+            //       color: Colors.blue,
+            //       label: "Equipment",
+            //       onTap: () => Navigator.pushNamed(context, '/equipment-management'),
+            //     ),
 
-                _dashboardTile(
-                  icon: Icons.event_available,
-                  color: Colors.green,
-                  label: "Reservations",
-                  // onTap: () => Navigator.pushNamed(context, '/reservation-management'),
-                  onTap: () {
-                    Navigator.push(
-                      context, 
-                      MaterialPageRoute(builder: (_)=> const ReservationManagementScreen()));
-                  },
-                ),
+            //     _dashboardTile(
+            //       icon: Icons.event_available,
+            //       color: Colors.green,
+            //       label: "Reservations",
+            //       // onTap: () => Navigator.pushNamed(context, '/reservation-management'),
+            //       onTap: () {
+            //         Navigator.push(
+            //           context, 
+            //           MaterialPageRoute(builder: (_)=> const ReservationManagementScreen()));
+            //       },
+            //     ),
 
-                _dashboardTile(
-                  icon: Icons.volunteer_activism,
-                  color: Colors.orange,
-                  label: "Donations",
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DonationList(),
-                    ),
-                  ),
-                ),
+            //     _dashboardTile(
+            //       icon: Icons.volunteer_activism,
+            //       color: Colors.orange,
+            //       label: "Donations",
+            //       onTap: () => Navigator.push(
+            //         context,
+            //         MaterialPageRoute(
+            //           builder: (context) => DonationList(),
+            //         ),
+            //       ),
+            //     ),
 
-                _dashboardTile(
-                  icon: Icons.build,
-                  color: Colors.red,
-                  label: "Maintenance",
-                  onTap: () => Navigator.pushNamed(context, '/maintenance-management'),
-                ),
+            //     _dashboardTile(
+            //       icon: Icons.build,
+            //       color: Colors.red,
+            //       label: "Maintenance",
+            //       onTap: () => Navigator.pushNamed(context, '/maintenance-management'),
+            //     ),
 
-                _dashboardTile(
-                  icon: Icons.bar_chart,
-                  color: Colors.purple,
-                  label: "Reports",
-                  onTap: () => Navigator.pushNamed(context, '/admin-reports'),
-                ),
+            //     _dashboardTile(
+            //       icon: Icons.bar_chart,
+            //       color: Colors.purple,
+            //       label: "Reports",
+            //       onTap: () => Navigator.pushNamed(context, '/admin-reports'),
+            //     ),
 
-                _dashboardTile(
-                  icon: Icons.notifications,
-                  color: Colors.teal,
-                  label: "Notifications",
-                  onTap: () => Navigator.pushNamed(context, '/notifications'),
-                ),
+            //     _dashboardTile(
+            //       icon: Icons.notifications,
+            //       color: Colors.teal,
+            //       label: "Notifications",
+            //       onTap: () => Navigator.pushNamed(context, '/notifications'),
+            //     ),
 
-                _dashboardTile(
-                  icon: Icons.bug_report,
-                  color: Colors.pink,
-                  label: "Debug Rentals",
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const DebugRentalsScreen()),
-                  ),
-                ),
-              ],
-            ),
+            //     _dashboardTile(
+            //       icon: Icons.bug_report,
+            //       color: Colors.pink,
+            //       label: "Debug Rentals",
+            //       onTap: () => Navigator.push(
+            //         context,
+            //         MaterialPageRoute(builder: (_) => const DebugRentalsScreen()),
+            //       ),
+            //     ),
+            //   ],
+            // ),
 
             const SizedBox(height: 30),
-
-            // -------------------------------------------
-            // ADMIN INFO CARD
-            // -------------------------------------------
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _infoRow("Email", admin?.email),
-                    _infoRow("Username", admin?.username),
-                    _infoRow("Phone Number", admin?.phoneNumber.toString()),
-                    _infoRow("CPR", admin?.cpr.toString()),
-                    _infoRow("Contact Preference", admin?.contactPref),
-                  ],
-                ),
-              ),
-            ),
-
           ],
         ),
       ),
     );
   }
 
+  // ================ WELCOME BANNER ================
   Widget _buildWelcomeBanner(dynamic admin) {
+    final firstName = admin?.firstName ?? admin?.name ?? 'Admin';
+    final greeting = _greetingText();
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.primaryBlue,
         borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
           colors: [
-            AppColors.primaryDark,
-            AppColors.primaryBlue.withOpacity(0.9),
+            Color.fromARGB(255, 56, 146, 137),
+            Color.fromARGB(255, 122, 201, 194),
           ],
         ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2B6C67).withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF2B6C67), Color(0xFF1A4A47)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.admin_panel_settings,
-              size: 40,
-              color: Colors.white,
-            ),
+            child: const Icon(Icons.admin_panel_settings, size: 28, color: Colors.white),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -483,19 +482,21 @@ class _AdminDashboardState extends State<AdminDashboard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Welcome, Admin ${admin?.firstName ?? ''}!",
+                  "$greeting, $firstName!",
                   style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: Color.fromARGB(255, 240, 249, 247),
+                    letterSpacing: -0.2,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   "Manage equipment, users, and reservations",
                   style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 16,
+                    color: const Color.fromARGB(255, 233, 248, 246),
+                    height: 1.4,
                   ),
                 ),
               ],
@@ -505,7 +506,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ),
     );
   }
-  
+
+  String _greetingText() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+  }
+
+  // ============ ADMIN STATS ============
   Widget _buildAdminStats(BuildContext context) {
     return Row(
       children: [
@@ -515,53 +524,70 @@ class _AdminDashboardState extends State<AdminDashboard> {
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
                 return _statCard(
-                  context,
                   icon: Icons.inventory,
                   value: "...",
-                  label: "Total Items",
-                  color: const Color.fromARGB(255, 0, 200, 183),
+                  label: "Total                 Items",
+                  color: const Color(0xFF2B6C67),
                 );
-             }
-
-           return _statCard(
-              context,
-              icon: Icons.inventory,
-              value: snapshot.data.toString(),
-              label: "Total Items",
-              color: const Color.fromARGB(255, 0, 200, 183),
-            );
-          },
-        ),
-      ),
-
-      const SizedBox(width: 12),
-
-        Expanded(
-          child: _statCard(
-            context,
-            icon: Icons.event_available,
-            value: "38",
-            label: "Active Reservations",
-            color: AppColors.success,
+              }
+              return _statCard(
+                icon: Icons.inventory,
+                value: snapshot.data.toString(),
+                label: "Total                 Items",
+                color: const Color(0xFF2B6C67),
+              );
+            },
           ),
         ),
-
         const SizedBox(width: 12),
-
         Expanded(
-          child: _statCard(
-            context,
-            icon: Icons.people,
-            value: "127",
-            label: "Total Users",
-            color: AppColors.warning,
+          child: FutureBuilder<int>(
+            future: getPendingReservationsCount(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return _statCard(
+                  icon: Icons.event_available,
+                  value: "...",
+                  label: "Pending Reservations",
+                  color: const Color(0xFFF59E0B),
+                );
+              }
+              return _statCard(
+                icon: Icons.event_available,
+                value: snapshot.data.toString(),
+                label: "Pending Reservations",
+                color: const Color(0xFFF59E0B),
+              );
+            },
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: FutureBuilder<int>(
+            future: getPendingDonationsCount(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return _statCard(
+                  icon: Icons.volunteer_activism,
+                  value: "...",
+                  label: "Pending Donations",
+                  color: const Color(0xFFF59E0B),
+                );
+              }
+              return _statCard(
+                icon: Icons.volunteer_activism,
+                value: snapshot.data.toString(),
+                label: "Pending Donations",
+                color: const Color(0xFFF59E0B),
+              );
+            },
           ),
         ),
       ],
     );
   }
 
-  Widget _statCard(BuildContext context, {
+  Widget _statCard({
     required IconData icon,
     required String value,
     required String label,
@@ -572,11 +598,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFE8ECEF),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF1A4A47).withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -598,265 +628,231 @@ class _AdminDashboardState extends State<AdminDashboard> {
           const SizedBox(height: 12),
           Text(
             value,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            style: const TextStyle(
+              fontSize: 24,
               fontWeight: FontWeight.w700,
-              color: AppColors.primaryDark,
+              color: Color(0xFF1E293B),
             ),
           ),
           Text(
             label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.neutralGray,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF64748B),
             ),
           ),
         ],
       ),
     );
   }
-
+ 
+  // ============ QUICK ACTIONS ============
   Widget _buildQuickActions(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              "Quick Actions",
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+        Text(
+          "Quick Actions",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF1E293B),
+            letterSpacing: -0.3,
+          ),
         ),
-        const SizedBox(height: 16),
-        
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.2,
-          children: [
-            _actionCard(
-              context,
-              icon: Icons.add_circle,
-              label: "Add Equipment",
-              color: AppColors.success,
-              onTap: () => _navigateToAddEquipment(),
-            ),
-            _actionCard(
-              context,
-              icon: Icons.person_add,
-              label: "Add User",
-              color: AppColors.info,
-              onTap: () => _navigateToAddUser(),
-            ),
-            _actionCard(
-              context,
-              icon: Icons.bar_chart,
-              label: "View Reports",
-              color: AppColors.warning,
-              onTap: () => setState(() => _selectedIndex = 5),
-            ),
-            _actionCard(
-              context,
-              icon: Icons.notifications_active,
-              label: "Send Alert",
-              color: const Color.fromARGB(255, 255, 67, 117),
-              onTap: () => _sendAlert(),
-            ),
-          ],
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 110,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              _quickActionCard(
+                title: "Add Equipment",
+                subtitle: "Add new equipment to inventory",
+                icon: Icons.add_circle_outline,
+                onTap: () => _navigateToAddEquipment(),
+              ),
+              const SizedBox(width: 12),
+              _quickActionCard(
+                title: "View Reports",
+                subtitle: "Analytics and insights",
+                icon: Icons.bar_chart_outlined,
+                onTap: () => setState(() => _selectedIndex = 5),
+              ),
+              const SizedBox(width: 12),
+              _quickActionCard(
+                title: "Manage Users",
+                subtitle: "View and manage users",
+                icon: Icons.people_outline,
+                onTap: () => setState(() => _selectedIndex = 6),
+              ),
+              const SizedBox(width: 12),
+              _quickActionCard(
+                title: "Send Alert",
+                subtitle: "Send notification to users",
+                icon: Icons.notifications_active_outlined,
+                onTap: () => _sendAlert(),
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _actionCard(BuildContext context, {
+  Widget _quickActionCard({
+    required String title,
+    required String subtitle,
     required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
+    required Function() onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Card(
-        color: Colors.white,
-        elevation: 2,
-        shape: RoundedRectangleBorder(
+      child: Container(
+        width: 220,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                  color: AppColors.primaryDark,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF1A4A47).withOpacity(0.06),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+          border: Border.all(
+            color: const Color(0xFFF1F5F9),
+            width: 1,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildRecentActivity(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              "Recent Activity",
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
+            Container(
+              height: 48,
+              width: 48,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF2B6C67), Color(0xFF1A4A47)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
               ),
+              child: Icon(icon, color: Colors.white, size: 22),
             ),
-            TextButton(
-              onPressed: () => setState(() => _selectedIndex = 2),
-              child: const Row(
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "View All",
-                    style: TextStyle(
-                      color: AppColors.primaryBlue,
-                      fontWeight: FontWeight.w600,
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      color: Color(0xFF1E293B),
                     ),
                   ),
-                  SizedBox(width: 4),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 14,
-                    color: AppColors.primaryBlue,
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF64748B),
+                      height: 1.4,
+                    ),
                   ),
                 ],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        
-        Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+      ),
+    );
+  }
+
+  Widget _buildRecentActivity(BuildContext context, {required String title, required String status, DateTime? date}) {
+    Color badgeColor;
+    String badgeText;
+    
+    if (status.toLowerCase() == 'approved' || status.toLowerCase() == 'completed') {
+      badgeColor = const Color(0xFF10B981);
+      badgeText = 'Approved';
+    } else if (status.toLowerCase() == 'pending') {
+      badgeColor = const Color(0xFFF59E0B);
+      badgeText = 'Pending';
+    } else {
+      badgeColor = const Color(0xFFEF4444);
+      badgeText = 'Declined';
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0F9F8),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.event_note,
+              color: const Color(0xFF2B6C67),
+              size: 20,
+            ),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
+          const SizedBox(width: 12),
+          Expanded(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _activityItem(
-                  icon: Icons.event_available,
-                  title: "New Reservation",
-                  subtitle: "Wheelchair #A102 rented",
-                  time: "2 hours ago",
-                  color: AppColors.success,
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: Color(0xFF1E293B),
+                  ),
                 ),
-                const Divider(),
-                _activityItem(
-                  icon: Icons.person_add,
-                  title: "New User Registered",
-                  subtitle: "John Doe joined the platform",
-                  time: "4 hours ago",
-                  color: AppColors.info,
-                ),
-                const Divider(),
-                _activityItem(
-                  icon: Icons.build,
-                  title: "Maintenance Request",
-                  subtitle: "Hospital bed #B205 needs service",
-                  time: "1 day ago",
-                  color: AppColors.warning,
+                const SizedBox(height: 4),
+                Text(
+                  date != null ? "${date.day}/${date.month}/${date.year}" : "",
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF64748B),
+                  ),
                 ),
               ],
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _activityItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required String time,
-    required Color color,
-  }) {
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, color: color, size: 20),
-      ),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontWeight: FontWeight.w600,
-          color: AppColors.primaryDark,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: TextStyle(
-          color: AppColors.neutralGray,
-        ),
-      ),
-      trailing: Text(
-        time,
-        style: TextStyle(
-          fontSize: 12,
-          color: AppColors.neutralGray,
-        ),
-      ),
-      contentPadding: EdgeInsets.zero,
-    );
-  }
-
-  Widget _buildMaintenanceBody(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.build,
-            size: 80,
-            color: AppColors.neutralGray.withOpacity(0.3),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            "Maintenance Management",
-            style: TextStyle(
-              fontSize: 24,
-              color: AppColors.neutralGray,
-              fontWeight: FontWeight.w600,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              color: badgeColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: badgeColor.withOpacity(0.2)),
             ),
-          ),
+            child: Text(
+              badgeText,
+              style: TextStyle(
+                color: badgeColor,
+                fontWeight: FontWeight.w700,
+                fontSize: 11,
+                letterSpacing: 0.3,
+              ),
+            ),
+          )
         ],
       ),
     );
@@ -879,6 +875,38 @@ class _AdminDashboardState extends State<AdminDashboard> {
               fontSize: 24,
               color: AppColors.neutralGray,
               fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+    Widget _buildMaintenanceBody(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.build,
+            size: 80,
+            color: const Color(0xFFE8ECEF),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            "Maintenance Management",
+            style: TextStyle(
+              fontSize: 18,
+              color: Color(0xFF475569),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            "Manage equipment maintenance and repairs",
+            style: TextStyle(
+              color: Color(0xFF64748B),
+              fontSize: 14,
             ),
           ),
         ],
@@ -911,22 +939,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   // ============ NAVIGATION METHODS ============
-  void _navigateToNotifications() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const NotificationsScreen()),
-    );
-  }
 
   void _navigateToAddEquipment() {
-    // Implement add equipment navigation
-   Navigator.push(
+    Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const AddEditEquipmentPage(),
-      ),
+      MaterialPageRoute(builder: (_) => AddEditEquipmentPage()),
     );
-    
   }
 
   void _navigateToAddUser() {
