@@ -59,24 +59,11 @@ class _UserDashboardState extends State<UserDashboard> {
                MaterialPageRoute(builder: (context) => Settings()),
              ),
            ),
-          _buildProfileButton(context, user),
         ],
       ),
       drawer: _buildSidebarDrawer(context, user, auth),
       body: _getBodyForIndex(_selectedIndex, context, auth, user),
     );
-  }
-
-  String _getTitleForIndex(int index) {
-    switch (index) {
-      case 0: return 'Care Center';
-      case 1: return 'Equipment';
-      case 2: return 'Reservations';
-      case 3: return 'Donations';
-      case 4: return 'History';
-      case 5: return 'Settings';
-      default: return 'Dashboard';
-    }
   }
 
   Widget _getBodyForIndex(int index, BuildContext context, AuthProvider auth, dynamic user) {
@@ -89,32 +76,6 @@ class _UserDashboardState extends State<UserDashboard> {
       case 5: return Settings();
       default: return _buildDashboardBody(context, auth, user);
     }
-  }
-
-  Widget _buildProfileButton(BuildContext context, dynamic user) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8.0),
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedIndex = 5),
-        child: CircleAvatar(
-          radius: 18,
-          backgroundColor: const Color(0xFFE8F4F3),
-          backgroundImage:
-              user?.profileImageUrl != null ? NetworkImage(user.profileImageUrl) : null,
-          child: user?.profileImageUrl == null
-              ? (user?.firstName != null
-                  ? Text(
-                      user.firstName[0].toUpperCase(),
-                      style: const TextStyle(
-                        color: Color(0xFF2B6C67),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    )
-                  : const Icon(Icons.person, size: 18, color: Color(0xFF2B6C67)))
-              : null,
-        ),
-      ),
-    );
   }
 
   Widget _buildSidebarDrawer(BuildContext context, dynamic user, AuthProvider auth) {
