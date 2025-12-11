@@ -234,11 +234,11 @@ class EquipmentDetailPage extends StatelessWidget {
                     // Show snackbar notification when equipment is unavailable
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Row(
+                        content: const Row(
                           children: [
-                            const Icon(Icons.error_outline, color: Colors.white, size: 20),
-                            const SizedBox(width: 12),
-                            const Expanded(
+                            Icon(Icons.error_outline, color: Colors.white, size: 20),
+                            SizedBox(width: 12),
+                            Expanded(
                               child: Text('This equipment is currently unavailable'),
                             ),
                           ],

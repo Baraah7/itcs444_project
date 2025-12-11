@@ -5,7 +5,7 @@ import '../services/notification_service.dart';
 class NotificationProvider with ChangeNotifier {
   final NotificationService _service = NotificationService();
   List<NotificationModel> _notifications = [];
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   List<NotificationModel> get notifications => _notifications;
   bool get isLoading => _isLoading;

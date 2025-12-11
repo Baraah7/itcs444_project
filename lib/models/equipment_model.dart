@@ -231,7 +231,7 @@ class Equipment {
     int? availableQuantity,
   }) {
     return Equipment(
-      id: this.id,
+      id: id,
       name: name ?? this.name,
       category: category ?? this.category,
       type: type ?? this.type,
@@ -244,7 +244,7 @@ class Equipment {
       tags: tags ?? this.tags,
       imageUrl: imageUrl ?? this.imageUrl,
       status: status ?? this.status,
-      createdAt: this.createdAt,
+      createdAt: createdAt,
       updatedAt: DateTime.now(), // This will set current time
       maxRentalDays: maxRentalDays ?? this.maxRentalDays,
       lateFeePerDay: lateFeePerDay ?? this.lateFeePerDay,

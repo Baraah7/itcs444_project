@@ -156,21 +156,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: ListView(
                       padding: EdgeInsets.zero,
                       children: [
-                        Text(
+                        const Text(
                           "Personal Information",
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
-                            color: const Color(0xFF1E293B),
+                            color: Color(0xFF1E293B),
                             letterSpacing: -0.3,
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text(
+                        const Text(
                           "Fill in your details below",
                           style: TextStyle(
                             fontSize: 14,
-                            color: const Color(0xFF64748B),
+                            color: Color(0xFF64748B),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -263,29 +263,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               value!.isEmpty ? "Username required" : null,
                         ),
                         const SizedBox(height: 24),
-                        Divider(
-                          color: const Color(0xFFE8ECEF),
+                        const Divider(
+                          color: Color(0xFFE8ECEF),
                           thickness: 1,
                           height: 1,
                         ),
                         const SizedBox(height: 24),
 
                         // ---------- ACCOUNT SETTINGS ----------
-                        Text(
+                        const Text(
                           "Account Settings",
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
-                            color: const Color(0xFF1E293B),
+                            color: Color(0xFF1E293B),
                             letterSpacing: -0.3,
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text(
+                        const Text(
                           "Configure your account preferences",
                           style: TextStyle(
                             fontSize: 14,
-                            color: const Color(0xFF64748B),
+                            color: Color(0xFF64748B),
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -294,12 +294,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            const Text(
                               "Preferred Contact",
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF475569),
+                                color: Color(0xFF475569),
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -312,15 +312,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                               ),
                               child: DropdownButtonFormField<String>(
-                                value: selectedContactPref,
+                                initialValue: selectedContactPref,
                                 isExpanded: true,
-                                decoration: InputDecoration(
-                                  contentPadding: const EdgeInsets.symmetric(
+                                decoration: const InputDecoration(
+                                  contentPadding: EdgeInsets.symmetric(
                                     horizontal: 16,
                                     vertical: 8,
                                   ),
                                   border: InputBorder.none,
-                                  prefixIcon: const Icon(
+                                  prefixIcon: Icon(
                                     Icons.settings_phone,
                                     color: Color(0xFF64748B),
                                   ),
@@ -461,7 +461,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       color: Colors.white,
                                     ),
                                   )
-                                : Text(
+                                : const Text(
                                     "Create Account",
                                     style: TextStyle(
                                       fontSize: 16,
@@ -479,18 +479,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           child: TextButton(
                             onPressed: () => Navigator.pop(context),
                             child: RichText(
-                              text: TextSpan(
+                              text: const TextSpan(
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: const Color(0xFF64748B),
+                                  color: Color(0xFF64748B),
                                 ),
                                 children: [
-                                  const TextSpan(text: "Already have an account? "),
+                                  TextSpan(text: "Already have an account? "),
                                   TextSpan(
                                     text: "Login",
                                     style: TextStyle(
                                       fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF2B6C67),
+                                      color: Color(0xFF2B6C67),
                                     ),
                                   ),
                                 ],

@@ -8,7 +8,7 @@ import '../../models/donation_model.dart';
 class UserDetailScreen extends StatefulWidget {
   final AppUser user;
 
-  const UserDetailScreen({Key? key, required this.user}) : super(key: key);
+  const UserDetailScreen({super.key, required this.user});
 
   @override
   State<UserDetailScreen> createState() => _UserDetailScreenState();
@@ -419,7 +419,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> with SingleTickerPr
 
     final activeRentals = rentalsSnapshot.docs
         .where((doc) {
-          final status = (doc.data() as Map<String, dynamic>)['status'];
+          final status = (doc.data())['status'];
           return status == 'approved' || status == 'checked_out';
         })
         .length;

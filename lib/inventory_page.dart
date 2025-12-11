@@ -317,7 +317,7 @@ class _InventoryPageState extends State<InventoryPage> {
       child: TextField(
         controller: c,
         keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-        decoration: InputDecoration(labelText: label, border: OutlineInputBorder()),
+        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
       ),
     );
   }

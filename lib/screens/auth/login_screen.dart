@@ -128,21 +128,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         "Welcome Back",
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1E293B),
+                          color: Color(0xFF1E293B),
                           letterSpacing: -0.3,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(
+                      const Text(
                         "Enter your credentials to continue",
                         style: TextStyle(
                           fontSize: 16,
-                          color: const Color(0xFF64748B),
+                          color: Color(0xFF64748B),
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -158,12 +158,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
+                                  const Text(
                                     "Email Address",
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF475569),
+                                      color: Color(0xFF475569),
                                     ),
                                   ),
                                   const SizedBox(height: 8),
@@ -178,14 +178,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                       hintStyle: const TextStyle(
                                         color: Color(0xFF94A3B8),
                                       ),
-                                      prefixIcon: Icon(
+                                      prefixIcon: const Icon(
                                         Icons.email_outlined,
-                                        color: const Color(0xFF64748B),
+                                        color: Color(0xFF64748B),
                                       ),
                                       suffixIcon: IconButton(
-                                        icon: Icon(
+                                        icon: const Icon(
                                           Icons.arrow_drop_down,
-                                          color: const Color(0xFF64748B),
+                                          color: Color(0xFF64748B),
                                         ),
                                         onPressed: () => _showSavedAccounts(),
                                       ),
@@ -238,12 +238,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
+                                      const Text(
                                         "Password",
                                         style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
-                                          color: const Color(0xFF475569),
+                                          color: Color(0xFF475569),
                                         ),
                                       ),
                                       TextButton(
@@ -251,12 +251,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                           Navigator.pushNamed(
                                               context, "/forgot-password");
                                         },
-                                        child: Text(
+                                        child: const Text(
                                           "Forgot Password?",
                                           style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF2B6C67),
+                                            color: Color(0xFF2B6C67),
                                           ),
                                         ),
                                       ),
@@ -274,9 +274,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                       hintStyle: const TextStyle(
                                         color: Color(0xFF94A3B8),
                                       ),
-                                      prefixIcon: Icon(
+                                      prefixIcon: const Icon(
                                         Icons.lock_outline,
-                                        color: const Color(0xFF64748B),
+                                        color: Color(0xFF64748B),
                                       ),
                                       suffixIcon: IconButton(
                                         icon: Icon(
@@ -345,11 +345,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                   ),
-                                  Text(
+                                  const Text(
                                     "Remember me",
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: const Color(0xFF475569),
+                                      color: Color(0xFF475569),
                                     ),
                                   ),
                                 ],
@@ -434,7 +434,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                             color: Colors.white,
                                           ),
                                         )
-                                      : Text(
+                                      : const Text(
                                           "Sign In",
                                           style: TextStyle(
                                             fontSize: 16,
@@ -448,20 +448,20 @@ class _LoginScreenState extends State<LoginScreen> {
                               const SizedBox(height: 24),
 
                               // Divider
-                              Row(
+                              const Row(
                                 children: [
                                   Expanded(
                                     child: Divider(
-                                      color: const Color(0xFFE8ECEF),
+                                      color: Color(0xFFE8ECEF),
                                       thickness: 1,
                                     ),
                                   ),
                                   Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    padding: EdgeInsets.symmetric(horizontal: 16),
                                     child: Text(
                                       "OR",
                                       style: TextStyle(
-                                        color: const Color(0xFF94A3B8),
+                                        color: Color(0xFF94A3B8),
                                         fontSize: 14,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -469,7 +469,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   Expanded(
                                     child: Divider(
-                                      color: const Color(0xFFE8ECEF),
+                                      color: Color(0xFFE8ECEF),
                                       thickness: 1,
                                     ),
                                   ),
@@ -501,12 +501,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     backgroundColor: Colors.transparent,
                                   ),
-                                  child: Text(
+                                  child: const Text(
                                     "Continue as Guest",
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF2B6C67),
+                                      color: Color(0xFF2B6C67),
                                     ),
                                   ),
                                 ),
@@ -518,23 +518,23 @@ class _LoginScreenState extends State<LoginScreen> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Text(
+                                  const Text(
                                     "Don't have an account? ",
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: const Color(0xFF64748B),
+                                      color: Color(0xFF64748B),
                                     ),
                                   ),
                                   GestureDetector(
                                     onTap: () {
                                       Navigator.pushNamed(context, "/register");
                                     },
-                                    child: Text(
+                                    child: const Text(
                                       "Sign Up",
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF2B6C67),
+                                        color: Color(0xFF2B6C67),
                                       ),
                                     ),
                                   ),
@@ -599,12 +599,12 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            Text(
+            const Text(
               "Saved Accounts",
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1E293B),
+                color: Color(0xFF1E293B),
               ),
             ),
             const SizedBox(height: 12),
@@ -643,7 +643,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Navigator.pop(context);
                 },
               );
-            }).toList(),
+            }),
             const SizedBox(height: 24),
           ],
         ),

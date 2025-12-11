@@ -5,15 +5,17 @@ import '../providers/notification_provider.dart';
 import '../notification_screen.dart/notification_screen.dart';
 
 class TestNotificationScreen extends StatelessWidget {
+  const TestNotificationScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final notificationProvider = Provider.of<NotificationProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text('Test Notifications')),
+      appBar: AppBar(title: const Text('Test Notifications')),
       body: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             ElevatedButton(
@@ -25,12 +27,12 @@ class TestNotificationScreen extends StatelessWidget {
                   type: 'approval',
                 );
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Notification sent!')),
+                  const SnackBar(content: Text('Notification sent!')),
                 );
               },
-              child: Text('Send Test Notification'),
+              child: const Text('Send Test Notification'),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -38,7 +40,7 @@ class TestNotificationScreen extends StatelessWidget {
                   MaterialPageRoute(builder: (_) => NotificationScreen()),
                 );
               },
-              child: Text('View Notifications'),
+              child: const Text('View Notifications'),
             ),
           ],
         ),

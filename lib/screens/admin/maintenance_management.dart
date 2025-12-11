@@ -4,8 +4,6 @@ import 'package:intl/intl.dart';
 import '../../services/equipment_service.dart';
 import '../../services/reservation_service.dart';
 import '../../models/equipment_model.dart';
-import '../../models/rental_model.dart';
-import '../../utils/theme.dart';
 
 class MaintenanceManagementScreen extends StatefulWidget {
   const MaintenanceManagementScreen({super.key});

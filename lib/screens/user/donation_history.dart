@@ -51,7 +51,7 @@ class _DonationHistoryState extends State<DonationHistory> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => DonationForm()),
+                  MaterialPageRoute(builder: (context) => const DonationForm()),
                 );
               },
               icon: const Icon(
@@ -69,8 +69,8 @@ class _DonationHistoryState extends State<DonationHistory> {
           // Header Section
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
@@ -80,7 +80,7 @@ class _DonationHistoryState extends State<DonationHistory> {
               ),
               border: Border(
                 bottom: BorderSide(
-                  color: const Color(0xFFE8ECEF),
+                  color: Color(0xFFE8ECEF),
                   width: 1,
                 ),
               ),
@@ -98,11 +98,11 @@ class _DonationHistoryState extends State<DonationHistory> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
+                const Text(
                   'Thank you for your generous contributions to Care Center',
                   style: TextStyle(
                     fontSize: 14,
-                    color: const Color(0xFF64748B),
+                    color: Color(0xFF64748B),
                     height: 1.5,
                   ),
                 ),
@@ -116,10 +116,10 @@ class _DonationHistoryState extends State<DonationHistory> {
                       selectedFilter == 'All' 
                         ? 'All Donations'
                         : '$selectedFilter Donations',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF475569),
+                        color: Color(0xFF475569),
                       ),
                     ),
                     
@@ -214,18 +214,18 @@ class _DonationHistoryState extends State<DonationHistory> {
                 future: DonationService().fetchDonationsByUserId(user!.uid),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(
+                    return const Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const CircularProgressIndicator(
+                          CircularProgressIndicator(
                             color: Color(0xFF2B6C67),
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
                           Text(
                             'Loading donations...',
                             style: TextStyle(
-                              color: const Color(0xFF64748B),
+                              color: Color(0xFF64748B),
                               fontSize: 14,
                             ),
                           ),
@@ -253,19 +253,19 @@ class _DonationHistoryState extends State<DonationHistory> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          Text(
+                          const Text(
                             'Error loading donations',
                             style: TextStyle(
                               fontSize: 16,
-                              color: const Color(0xFF475569),
+                              color: Color(0xFF475569),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Text(
+                          const Text(
                             'Please try again later',
                             style: TextStyle(
-                              color: const Color(0xFF64748B),
+                              color: Color(0xFF64748B),
                             ),
                           ),
                         ],
@@ -302,14 +302,14 @@ class _DonationHistoryState extends State<DonationHistory> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 40),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 40),
                             child: Text(
                               'Start making a difference by donating equipment to those in need',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: const Color(0xFF64748B),
+                                color: Color(0xFF64748B),
                                 height: 1.5,
                               ),
                             ),
@@ -320,7 +320,7 @@ class _DonationHistoryState extends State<DonationHistory> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => DonationForm(),
+                                  builder: (context) => const DonationForm(),
                                 ),
                               );
                             },
@@ -389,10 +389,10 @@ class _DonationHistoryState extends State<DonationHistory> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Text(
+                          const Text(
                             'Try changing your filter to see other donations',
                             style: TextStyle(
-                              color: const Color(0xFF64748B),
+                              color: Color(0xFF64748B),
                             ),
                           ),
                         ],
@@ -402,10 +402,10 @@ class _DonationHistoryState extends State<DonationHistory> {
 
                   // Sort by date (newest first)
                   donations.sort((a, b) {
-                    if (b.submissionDate == null || a.submissionDate == null) {
+                    if (a.submissionDate == null) {
                       return 0;
                     }
-                    return b.submissionDate!.compareTo(a.submissionDate!);
+                    return b.submissionDate.compareTo(a.submissionDate);
                   });
 
                   return ListView.builder(
@@ -565,10 +565,10 @@ class _DonationHistoryState extends State<DonationHistory> {
                                       
                                       Row(
                                         children: [
-                                          Icon(
+                                          const Icon(
                                             Icons.calendar_today,
                                             size: 14,
-                                            color: const Color(0xFF64748B),
+                                            color: Color(0xFF64748B),
                                           ),
                                           const SizedBox(width: 6),
                                           Text(

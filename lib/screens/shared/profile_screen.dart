@@ -362,7 +362,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _profileInfoRow(
                       icon: Icons.badge,
                       label: 'CPR Number',
-                      value: user?.cpr?.toString() ?? 'Not provided',
+                      value: user?.cpr.toString() ?? 'Not provided',
                     ),
                   ],
                 ),
@@ -605,11 +605,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  const Text(
                     "Make changes to your personal information",
                     style: TextStyle(
                       fontSize: 14,
-                      color: const Color(0xFF64748B),
+                      color: Color(0xFF64748B),
                     ),
                   ),
                 ],
