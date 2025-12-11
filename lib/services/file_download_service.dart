@@ -1,10 +1,10 @@
-import 'dart:io';
 import 'dart:typed_data';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
+import 'download_service.dart' as download_service;
 
 class FileDownloadService {
   
@@ -12,21 +12,18 @@ class FileDownloadService {
   Future<String?> saveTextFile(String content, String fileName) async {
     try {
       if (kIsWeb) {
-        // Web download using blob
-        _downloadFileWeb(content, fileName);
+        download_service.FileDownloadService.downloadText(content, fileName);
         return 'Downloaded to browser downloads';
       } else {
-        // Mobile/Desktop save
-        final directory = await getApplicationDocumentsDirectory();
-        final file = File('${directory.path}/$fileName');
-        await file.writeAsString(content);
-        return file.path;
+        return await download_service.FileDownloadService.downloadText(content, fileName);
       }
     } catch (e) {
       if (kDebugMode) print('Error saving file: $e');
       return null;
     }
   }
+
+
 
   // Generate and save PDF
   Future<String?> generatePDF(Map<String, dynamic> reportData) async {
@@ -198,15 +195,12 @@ class FileDownloadService {
 
       final fileName = 'care_center_summary_${DateTime.now().millisecondsSinceEpoch}.pdf';
       
+      final bytes = await pdf.save();
       if (kIsWeb) {
-        final bytes = await pdf.save();
-        _downloadPdfWeb(bytes, fileName);
+        download_service.FileDownloadService.downloadBytes(bytes, fileName, 'application/pdf');
         return 'Downloaded to browser downloads';
       } else {
-        final directory = await getApplicationDocumentsDirectory();
-        final file = File('${directory.path}/$fileName');
-        await file.writeAsBytes(await pdf.save());
-        return file.path;
+        return await download_service.FileDownloadService.downloadBytes(bytes, fileName, 'application/pdf');
       }
     } catch (e) {
       if (kDebugMode) print('Error generating PDF: $e');
@@ -253,14 +247,5 @@ class FileDownloadService {
     }
   }
 
-  void _downloadFileWeb(String content, String fileName) {
-    // Web download implementation would go here
-    // For now, we'll show the content in a new tab
-    if (kDebugMode) print('Web download: $fileName');
-  }
 
-  void _downloadPdfWeb(Uint8List bytes, String fileName) {
-    // Web PDF download implementation would go here
-    if (kDebugMode) print('Web PDF download: $fileName');
-  }
 }

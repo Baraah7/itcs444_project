@@ -782,12 +782,12 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
         case 'json':
           final exportedData = _exportService.exportAsJson(reportData);
           final fileName = 'care_center_report_${DateTime.now().millisecondsSinceEpoch}.json';
-          await _downloadFile(exportedData, fileName);
+          _showExportDialog(exportedData, fileName);
           break;
         case 'csv':
           final exportedData = _exportService.exportAsCsv(reportData);
           final fileName = 'care_center_report_${DateTime.now().millisecondsSinceEpoch}.csv';
-          await _downloadFile(exportedData, fileName);
+          _showExportDialog(exportedData, fileName);
           break;
         case 'pdf':
           await _generateAndDownloadPDF(reportData);
@@ -820,6 +820,51 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showExportDialog(String data, String fileName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Report Generated'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('File: $fileName'),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.maxFinite,
+              height: 200,
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: SingleChildScrollView(
+                    child: SelectableText(
+                      data,
+                      style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await _downloadFile(data, fileName);
+            },
+            child: const Text('Download'),
+          ),
+        ],
       ),
     );
   }
