@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 
@@ -22,6 +23,7 @@ class AuthProvider with ChangeNotifier {
   Future<bool> register(AppUser user, String password) async {
     try {
       _isLoading = true;
+      _errorMessage = null;
       notifyListeners();
 
       AppUser? createdUser = await _authService.registerUser(user, password);
@@ -32,11 +34,14 @@ class AuthProvider with ChangeNotifier {
         notifyListeners();
         return true;
       } else {
+        _errorMessage = "Registration failed. User could not be created.";
         _isLoading = false;
         notifyListeners();
         return false;
       }
     } catch (e) {
+      _errorMessage = e.toString();
+      print('Registration error: $e'); // Debug print
       _isLoading = false;
       notifyListeners();
       return false;
@@ -53,6 +58,13 @@ class AuthProvider with ChangeNotifier {
 
       if (user != null) {
         _currentUser = user;
+        
+        if (rememberMe) {
+          await _saveCredentials(email, password);
+        } else {
+          await _clearCredentials();
+        }
+        
         _isLoading = false;
         notifyListeners();
         return true;
@@ -72,6 +84,32 @@ class AuthProvider with ChangeNotifier {
     await _authService.logout();
     _currentUser = null;
     notifyListeners();
+  }
+
+  Future<void> _saveCredentials(String email, String password) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> savedAccounts = prefs.getStringList('saved_accounts') ?? [];
+    
+    String account = '$email:$password';
+    savedAccounts.remove(account);
+    savedAccounts.insert(0, account);
+    
+    await prefs.setStringList('saved_accounts', savedAccounts);
+  }
+
+  Future<void> _clearCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('saved_accounts');
+  }
+
+  Future<List<Map<String, String>>> getSavedAccounts() async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> savedAccounts = prefs.getStringList('saved_accounts') ?? [];
+    
+    return savedAccounts.map((account) {
+      final parts = account.split(':');
+      return {'email': parts[0], 'password': parts[1]};
+    }).toList();
   }
 
   Future<String?> updateProfile(AppUser updatedUser, {File? profileImage}) async {

@@ -2,15 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'providers/auth_provider.dart';
+import 'providers/notification_provider.dart';
+import 'providers/tracking_providers.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/user/user_dashboard.dart';
 import 'screens/admin/admin_dashboard.dart';
+import 'screens/admin/equipment_management.dart';
+import 'services/background_notification_service.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  //await Firebase.initializeApp();
 
+  //new web stuff
   if (kIsWeb) {
+    // Web initialization with YOUR FIREBASE CONFIG
     await Firebase.initializeApp(
       options: const FirebaseOptions(
         apiKey: "AIzaSyB7ckqv8rC21nfbY9i3eq1J5WHWW4HHdqI",
@@ -23,12 +31,21 @@ void main() async {
       ),
     );
   } else {
+    // Android initialization (uses google-services.json)
     await Firebase.initializeApp();
   }
 
+  // Initialize background notification service
+  final backgroundService = BackgroundNotificationService();
+  backgroundService.startMonitoring();
+
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => TrackingProvider()),
+      ],
       child: MyApp(),
     ),
   );
@@ -49,13 +66,11 @@ class MyApp extends StatelessWidget {
         '/register': (_) => const RegisterScreen(),
         '/user-dashboard': (_) => const UserDashboard(),
         '/admin-dashboard': (_) => const AdminDashboard(),
+        '/equipment-management': (_) => const EquipmentPage(),
       },
     );
   }
 }
-
-
-
 
 class RoleWrapper extends StatelessWidget {
   const RoleWrapper({super.key});
@@ -84,15 +99,13 @@ class RoleWrapper extends StatelessWidget {
         switch (user.role.toLowerCase()) {
           case 'admin':
             return const AdminDashboard();
-          case 'renter':
-          case 'donor':
+          case 'user':
             return const UserDashboard();
           default:
             return const LoginScreen();
         }
       },
     );
+
   }
 }
-
-

@@ -32,16 +32,16 @@ class AppUser {
 
     return AppUser(
       docId: doc.id,
-      cpr: data['CPR'] ?? '',
+      cpr: (data['CPR'] ?? '').toString(),
       email: data['email'] ?? '',
       firstName: data['firstName'] ?? '',
       lastName: data['lastName'] ?? '',
-      phoneNumber: data['phoneNumber'] ?? '',
+      phoneNumber: (data['phoneNumber'] ?? '').toString(),
       role: data['role'] ?? 'Guest',
       contactPref: data['contact_pref'] ?? '',
       id: data['id'] ?? 0,
       username: data['username'] ?? '',
-      profileImageUrl: data['profileImageUrl'], // Fetch URL
+      profileImageUrl: data['profileImageUrl'],
     );
   }
 
