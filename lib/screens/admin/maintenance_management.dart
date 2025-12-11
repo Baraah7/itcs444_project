@@ -33,11 +33,12 @@ class _MaintenanceManagementScreenState extends State<MaintenanceManagementScree
       await _equipmentService.markEquipmentAvailable(equipmentId);
       await _addMaintenanceLog(equipmentId, 'completed', notes);
 
-      // Notify other admins
+      // Notify other admins (excluding the current admin)
       await createAdminNotification(
         title: 'Maintenance Completed',
         message: '$adminEmail completed maintenance for "$equipmentName". ${notes.isNotEmpty ? "Notes: $notes" : ""}',
         type: 'maintenance',
+        excludeAdminId: currentUser?.uid, // Exclude current admin from receiving notification
       );
 
       if (mounted) {
@@ -191,11 +192,12 @@ class _MaintenanceManagementScreenState extends State<MaintenanceManagementScree
       });
       await _addMaintenanceLog(equipmentId, 'started', notes);
 
-      // Notify other admins
+      // Notify other admins (excluding the current admin)
       await createAdminNotification(
         title: 'Equipment Under Maintenance',
         message: '$adminEmail marked "$equipmentName" for maintenance. Reason: $notes',
         type: 'maintenance',
+        excludeAdminId: currentUser?.uid, // Exclude current admin from receiving notification
       );
 
       if (mounted) {
