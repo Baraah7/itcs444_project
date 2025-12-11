@@ -13,7 +13,7 @@ class DonationHistory extends StatefulWidget {
 }
 
 class _DonationHistoryState extends State<DonationHistory> {
-  List<String> filterOptions = ['All', 'Pending', 'Approved', 'Rejected', 'Completed'];
+  List<String> filterOptions = ['All', 'Pending', 'Approved', 'Rejected'];
   String selectedFilter = 'All';
   final user = FirebaseAuth.instance.currentUser;
   late final uid = user?.uid;
@@ -107,22 +107,22 @@ class _DonationHistoryState extends State<DonationHistory> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Filter Row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      selectedFilter == 'All' 
-                        ? 'All Donations'
-                        : '$selectedFilter Donations',
+                      selectedFilter == 'All'
+                          ? 'All Donations'
+                          : '$selectedFilter Donations',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF475569),
                       ),
                     ),
-                    
+
                     // Filter Dropdown
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -150,7 +150,7 @@ class _DonationHistoryState extends State<DonationHistory> {
                           items: filterOptions.map((String value) {
                             IconData icon;
                             Color color;
-                            
+
                             switch (value) {
                               case 'All':
                                 icon = Icons.all_inclusive;
@@ -168,15 +168,12 @@ class _DonationHistoryState extends State<DonationHistory> {
                                 icon = Icons.cancel;
                                 color = const Color(0xFFEF4444);
                                 break;
-                              case 'Completed':
-                                icon = Icons.done_all;
-                                color = const Color(0xFF2B6C67);
-                                break;
+
                               default:
                                 icon = Icons.category;
                                 color = const Color(0xFF64748B);
                             }
-                            
+
                             return DropdownMenuItem<String>(
                               value: value,
                               child: Row(
@@ -413,12 +410,12 @@ class _DonationHistoryState extends State<DonationHistory> {
                     itemBuilder: (context, index) {
                       final donation = donations[index];
                       final status = donation.status.toLowerCase();
-                      
+
                       // Status colors
                       Color statusColor;
                       Color statusBgColor;
                       IconData statusIcon;
-                      
+
                       switch (status) {
                         case 'pending':
                           statusColor = const Color(0xFFF59E0B);
@@ -462,8 +459,8 @@ class _DonationHistoryState extends State<DonationHistory> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>
-                                    UserDonationDetails(donationID: donation.id!),
+                                builder: (context) => UserDonationDetails(
+                                    donationID: donation.id!),
                               ),
                             );
                           },
@@ -491,19 +488,21 @@ class _DonationHistoryState extends State<DonationHistory> {
                                     ),
                                   ),
                                 ),
-                                
+
                                 const SizedBox(width: 16),
-                                
+
                                 // Donation Details
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: [
                                           Expanded(
                                             child: Text(
-                                              donation.itemType ?? 'Equipment Donation',
+                                              donation.itemType ??
+                                                  'Equipment Donation',
                                               style: const TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.w700,
@@ -521,9 +520,11 @@ class _DonationHistoryState extends State<DonationHistory> {
                                             ),
                                             decoration: BoxDecoration(
                                               color: statusBgColor,
-                                              borderRadius: BorderRadius.circular(6),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
                                               border: Border.all(
-                                                color: statusColor.withOpacity(0.3),
+                                                color: statusColor
+                                                    .withOpacity(0.3),
                                                 width: 1,
                                               ),
                                             ),
@@ -549,9 +550,7 @@ class _DonationHistoryState extends State<DonationHistory> {
                                           ),
                                         ],
                                       ),
-                                      
                                       const SizedBox(height: 8),
-                                      
                                       Text(
                                         donation.donorName ?? 'Anonymous Donor',
                                         style: const TextStyle(
@@ -560,9 +559,7 @@ class _DonationHistoryState extends State<DonationHistory> {
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
-                                      
                                       const SizedBox(height: 6),
-                                      
                                       Row(
                                         children: [
                                           Icon(
@@ -572,7 +569,8 @@ class _DonationHistoryState extends State<DonationHistory> {
                                           ),
                                           const SizedBox(width: 6),
                                           Text(
-                                            _formatDate(donation.submissionDate),
+                                            _formatDate(
+                                                donation.submissionDate),
                                             style: const TextStyle(
                                               fontSize: 13,
                                               color: Color(0xFF64748B),
@@ -580,11 +578,11 @@ class _DonationHistoryState extends State<DonationHistory> {
                                           ),
                                         ],
                                       ),
-                                      
                                       if (donation.description != null &&
                                           donation.description!.isNotEmpty)
                                         Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             const SizedBox(height: 8),
                                             Text(
@@ -603,9 +601,9 @@ class _DonationHistoryState extends State<DonationHistory> {
                                     ],
                                   ),
                                 ),
-                                
+
                                 const SizedBox(width: 12),
-                                
+
                                 // View Details Arrow
                                 Container(
                                   width: 36,
@@ -638,10 +636,10 @@ class _DonationHistoryState extends State<DonationHistory> {
 
   String _formatDate(DateTime? date) {
     if (date == null) return 'Date not available';
-    
+
     final now = DateTime.now();
     final difference = now.difference(date).inDays;
-    
+
     if (difference == 0) {
       return 'Today';
     } else if (difference == 1) {
