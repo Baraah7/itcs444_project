@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'item_page.dart';
 import 'add_edit_equipment.dart';
 
+enum ViewType { list, grid }
+
 class EquipmentPage extends StatefulWidget {
   const EquipmentPage({super.key});
 
@@ -19,13 +21,9 @@ class _EquipmentPageState extends State<EquipmentPage> {
   
   final List<String> _equipmentTypes = [
     'All',
-    'Power Tools',
-    'Hand Tools',
-    'Electrical',
-    'Plumbing',
-    'Gardening',
-    'Cleaning',
-    'Safety',
+    'Mobility Aid',
+    'Bathroom Aid',
+    'Hospital Furniture',
   ];
 
   @override
@@ -1236,5 +1234,3 @@ class _EquipmentPageState extends State<EquipmentPage> {
     );
   }
 }
-
-enum ViewType { list, grid }
