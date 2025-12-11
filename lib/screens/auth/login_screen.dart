@@ -488,7 +488,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     backgroundColor: Colors.transparent,
                                   ),
                                   child: Text(
-                                    "Continue as Guest",
+                                    "Donate as Guest",
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
