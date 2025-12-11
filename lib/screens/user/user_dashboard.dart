@@ -360,6 +360,7 @@ class _UserDashboardState extends State<UserDashboard> {
   }
 
   // ----------------- Recent Activities -----------------
+// ----------------- FIXED Recent Activities -----------------
   Widget _buildRecentActivity(dynamic user) {
     final userId = user?.docId;
 
@@ -386,108 +387,31 @@ class _UserDashboardState extends State<UserDashboard> {
               color: const Color(0xFFE8ECEF),
             ),
           ),
-          child: Row(
+          child: Column(
             children: [
-              // Reservations Column
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Reservations",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF475569),
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('reservations')
-                          .where('userId', isEqualTo: userId)
-                          .limit(2)
-                          .snapshots(),
-                      builder: (context, snap) {
-                        if (snap.connectionState == ConnectionState.waiting) {
-                          return const SizedBox(
-                            height: 68,
-                            child: Center(
-                                child: CircularProgressIndicator(color: Color(0xFF2B6C67))),
-                          );
-                        }
-                        final docs = snap.data?.docs ?? [];
-                        if (docs.isEmpty) {
-                          return _smallEmptyCard("No reservations");
-                        }
-                        return Column(
-                          children: docs.map((d) {
-                            final data = d.data() as Map<String, dynamic>;
-                            final title = data['equipmentName'] ?? 'Equipment';
-                            final status = (data['status'] ?? 'pending').toString();
-                            final date = (data['createdAt'] is Timestamp)
-                                ? (data['createdAt'] as Timestamp).toDate()
-                                : null;
-                            return _compactActivityRow(
-                                title: title, status: status, date: date);
-                          }).toList(),
-                        );
-                      },
-                    ),
-                  ],
-                ),
+              // Reservations Section
+              _buildActivitySection(
+                title: "Reservations",
+                userId: userId,
+                collection: 'reservations',
+                icon: Icons.event_available,
+                emptyMessage: "No reservations",
               ),
-                  
-              const SizedBox(width: 16),
-                  
-              // Donations Column
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Donations",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF475569),
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('donations')
-                          .where('userId', isEqualTo: userId)
-                          .limit(2)
-                          .snapshots(),
-                      builder: (context, snap) {
-                        if (snap.connectionState == ConnectionState.waiting) {
-                          return const SizedBox(
-                            height: 68,
-                            child: Center(
-                                child: CircularProgressIndicator(color: Color(0xFF2B6C67))),
-                          );
-                        }
-                        final docs = snap.data?.docs ?? [];
-                        if (docs.isEmpty) {
-                          return _smallEmptyCard("No donations");
-                        }
-                        return Column(
-                          children: docs.map((d) {
-                            final data = d.data() as Map<String, dynamic>;
-                            final title = data['equipmentName'] ?? 'Donation';
-                            final status = (data['status'] ?? 'pending').toString();
-                            final date = (data['createdAt'] is Timestamp)
-                                ? (data['createdAt'] as Timestamp).toDate()
-                                : null;
-                            return _compactActivityRow(
-                                title: title, status: status, date: date);
-                          }).toList(),
-                        );
-                      },
-                    ),
-                  ],
-                ),
+              
+              const SizedBox(height: 20),
+              
+              // Divider
+              const Divider(height: 1, color: Color(0xFFE8ECEF)),
+              
+              const SizedBox(height: 20),
+              
+              // Donations Section
+              _buildActivitySection(
+                title: "Donations",
+                userId: userId,
+                collection: 'donations',
+                icon: Icons.volunteer_activism,
+                emptyMessage: "No donations",
               ),
             ],
           ),
@@ -496,24 +420,98 @@ class _UserDashboardState extends State<UserDashboard> {
     );
   }
 
+  Widget _buildActivitySection({
+    required String title,
+    required String? userId,
+    required String collection,
+    required IconData icon,
+    required String emptyMessage,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 18, color: const Color(0xFF2B6C67)),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1E293B),
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection(collection)
+              .where('userId', isEqualTo: userId)
+              .orderBy('createdAt', descending: true)
+              .limit(3)
+              .snapshots(),
+          builder: (context, snap) {
+            if (snap.connectionState == ConnectionState.waiting) {
+              return const SizedBox(
+                height: 80,
+                child: Center(
+                  child: CircularProgressIndicator(color: Color(0xFF2B6C67)),
+                ),
+              );
+            }
+            
+            final docs = snap.data?.docs ?? [];
+            
+            if (docs.isEmpty) {
+              return _smallEmptyCard(emptyMessage);
+            }
+            
+            return Column(
+              children: docs.map((d) {
+                final data = d.data() as Map<String, dynamic>;
+                final title = data['equipmentName'] ?? 
+                             (collection == 'donations' ? 'Donation' : 'Equipment');
+                final status = (data['status'] ?? 'pending').toString();
+                final date = (data['createdAt'] is Timestamp)
+                    ? (data['createdAt'] as Timestamp).toDate()
+                    : null;
+                
+                return _compactActivityRow(
+                  title: title, 
+                  status: status, 
+                  date: date,
+                  type: collection,
+                );
+              }).toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
   Widget _smallEmptyCard(String text) {
     return Container(
-      height: 68,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE8ECEF)),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.info_outline, color: const Color(0xFF64748B)),
-          const SizedBox(width: 8),
+          Icon(Icons.info_outline, color: const Color(0xFF94A3B8), size: 20),
+          const SizedBox(width: 10),
           Text(
-            text, 
+            text,
             style: const TextStyle(
-              color: Color(0xFF475569),
-              fontSize: 13,
+              color: Color(0xFF64748B),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -521,88 +519,174 @@ class _UserDashboardState extends State<UserDashboard> {
     );
   }
 
-  Widget _compactActivityRow({required String title, required String status, DateTime? date}) {
+  Widget _compactActivityRow({
+    required String title, 
+    required String status, 
+    DateTime? date,
+    required String type,
+  }) {
     Color badgeColor;
     String badgeText;
+    IconData statusIcon;
     
     if (status.toLowerCase() == 'approved' || status.toLowerCase() == 'completed') {
       badgeColor = const Color(0xFF10B981);
       badgeText = 'Approved';
+      statusIcon = Icons.check_circle;
     } else if (status.toLowerCase() == 'pending') {
       badgeColor = const Color(0xFFF59E0B);
       badgeText = 'Pending';
-    } else {
+      statusIcon = Icons.schedule;
+    } else if (status.toLowerCase() == 'rejected') {
       badgeColor = const Color(0xFFEF4444);
-      badgeText = 'Declined';
+      badgeText = 'Rejected';
+      statusIcon = Icons.cancel;
+    } else if (status.toLowerCase() == 'cancelled') {
+      badgeColor = const Color(0xFF64748B);
+      badgeText = 'Cancelled';
+      statusIcon = Icons.cancel_outlined;
+    } else {
+      badgeColor = const Color(0xFF64748B);
+      badgeText = status.substring(0, 1).toUpperCase() + status.substring(1);
+      statusIcon = Icons.info_outline;
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: const Color(0xFFE8ECEF)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1E293B).withOpacity(0.03),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
+          // Icon Container
           Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: const Color(0xFFF0F9F8),
-              borderRadius: BorderRadius.circular(8),
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF2B6C67).withOpacity(0.1),
+                  const Color(0xFF1A4A47).withOpacity(0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
-              Icons.event_note,
+              type == 'donations' ? Icons.volunteer_activism : Icons.event_note,
               color: const Color(0xFF2B6C67),
               size: 20,
             ),
           ),
+          
           const SizedBox(width: 12),
+          
+          // Text Content
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  title, 
+                  title,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                     color: Color(0xFF1E293B),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.access_time,
+                      size: 12,
+                      color: const Color(0xFF94A3B8),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      date != null ? _formatDate(date) : "N/A",
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(width: 8),
+          
+          // Status Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              color: badgeColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: badgeColor.withOpacity(0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  statusIcon,
+                  size: 12,
+                  color: badgeColor,
+                ),
+                const SizedBox(width: 4),
                 Text(
-                  date != null ? "${date.day}/${date.month}/${date.year}" : "",
-                  style: const TextStyle(
-                    fontSize: 12, 
-                    color: Color(0xFF64748B),
+                  badgeText,
+                  style: TextStyle(
+                    color: badgeColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                    letterSpacing: 0.3,
                   ),
                 ),
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: BoxDecoration(
-              color: badgeColor.withOpacity(0.1), 
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: badgeColor.withOpacity(0.2)),
-            ),
-            child: Text(
-              badgeText,
-              style: TextStyle(
-                color: badgeColor, 
-                fontWeight: FontWeight.w700, 
-                fontSize: 11,
-                letterSpacing: 0.3,
-              ),
-            ),
-          )
         ],
       ),
     );
+  }
+
+  // Helper method to format dates
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays == 0) {
+      if (difference.inHours == 0) {
+        if (difference.inMinutes == 0) {
+          return "Just now";
+        }
+        return "${difference.inMinutes}m ago";
+      }
+      return "${difference.inHours}h ago";
+    } else if (difference.inDays == 1) {
+      return "Yesterday";
+    } else if (difference.inDays < 7) {
+      return "${difference.inDays}d ago";
+    } else if (difference.inDays < 30) {
+      final weeks = (difference.inDays / 7).floor();
+      return "${weeks}w ago";
+    } else {
+      return "${date.day}/${date.month}/${date.year}";
+    }
   }
 
   // ------------------- QUICK ACTIONS -------------------
