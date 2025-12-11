@@ -122,10 +122,10 @@ class _UserDonationDetailsState extends State<UserDonationDetails> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) =>
-                                      DonationForm(),
+                                      const DonationForm(),
                                 ),
                               );
-                    }, child: Text('Submit Another Donation'))
+                    }, child: const Text('Submit Another Donation'))
                 ],
               ),
             ),

@@ -143,7 +143,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       icon: const Icon(Icons.settings_outlined, color: Color(0xFF2B6C67)),
                       onPressed: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => Settings()),
+                        MaterialPageRoute(builder: (context) => const Settings()),
                       ),
                    ),
         ],
@@ -170,13 +170,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget _getBodyForIndex(int index, BuildContext context, AuthProvider auth, dynamic admin) {
     switch (index) {
       case 0: return _buildDashboardBody(context, auth, admin);
-      case 1: return EquipmentPage();
-      case 2: return ReservationManagementScreen();
-      case 3: return DonationList();
-      case 4: return MaintenanceManagementScreen();
-      case 5: return AdminReportsScreen();
-      case 6: return UsersManagement();
-      case 7: return ProfileScreen();
+      case 1: return const EquipmentPage();
+      case 2: return const ReservationManagementScreen();
+      case 3: return const DonationList();
+      case 4: return const MaintenanceManagementScreen();
+      case 5: return const AdminReportsScreen();
+      case 6: return const UsersManagement();
+      case 7: return const ProfileScreen();
       default: return _buildDashboardBody(context, auth, admin);
     }
   }
@@ -271,10 +271,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     Icons.logout,
                     color: Color(0xFFE53935),
                   ),
-                  title: Text(
+                  title: const Text(
                     'Logout',
                     style: TextStyle(
-                      color: const Color(0xFFE53935),
+                      color: Color(0xFFE53935),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -491,11 +491,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Text(
+                const Text(
                   "Manage equipment, users, and reservations",
                   style: TextStyle(
                     fontSize: 16,
-                    color: const Color.fromARGB(255, 233, 248, 246),
+                    color: Color.fromARGB(255, 233, 248, 246),
                     height: 1.4,
                   ),
                 ),
@@ -651,12 +651,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           "Quick Actions",
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF1E293B),
+            color: Color(0xFF1E293B),
             letterSpacing: -0.3,
           ),
         ),
@@ -781,12 +781,12 @@ Widget _buildRecentActivity(BuildContext context) {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
+            const Text(
               "Recent Activity",
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1E293B),
+                color: Color(0xFF1E293B),
                 letterSpacing: -0.3,
               ),
             ),
@@ -945,7 +945,7 @@ Widget _buildRecentActivity(BuildContext context) {
       ),
       child: Row(
         children: [
-          Icon(Icons.info_outline, color: const Color(0xFF64748B)),
+          const Icon(Icons.info_outline, color: Color(0xFF64748B)),
           const SizedBox(width: 8),
           Text(
             text,
@@ -991,9 +991,9 @@ Widget _buildRecentActivity(BuildContext context) {
               color: const Color(0xFFF0F9F8),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.event_note,
-              color: const Color(0xFF2B6C67),
+              color: Color(0xFF2B6C67),
               size: 20,
             ),
           ),
@@ -1054,7 +1054,7 @@ Widget _buildRecentActivity(BuildContext context) {
             color: AppColors.neutralGray.withOpacity(0.3),
           ),
           const SizedBox(height: 20),
-          Text(
+          const Text(
             "Reports & Analytics",
             style: TextStyle(
               fontSize: 24,
@@ -1068,17 +1068,17 @@ Widget _buildRecentActivity(BuildContext context) {
   }
 
     Widget _buildMaintenanceBody(BuildContext context) {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.build,
             size: 80,
-            color: const Color(0xFFE8ECEF),
+            color: Color(0xFFE8ECEF),
           ),
-          const SizedBox(height: 20),
-          const Text(
+          SizedBox(height: 20),
+          Text(
             "Maintenance Management",
             style: TextStyle(
               fontSize: 18,
@@ -1086,8 +1086,8 @@ Widget _buildRecentActivity(BuildContext context) {
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 10),
-          const Text(
+          SizedBox(height: 10),
+          Text(
             "Manage equipment maintenance and repairs",
             style: TextStyle(
               color: Color(0xFF64748B),
@@ -1108,7 +1108,7 @@ Widget _buildRecentActivity(BuildContext context) {
   void _navigateToAddEquipment() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => AddEditEquipmentPage()),
+      MaterialPageRoute(builder: (_) => const AddEditEquipmentPage()),
     );
   }
 
@@ -1164,7 +1164,7 @@ Widget _buildRecentActivity(BuildContext context) {
               const SizedBox(height: 12),
               Text(
                 label,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: AppColors.primaryDark,

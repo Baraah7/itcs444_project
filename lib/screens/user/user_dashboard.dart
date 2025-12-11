@@ -91,7 +91,7 @@ class _UserDashboardState extends State<UserDashboard> {
              icon: const Icon(Icons.settings_outlined, color: Color(0xFF2B6C67)),
              onPressed: () => Navigator.push(
                context,
-               MaterialPageRoute(builder: (context) => Settings()),
+               MaterialPageRoute(builder: (context) => const Settings()),
              ),
            ),
         ],
@@ -104,10 +104,10 @@ class _UserDashboardState extends State<UserDashboard> {
   Widget _getBodyForIndex(int index, BuildContext context, AuthProvider auth, dynamic user) {
     switch (index) {
       case 0: return _buildDashboardBody(context, auth, user);
-      case 1: return UserEquipmentPage();
-      case 2: return MyReservationsScreen();
-      case 3: return DonationHistory();
-      case 4: return Settings();
+      case 1: return const UserEquipmentPage();
+      case 2: return const MyReservationsScreen();
+      case 3: return const DonationHistory();
+      case 4: return const Settings();
       default: return _buildDashboardBody(context, auth, user);
     }
   }
@@ -192,10 +192,10 @@ class _UserDashboardState extends State<UserDashboard> {
 
                 ListTile(
                   leading: const Icon(Icons.logout, color: Color(0xFFE53935)),
-                  title: Text(
+                  title: const Text(
                     'Logout',
                     style: TextStyle(
-                      color: const Color(0xFFE53935),
+                      color: Color(0xFFE53935),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -336,11 +336,11 @@ class _UserDashboardState extends State<UserDashboard> {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Text(
+                const Text(
                   "Welcome back to Care Center App",
                   style: TextStyle(
                     fontSize: 16, 
-                    color: const Color.fromARGB(255, 233, 248, 246),
+                    color: Color.fromARGB(255, 233, 248, 246),
                     height: 1.4,
                   ),
                 ),
@@ -368,12 +368,12 @@ class _UserDashboardState extends State<UserDashboard> {
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           "Recent Activity",
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF1E293B),
+            color: Color(0xFF1E293B),
             letterSpacing: -0.3,
           ),
         ),
@@ -504,7 +504,7 @@ class _UserDashboardState extends State<UserDashboard> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.info_outline, color: const Color(0xFF94A3B8), size: 20),
+          const Icon(Icons.info_outline, color: Color(0xFF94A3B8), size: 20),
           const SizedBox(width: 10),
           Text(
             text,
@@ -609,10 +609,10 @@ class _UserDashboardState extends State<UserDashboard> {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.access_time,
                       size: 12,
-                      color: const Color(0xFF94A3B8),
+                      color: Color(0xFF94A3B8),
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -694,12 +694,12 @@ class _UserDashboardState extends State<UserDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           "Quick Actions",
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF1E293B),
+            color: Color(0xFF1E293B),
             letterSpacing: -0.3,
           ),
         ),
@@ -714,7 +714,7 @@ class _UserDashboardState extends State<UserDashboard> {
                 subtitle: "Give equipment quickly",
                 icon: Icons.volunteer_activism_outlined,
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => DonationForm()));
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const DonationForm()));
                 },
               ),
               const SizedBox(width: 12),
@@ -723,7 +723,7 @@ class _UserDashboardState extends State<UserDashboard> {
                 subtitle: "Reserve equipment",
                 icon: Icons.event_available_outlined,
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => UserEquipmentPage()));
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const UserEquipmentPage()));
                 },
               ),
               const SizedBox(width: 12),
@@ -1006,10 +1006,10 @@ class _UserDashboardState extends State<UserDashboard> {
 
                   Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.category_outlined,
                         size: 14, 
-                        color: const Color(0xFF64748B),
+                        color: Color(0xFF64748B),
                       ),
                       const SizedBox(width: 6),
                       Expanded(
@@ -1057,9 +1057,9 @@ class _UserDashboardState extends State<UserDashboard> {
                           ),
                         ],
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           Icon(Icons.visibility, size: 16, color: Colors.white),
                           SizedBox(width: 8),
                           Text(
@@ -1101,23 +1101,23 @@ class _UserDashboardState extends State<UserDashboard> {
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Center(
+          return const Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.history_outlined, size: 80, color: const Color(0xFFE8ECEF)),
-                const SizedBox(height: 20),
+                Icon(Icons.history_outlined, size: 80, color: Color(0xFFE8ECEF)),
+                SizedBox(height: 20),
                 Text(
                   "No rental history",
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 18,
                       color: Color(0xFF475569),
                       fontWeight: FontWeight.w600),
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 Text(
                   "Your past rentals will appear here",
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Color(0xFF64748B),
                     fontSize: 14,
                   ),

@@ -8,7 +8,7 @@ class ReportsService {
   Stream<List<Rental>> getAllRentalsForReports() {
     return _firestore.collection('rentals').snapshots().map((snapshot) {
       return snapshot.docs
-          .map((doc) => Rental.fromMap(doc.data() as Map<String, dynamic>))
+          .map((doc) => Rental.fromMap(doc.data()))
           .toList();
     });
   }
@@ -20,7 +20,7 @@ class ReportsService {
         .where('status', isEqualTo: 'cancelled')
         .snapshots()
         .map((snapshot) => snapshot.docs
-            .map((doc) => Rental.fromMap(doc.data() as Map<String, dynamic>))
+            .map((doc) => Rental.fromMap(doc.data()))
             .toList());
   }
 
@@ -31,7 +31,7 @@ class ReportsService {
         .where('status', isEqualTo: 'maintenance')
         .snapshots()
         .map((snapshot) => snapshot.docs
-            .map((doc) => Rental.fromMap(doc.data() as Map<String, dynamic>))
+            .map((doc) => Rental.fromMap(doc.data()))
             .toList());
   }
 
@@ -42,7 +42,7 @@ class ReportsService {
         .where('status', whereIn: ['returned', 'cancelled', 'maintenance'])
         .snapshots()
         .map((snapshot) => snapshot.docs
-            .map((doc) => Rental.fromMap(doc.data() as Map<String, dynamic>))
+            .map((doc) => Rental.fromMap(doc.data()))
             .toList());
   }
 
@@ -62,7 +62,7 @@ class ReportsService {
     };
 
     for (var doc in snapshot.docs) {
-      final rental = Rental.fromMap(doc.data() as Map<String, dynamic>);
+      final rental = Rental.fromMap(doc.data());
       stats[rental.status] = (stats[rental.status] ?? 0) + 1;
       
       if (rental.isOverdue) {

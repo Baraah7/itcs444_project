@@ -100,7 +100,7 @@ class DonationFormState extends State<DonationForm> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text('Donation Form'),
+        title: const Text('Donation Form'),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -306,7 +306,7 @@ class DonationFormState extends State<DonationForm> {
                     ListTile(
                       leading: _selectedIcon != null
                           ? Icon(_selectedIcon)
-                          : Icon(Icons.add),
+                          : const Icon(Icons.add),
 
                       title: const Text(
                         'You can choose icons describing the item here.',

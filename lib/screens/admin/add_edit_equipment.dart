@@ -382,10 +382,10 @@ class _AddEditEquipmentPageState extends State<AddEditEquipmentPage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Equipment Name *',
                           style: TextStyle(
-                            color: const Color(0xFF1E293B),
+                            color: Color(0xFF1E293B),
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
@@ -441,10 +441,10 @@ class _AddEditEquipmentPageState extends State<AddEditEquipmentPage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Equipment Type *',
                           style: TextStyle(
-                            color: const Color(0xFF1E293B),
+                            color: Color(0xFF1E293B),
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
@@ -529,10 +529,10 @@ class _AddEditEquipmentPageState extends State<AddEditEquipmentPage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Description *',
                           style: TextStyle(
-                            color: const Color(0xFF1E293B),
+                            color: Color(0xFF1E293B),
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
@@ -699,9 +699,9 @@ class _AddEditEquipmentPageState extends State<AddEditEquipmentPage> {
                             ],
                           ),
                           const SizedBox(height: 12),
-                          Column(
+                          const Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
+                            children: [
                               Text(
                                 '• Use descriptive names that clearly identify the equipment',
                                 style: TextStyle(

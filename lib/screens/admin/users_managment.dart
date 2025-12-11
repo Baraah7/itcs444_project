@@ -822,9 +822,9 @@ class _UsersManagementState extends State<UsersManagement> {
         _handleMenuSelection(value, userId, userData, userName);
       },
       itemBuilder: (context) => [
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 'details',
-          child: const Row(
+          child: Row(
             children: [
               Icon(Icons.info_outline, size: 18, color: Color(0xFF2B6C67)),
               SizedBox(width: 8),
@@ -951,7 +951,7 @@ class _UsersManagementState extends State<UsersManagement> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
         actions: [
@@ -1010,7 +1010,7 @@ class _UsersManagementState extends State<UsersManagement> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
         actions: [
@@ -1094,19 +1094,19 @@ class _UsersManagementState extends State<UsersManagement> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
+    return const Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.people_outline,
               size: 80,
-              color: const Color(0xFFE8ECEF),
+              color: Color(0xFFE8ECEF),
             ),
-            const SizedBox(height: 16),
-            const Text(
+            SizedBox(height: 16),
+            Text(
               'No Users Found',
               style: TextStyle(
                 fontSize: 20,
@@ -1114,8 +1114,8 @@ class _UsersManagementState extends State<UsersManagement> {
                 color: Color(0xFF475569),
               ),
             ),
-            const SizedBox(height: 8),
-            const Text(
+            SizedBox(height: 8),
+            Text(
               'Users will appear here once they register',
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -1135,10 +1135,10 @@ class _UsersManagementState extends State<UsersManagement> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.search_off,
               size: 80,
-              color: const Color(0xFFE8ECEF),
+              color: Color(0xFFE8ECEF),
             ),
             const SizedBox(height: 16),
             const Text(

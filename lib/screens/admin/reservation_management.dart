@@ -301,9 +301,9 @@ class _ReservationManagementScreenState
                   const SizedBox(width: 16),
                   const Icon(Icons.warning, size: 14, color: Colors.red),
                   const SizedBox(width: 4),
-                  Text(
+                  const Text(
                     'Overdue',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       color: Colors.red,
                       fontWeight: FontWeight.bold,

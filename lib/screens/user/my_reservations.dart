@@ -6,7 +6,7 @@ import '../../utils/theme.dart';
 import 'equipment_detail.dart';
 
 class MyReservationsScreen extends StatefulWidget {
-  const MyReservationsScreen({Key? key}) : super(key: key);
+  const MyReservationsScreen({super.key});
 
   @override
   State<MyReservationsScreen> createState() => _MyReservationsScreenState();

@@ -44,7 +44,7 @@ class NotificationService {
 
   Future<void> checkAndSendRentalReminders() async {
     final now = DateTime.now();
-    final threeDaysLater = now.add(Duration(days: 3));
+    final threeDaysLater = now.add(const Duration(days: 3));
 
     final rentals = await _firestore
         .collection('rentals')

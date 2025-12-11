@@ -10,7 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 class ReservationScreen extends StatefulWidget {
   final Map<String, dynamic> equipment;
   
-  const ReservationScreen({Key? key, required this.equipment}) : super(key: key);
+  const ReservationScreen({super.key, required this.equipment});
   
   @override
   State<ReservationScreen> createState() => _ReservationScreenState();
@@ -141,8 +141,9 @@ class _ReservationScreenState extends State<ReservationScreen> {
       
       // Calculate trust score (simplified)
       int trustScore = 0;
-      if (returnedCount >= 10) trustScore = 3; // Trusted user
-      else if (returnedCount >= 5) trustScore = 2; // Regular user
+      if (returnedCount >= 10) {
+        trustScore = 3; // Trusted user
+      } else if (returnedCount >= 5) trustScore = 2; // Regular user
       else if (returnedCount >= 1) trustScore = 1; // New user with history
       
       setState(() {
@@ -645,7 +646,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
             ),
             if (progress > 1) ...[
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 '⚠️ Exceeds maximum rental period',
                 style: TextStyle(
                   fontSize: 12,
@@ -664,17 +665,17 @@ class _ReservationScreenState extends State<ReservationScreen> {
     if (_checkingAvailability) {
       return Card(
         color: Colors.blue.withOpacity(0.05),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+        child: const Padding(
+          padding: EdgeInsets.all(16),
           child: Row(
             children: [
-              const SizedBox(
+              SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
-              const SizedBox(width: 16),
-              const Expanded(
+              SizedBox(width: 16),
+              Expanded(
                 child: Text(
                   'Checking availability...',
                   style: TextStyle(fontWeight: FontWeight.w500),
@@ -898,7 +899,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
                         });
                         _checkAvailability();
                       },
-                      activeColor: AppColors.primaryBlue,
+                      activeThumbColor: AppColors.primaryBlue,
                     ),
                   ],
                 ),

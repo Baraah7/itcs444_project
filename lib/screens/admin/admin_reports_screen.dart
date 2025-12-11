@@ -79,7 +79,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
 
                 final rentals = snapshot.data ?? [];
                 if (rentals.isEmpty) {
-                  return Center(child: Text('No ${_selectedFilter} rentals'));
+                  return Center(child: Text('No $_selectedFilter rentals'));
                 }
 
                 return ListView.builder(
