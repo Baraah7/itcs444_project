@@ -136,6 +136,19 @@ class DonationService {
 
     final donation = snapshot.data() as Map<String, dynamic>;
 
+    // Notify the donor about approval
+    final donorId = donation['donorID'] as String?;
+    final itemName = donation['itemName'] as String? ?? 'item';
+    if (donorId != null) {
+      await _notificationService.sendNotification(
+        userId: donorId,
+        title: 'Donation Approved',
+        message: 'Your donation "$itemName" has been approved. Thank you for your contribution!',
+        type: 'donation',
+        data: {'donationId': donationID},
+      );
+    }
+
     final String itemType = (donation['itemType'] ?? '').toString();
     if (itemType.isEmpty) {
       print('❌ Cannot approve donation: itemType is empty');
