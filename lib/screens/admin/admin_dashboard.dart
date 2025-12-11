@@ -144,7 +144,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       icon: const Icon(Icons.settings_outlined, color: Color(0xFF2B6C67)),
                       onPressed: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const Settings()),
+                        MaterialPageRoute(builder: (context) => const AdminSettings()),
                       ),
                    ),
         ],
@@ -177,7 +177,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       case 4: return MaintenanceManagementScreen();
       case 5: return AdminReportsScreen();
       case 6: return UsersManagementScreen();
-      case 7: return ProfileScreen();
+      case 7: return const AdminSettings();
       default: return _buildDashboardBody(context, auth, admin);
     }
   }
