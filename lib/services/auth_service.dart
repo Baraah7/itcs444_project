@@ -92,28 +92,31 @@ class AuthService {
   // ─────────────────────────────────────────────
   // LOGIN USER
   // ─────────────────────────────────────────────
-  Future<AppUser?> login(String email, String password) async {
-    try {
-      // Firebase authentication
-      UserCredential cred = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+Future<AppUser?> login(String email, String password) async {
+  try {
+    UserCredential userCredential = await FirebaseAuth.instance
+        .signInWithEmailAndPassword(email: email, password: password);
 
-      String uid = cred.user!.uid;
+    // Use UID to fetch user profile
+    DocumentSnapshot doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userCredential.user!.uid)
+        .get();
 
-      // Fetch user data from Firestore
-      DocumentSnapshot snapshot = await usersCollection.doc(uid).get();
-
-      if (!snapshot.exists) return null;
-
-      return AppUser.fromFirestore(snapshot);
-
-    } catch (e) {
-      print("❌ Login error: $e");
+    if (doc.exists) {
+      return AppUser.fromFirestore(doc);
+    } else {
       return null;
     }
+  } catch (e) {
+    print('Login exception: $e');
+    return null;
   }
+}
+
+
+
+
 
   // ─────────────────────────────────────────────
   // LOGOUT USER
