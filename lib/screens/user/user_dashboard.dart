@@ -539,7 +539,7 @@ class _UserDashboardState extends State<UserDashboard> {
             });
 
             // Take only first 3
-            final limitedDocs = docs.take(3).toList();
+            final limitedDocs = docs.take(2).toList();
 
             return Column(
               children: limitedDocs.map((d) {
