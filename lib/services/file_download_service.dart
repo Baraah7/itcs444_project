@@ -4,26 +4,25 @@ import 'package:flutter/foundation.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
-import 'download_service.dart' as download_service;
+import 'download_service.dart';
 
 class FileDownloadService {
   
   // Save text file (JSON/CSV)
   Future<String?> saveTextFile(String content, String fileName) async {
     try {
-      if (kIsWeb) {
-        download_service.FileDownloadService.downloadText(content, fileName);
-        return 'Downloaded to browser downloads';
+      if (fileName.endsWith('.csv')) {
+        return await DownloadService.saveCsv(content, fileName);
       } else {
-        return await download_service.FileDownloadService.downloadText(content, fileName);
+        // Assume JSON if not CSV
+        final jsonData = jsonDecode(content) as Map<String, dynamic>;
+        return await DownloadService.saveJson(jsonData, fileName);
       }
     } catch (e) {
       if (kDebugMode) print('Error saving file: $e');
       return null;
     }
   }
-
-
 
   // Generate and save PDF
   Future<String?> generatePDF(Map<String, dynamic> reportData) async {
@@ -171,7 +170,7 @@ class FileDownloadService {
                         ...((rec['actionItems'] as List?) ?? []).map((item) => 
                           pw.Padding(
                             padding: const pw.EdgeInsets.only(left: 12, bottom: 2),
-                            child: pw.Text('• $item', style: const pw.TextStyle(fontSize: 10)),
+                            child: pw.Text('- $item', style: const pw.TextStyle(fontSize: 10)),
                           ),
                         ),
                       ],
@@ -196,12 +195,7 @@ class FileDownloadService {
       final fileName = 'care_center_summary_${DateTime.now().millisecondsSinceEpoch}.pdf';
       
       final bytes = await pdf.save();
-      if (kIsWeb) {
-        download_service.FileDownloadService.downloadBytes(bytes, fileName, 'application/pdf');
-        return 'Downloaded to browser downloads';
-      } else {
-        return await download_service.FileDownloadService.downloadBytes(bytes, fileName, 'application/pdf');
-      }
+      return await DownloadService.savePdf(bytes, fileName);
     } catch (e) {
       if (kDebugMode) print('Error generating PDF: $e');
       return null;
@@ -223,12 +217,7 @@ class FileDownloadService {
         ),
         pw.Padding(
           padding: const pw.EdgeInsets.all(8),
-          child: pw.Text(
-            value,
-            style: pw.TextStyle(
-              fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
-            ),
-          ),
+          child: pw.Text(value),
         ),
       ],
     );
@@ -246,6 +235,4 @@ class FileDownloadService {
         return PdfColors.blue;
     }
   }
-
-
 }

@@ -24,7 +24,7 @@ android {
         applicationId = "com.example.itcs444_project"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = 21
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
