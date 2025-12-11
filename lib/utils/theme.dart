@@ -7,7 +7,7 @@ class AppColors {
   static const Color primaryBlue = Color(0xFF57707A);    // Muted blue
   static const Color secondaryBlue = Color(0xFF7E919F);  // Light blue-gray
   static const Color neutralGray = Color(0xFF979DAB);    // Medium gray
-  static const Color accentMauve = Color(0xFFC5BAC4);    // Soft purple
+  static const Color accentMauve = Color.fromARGB(255, 235, 191, 206);    // Soft purple
   static const Color backgroundLight = Color(0xFFDEDCDC); // Light gray
   
   // Semantic Colors
@@ -23,11 +23,9 @@ class AppTheme {
     colorScheme: const ColorScheme.light(
       primary: AppColors.primaryBlue,
       secondary: AppColors.accentMauve,
-      background: AppColors.backgroundLight,
       surface: Colors.white,
       onPrimary: Colors.white,
       onSecondary: Colors.white,
-      onBackground: AppColors.primaryDark,
       onSurface: AppColors.primaryDark,
     ),
     
