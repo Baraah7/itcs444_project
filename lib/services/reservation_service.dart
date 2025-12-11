@@ -127,6 +127,7 @@ class ReservationService {
     required DateTime startDate,
     required DateTime endDate,
     int quantity = 1,
+    String? excludeRentalId,
   }) async {
     try {
       // Get equipment document
@@ -138,20 +139,10 @@ class ReservationService {
 
       final equipmentData = equipmentDoc.data() as Map<String, dynamic>;
 
-      // Check basic availability
-      final availability = equipmentData['availability'] ?? false;
-      if (!availability) {
-        return false;
-      }
-
       // Check quantity
       final totalQuantity = (equipmentData['quantity'] ?? 1) as int;
       final availableQuantity =
           (equipmentData['availableQuantity'] ?? totalQuantity) as int;
-
-      if (availableQuantity < quantity) {
-        return false;
-      }
 
       // Check for overlapping reservations
       final overlappingQuery = await _firestore
@@ -161,18 +152,36 @@ class ReservationService {
           .get();
 
       int reservedCount = 0;
+      int excludedRentalQuantity = 0;
+
       for (final rentalDoc in overlappingQuery.docs) {
         final rentalData = rentalDoc.data() as Map<String, dynamic>;
+
+        // Track the quantity of the rental we're extending
+        if (excludeRentalId != null && rentalDoc.id == excludeRentalId) {
+          excludedRentalQuantity = (rentalData['quantity'] ?? 1) as int;
+          continue;
+        }
+
         final rentalStart = DateTime.parse(rentalData['startDate']);
         final rentalEnd = DateTime.parse(rentalData['endDate']);
 
-        // Check for date overlap
-        if (startDate.isBefore(rentalEnd) && endDate.isAfter(rentalStart)) {
+        // Check for date overlap (excluding touching boundaries)
+        // Two periods overlap if: start1 < end2 AND end1 > start2
+        // But we want to allow touching: if end1 == start2 or start1 == end2, no overlap
+        if (startDate.isBefore(rentalEnd) &&
+            endDate.isAfter(rentalStart) &&
+            !startDate.isAtSameMomentAs(rentalEnd) &&
+            !endDate.isAtSameMomentAs(rentalStart)) {
           reservedCount += (rentalData['quantity'] ?? 1) as int;
         }
       }
 
-      final actuallyAvailable = availableQuantity - reservedCount;
+      // When extending, add back the quantity from the excluded rental
+      // because those items are already in use by that rental
+      final effectiveAvailable = availableQuantity + excludedRentalQuantity;
+      final actuallyAvailable = effectiveAvailable - reservedCount;
+
       return actuallyAvailable >= quantity;
     } catch (e) {
       print('Error checking availability: $e');
@@ -216,7 +225,10 @@ class ReservationService {
 
   // 4. GET ALL RENTALS (FOR ADMIN)
   Stream<List<Rental>> getAllRentals() {
-    return rentalsCollection.snapshots().map((snapshot) {
+    return rentalsCollection
+        .where('status', whereNotIn: ['available', 'maintenance', 'cancelled'])
+        .snapshots()
+        .map((snapshot) {
       final rentals = <Rental>[];
 
       for (var doc in snapshot.docs) {
@@ -406,21 +418,24 @@ class ReservationService {
 
       final rentalData = rentalDoc.data() as Map<String, dynamic>;
       final currentEndDate = DateTime.parse(rentalData['endDate']);
+      final startDate = DateTime.parse(rentalData['startDate']);
 
-      if (newEndDate.isBefore(currentEndDate)) {
+      if (newEndDate.isBefore(currentEndDate) ||
+          newEndDate.isAtSameMomentAs(currentEndDate)) {
         throw Exception('New end date must be after current end date');
       }
 
-      // Check availability for extended period
       final equipmentId = rentalData['equipmentId'] as String;
       final quantity = (rentalData['quantity'] ?? 1) as int;
-      final startDate = DateTime.parse(rentalData['startDate']);
 
+      // Check availability for the extension period only (from current end to new end)
+      // We check slightly before current end to catch any overlapping rentals
       final isAvailable = await checkAvailability(
         equipmentId: equipmentId,
-        startDate: startDate,
+        startDate: currentEndDate,
         endDate: newEndDate,
         quantity: quantity,
+        excludeRentalId: rentalId,
       );
 
       if (!isAvailable) {
@@ -429,9 +444,10 @@ class ReservationService {
 
       // Calculate additional cost
       final extraDays = newEndDate.difference(currentEndDate).inDays;
-      final dailyRate =
-          (rentalData['totalCost'] as double) /
-          (currentEndDate.difference(startDate).inDays);
+      final totalDays = currentEndDate.difference(startDate).inDays;
+      final dailyRate = totalDays > 0
+          ? (rentalData['totalCost'] as double) / totalDays
+          : 0.0;
       final additionalCost = extraDays * dailyRate * quantity;
 
       // Update rental

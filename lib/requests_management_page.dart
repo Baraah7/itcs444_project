@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:itcs444_project/models/rental_model.dart';
+import 'package:itcs444_project/services/reservation_service.dart';
 
 class RequestsManagementPage extends StatefulWidget {
   const RequestsManagementPage({super.key});
@@ -9,168 +11,19 @@ class RequestsManagementPage extends StatefulWidget {
 
 class _RequestsManagementPageState extends State<RequestsManagementPage>
     with SingleTickerProviderStateMixin {
-  late TabController tabController;
+  late TabController _tabController;
+  final ReservationService _reservationService = ReservationService();
 
   @override
   void initState() {
     super.initState();
-    tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
-  // TODO: Replace with Firestore Streams
-  final dummyRequests = [
-    {
-      "user": "Ali Ahmed",
-      "contact": "+973 3999 5522",
-      "equipment": "Wheelchair",
-      "dateStart": "2025-01-15",
-      "dateEnd": "2025-01-20",
-      "status": "pending",
-    },
-    {
-      "user": "Fatima Yusuf",
-      "contact": "+973 3311 1100",
-      "equipment": "Crutches",
-      "dateStart": "2025-01-10",
-      "dateEnd": "2025-01-12",
-      "status": "approved",
-    },
-    {
-      "user": "Hassan Ali",
-      "contact": "+973 3666 5533",
-      "equipment": "Walker",
-      "dateStart": "2025-01-01",
-      "dateEnd": "2025-01-15",
-      "status": "active",
-    },
-    {
-      "user": "Maryam Salman",
-      "contact": "+973 3777 9484",
-      "equipment": "Portable Bed",
-      "dateStart": "2024-12-20",
-      "dateEnd": "2024-12-30",
-      "status": "completed",
-    },
-  ];
-
-  // Filter helper
-  List<Map<String, dynamic>> filterRequests(String status) {
-    return dummyRequests.where((r) => r["status"] == status).toList();
-  }
-
-  Color getStatusColor(String status) {
-    switch (status) {
-      case "pending":
-        return Colors.orange;
-      case "approved":
-        return Colors.blue;
-      case "active":
-        return Colors.green;
-      case "completed":
-        return Colors.grey;
-      default:
-        return Colors.black;
-    }
-  }
-
-  // Approve → Check availability → Firestore Transaction later
-  void approveRequest(Map<String, dynamic> req) {
-    // TODO: Firestore Transaction to:
-    // 1. Check availability
-    // 2. Mark request as approved
-    // 3. Lock equipment for rental dates
-  }
-
-  void declineRequest(Map<String, dynamic> req) {
-    // TODO: Update status to "declined" and send notification
-  }
-
-  void checkOutEquipment(Map<String, dynamic> req) {
-    // TODO: Change status from "approved" → "active"
-  }
-
-  void markCompleted(Map<String, dynamic> req) {
-    // TODO: Change status "active" → "completed"
-    // TODO: Increase trust score or update history
-  }
-
-  Widget buildRequestCard(Map<String, dynamic> req) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // User Info
-            Text(
-              req["user"],
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 4),
-            Text(req["contact"], style: const TextStyle(color: Colors.grey)),
-
-            const SizedBox(height: 10),
-
-            // Equipment + Dates
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("Equipment: ${req["equipment"]}"),
-                Chip(
-                  label: Text(req["status"].toUpperCase()),
-                  backgroundColor: getStatusColor(
-                    req["status"],
-                  ).withOpacity(.2),
-                  labelStyle: TextStyle(
-                    color: getStatusColor(req["status"]),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            Text(
-              "From: ${req["dateStart"]}   →   To: ${req["dateEnd"]}",
-              style: const TextStyle(fontSize: 13),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Action Buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (req["status"] == "pending") ...[
-                  ElevatedButton(
-                    onPressed: () => approveRequest(req),
-                    child: const Text("Approve"),
-                  ),
-                  const SizedBox(width: 10),
-                  OutlinedButton(
-                    onPressed: () => declineRequest(req),
-                    child: const Text("Decline"),
-                  ),
-                ],
-
-                if (req["status"] == "approved") ...[
-                  ElevatedButton(
-                    onPressed: () => checkOutEquipment(req),
-                    child: const Text("Pick Up"),
-                  ),
-                ],
-
-                if (req["status"] == "active") ...[
-                  ElevatedButton(
-                    onPressed: () => markCompleted(req),
-                    child: const Text("Mark Returned"),
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -179,7 +32,7 @@ class _RequestsManagementPageState extends State<RequestsManagementPage>
       appBar: AppBar(
         title: const Text("Requests Management"),
         bottom: TabBar(
-          controller: tabController,
+          controller: _tabController,
           labelColor: Colors.white,
           indicatorColor: Colors.white,
           tabs: const [
@@ -191,31 +44,146 @@ class _RequestsManagementPageState extends State<RequestsManagementPage>
         ),
       ),
       body: TabBarView(
-        controller: tabController,
+        controller: _tabController,
         children: [
-          // PENDING
-          ListView(
-            children: filterRequests("pending").map(buildRequestCard).toList(),
-          ),
-
-          // APPROVED
-          ListView(
-            children: filterRequests("approved").map(buildRequestCard).toList(),
-          ),
-
-          // ACTIVE RENTALS
-          ListView(
-            children: filterRequests("active").map(buildRequestCard).toList(),
-          ),
-
-          // COMPLETED
-          ListView(
-            children: filterRequests(
-              "completed",
-            ).map(buildRequestCard).toList(),
-          ),
+          _buildRequestsList('pending'),
+          _buildRequestsList('approved'),
+          _buildRequestsList('active'),
+          _buildRequestsList('completed'),
         ],
       ),
     );
   }
+
+  Widget _buildRequestsList(String status) {
+    return StreamBuilder<List<Rental>>(
+      stream: _reservationService.getAllRentals(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text('No requests found.'));
+        }
+
+        final rentals = snapshot.data!.where((r) => r.status == status).toList();
+
+        if (rentals.isEmpty) {
+          return Center(child: Text('No requests with status "$status".'));
+        }
+
+        return ListView.builder(
+          itemCount: rentals.length,
+          itemBuilder: (context, index) {
+            return _buildRequestCard(rentals[index]);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildRequestCard(Rental rental) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              rental.userFullName,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("Equipment: ${rental.equipmentName}"),
+                Chip(
+                  label: Text(rental.status.toUpperCase()),
+                  backgroundColor: _getStatusColor(rental.status).withOpacity(.2),
+                  labelStyle: TextStyle(
+                    color: _getStatusColor(rental.status),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              "From: ${rental.startDate.toLocal().toString().split(' ')[0]}   →   To: ${rental.endDate.toLocal().toString().split(' ')[0]}",
+              style: const TextStyle(fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            _buildActionButtons(rental),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case "pending":
+        return Colors.orange;
+      case "approved":
+        return Colors.blue;
+      case "active":
+      case "checked_out":
+        return Colors.green;
+      case "completed":
+      case "returned":
+        return Colors.grey;
+      default:
+        return Colors.black;
+    }
+  }
+
+  Widget _buildActionButtons(Rental rental) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        if (rental.status == "pending") ...[
+          ElevatedButton(
+            onPressed: () => _updateRentalStatus(rental.id, 'approved'),
+            child: const Text("Approve"),
+          ),
+          const SizedBox(width: 10),
+          OutlinedButton(
+            onPressed: () => _updateRentalStatus(rental.id, 'cancelled'),
+            child: const Text("Decline"),
+          ),
+        ],
+        if (rental.status == "approved") ...[
+          ElevatedButton(
+            onPressed: () => _updateRentalStatus(rental.id, 'checked_out'),
+            child: const Text("Pick Up"),
+          ),
+        ],
+        if (rental.status == "active" || rental.status == "checked_out") ...[
+          ElevatedButton(
+            onPressed: () => _updateRentalStatus(rental.id, 'returned'),
+            child: const Text("Mark Returned"),
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _updateRentalStatus(String rentalId, String newStatus) {
+    _reservationService.updateRentalStatus(rentalId: rentalId, status: newStatus)
+      .then((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Rental status updated to $newStatus')),
+        );
+      })
+      .catchError((error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update status: $error')),
+        );
+      });
+  }
 }
+

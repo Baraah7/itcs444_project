@@ -94,25 +94,50 @@ class EquipmentService {
 
   // Mark equipment as available (from maintenance or returned)
   Future<void> markEquipmentAvailable(String equipmentId) async {
+    print('Executing markEquipmentAvailable for equipmentId: $equipmentId');
     await _firestore.collection('equipment').doc(equipmentId).update({
       'status': 'available',
       'availability': true,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+    print('Equipment $equipmentId status updated to available.');
     
     // Update all items to available
     await _updateAllItemsStatus(equipmentId, 'available', true);
+    print('Sub-items for $equipmentId updated.');
+
+    // Update related rentals to 'available'
+    final rentalsQuery = _firestore
+        .collection('rentals')
+        .where('equipmentId', isEqualTo: equipmentId)
+        .where('status', whereIn: ['pending', 'approved', 'checked_out', 'active', 'returned', 'completed']);
+    
+    final rentals = await rentalsQuery.get();
+    print('Found ${rentals.docs.length} related rentals to update.');
+
+    if (rentals.docs.isEmpty) {
+      print('No active or completed rentals found for equipment $equipmentId. Nothing to update.');
+      return;
+    }
+
+    final batch = _firestore.batch();
+    for (final doc in rentals.docs) {
+      print('Updating rental ${doc.id} to status: available');
+      batch.update(doc.reference, {'status': 'available'});
+    }
+    await batch.commit();
+    print('Batch commit successful for related rentals.');
   }
 
   // Get equipment by status
   Stream<List<Equipment>> getEquipmentByStatus(String status) {
-    return _firestore
-        .collection('equipment')
-        .where('status', isEqualTo: status)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Equipment.fromFirestore(doc))
-            .toList());
+    Query query = _firestore.collection('equipment');
+    if (status != 'All') {
+      query = query.where('status', isEqualTo: status.toLowerCase());
+    }
+    return query.snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) => Equipment.fromFirestore(doc)).toList();
+    });
   }
 
   // Get all equipment under maintenance
@@ -130,5 +155,26 @@ class EquipmentService {
         .get();
     
     return itemsSnapshot.docs.length;
+  }
+
+  Future<void> updateEquipmentStatus(String id, bool isAvailable, String status) async {
+    await _firestore.collection('equipment').doc(id).update({
+      'availability': isAvailable,
+      'status': status,
+    });
+
+    if (status == 'maintenance') {
+      final rentals = await _firestore
+          .collection('rentals')
+          .where('equipmentId', isEqualTo: id)
+          .where('status', whereIn: ['pending', 'approved', 'checked_out', 'active', 'returned', 'completed'])
+          .get();
+
+      final batch = _firestore.batch();
+      for (final doc in rentals.docs) {
+        batch.update(doc.reference, {'status': 'maintenance'});
+      }
+      await batch.commit();
+    }
   }
 }

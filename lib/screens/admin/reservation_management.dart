@@ -911,276 +911,12 @@ class _ReservationManagementScreenState
 
     return showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
-          return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Extend Rental',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E293B),
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Current end date: ${DateFormat('MMM dd, yyyy').format(rental.endDate)}',
-                      style: const TextStyle(
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    TextField(
-                      controller: newEndDateController,
-                      decoration: InputDecoration(
-                        labelText: 'New End Date',
-                        hintText: 'YYYY-MM-DD',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE8ECEF)),
-                        ),
-                        filled: true,
-                        fillColor: const Color(0xFFF8FAFC),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.calendar_today,
-                              color: Color(0xFF2B6C67)),
-                          onPressed: () async {
-                            final DateTime? picked = await showDatePicker(
-                              context: context,
-                              initialDate: rental.endDate.add(
-                                const Duration(days: 7),
-                              ),
-                              firstDate: rental.endDate,
-                              lastDate: DateTime(2100),
-                            );
-                            if (picked != null) {
-                              newEndDateController.text = DateFormat(
-                                'yyyy-MM-dd',
-                              ).format(picked);
-                              setState(() {});
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    FutureBuilder<bool>(
-                      future: _checkExtensionAvailability(
-                        rental,
-                        newEndDateController.text,
-                      ),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(
-                              color: Color(0xFF2B6C67),
-                            ),
-                          );
-                        }
-
-                        if (snapshot.hasError || snapshot.data == false) {
-                          return Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(12),
-                              border:
-                                  Border.all(color: Colors.red.withOpacity(0.3)),
-                            ),
-                            child: Text(
-                              'Cannot extend: ${snapshot.hasError ? snapshot.error.toString() : 'Not available'}',
-                              style: const TextStyle(color: Colors.red),
-                            ),
-                          );
-                        }
-
-                        final newEndDate = DateTime.tryParse(
-                          newEndDateController.text,
-                        );
-                        if (newEndDate != null) {
-                          final extraDays = newEndDate
-                              .difference(rental.endDate)
-                              .inDays;
-                          final dailyRate =
-                              rental.totalCost / rental.durationInDays;
-                          final additionalCost =
-                              extraDays * dailyRate * rental.quantity;
-
-                          return Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF0F9F8),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: const Color(0xFF2B6C67).withOpacity(0.3),
-                              ),
-                            ),
-                            child: Column(
-                              children: [
-                                const Text(
-                                  'Additional Cost',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFF64748B),
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '\$${additionalCost.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF2B6C67),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-
-                        return const SizedBox();
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.pop(context),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF2B6C67),
-                              side: const BorderSide(color: Color(0xFF2B6C67)),
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text('Cancel'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Container(
-                            height: 48,
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF2B6C67), Color(0xFF1A4A47)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF2B6C67).withOpacity(0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                shadowColor: Colors.transparent,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              onPressed: () async {
-                                final newEndDate = DateTime.tryParse(
-                                  newEndDateController.text,
-                                );
-                                if (newEndDate == null ||
-                                    newEndDate.isBefore(rental.endDate)) {
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Invalid date'),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                  }
-                                  return;
-                                }
-
-                                try {
-                                  await _reservationService.extendRental(
-                                    rentalId: rental.id,
-                                    newEndDate: newEndDate,
-                                  );
-
-                                  if (mounted) {
-                                    Navigator.pop(context);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content:
-                                            Text('Rental extended successfully'),
-                                        backgroundColor: Colors.green,
-                                      ),
-                                    );
-                                  }
-                                } catch (e) {
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Error: $e'),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
-                              child: const Text(
-                                'Extend',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
+      builder: (dialogContext) => _ExtendRentalDialog(
+        rental: rental,
+        newEndDateController: newEndDateController,
+        reservationService: _reservationService,
       ),
     );
-  }
-
-  Future<bool> _checkExtensionAvailability(
-    Rental rental,
-    String newEndDateString,
-  ) async {
-    try {
-      final newEndDate = DateTime.tryParse(newEndDateString);
-      if (newEndDate == null) return false;
-
-      return await _reservationService.checkAvailability(
-        equipmentId: rental.equipmentId,
-        startDate: rental.startDate,
-        endDate: newEndDate,
-        quantity: rental.quantity,
-      );
-    } catch (e) {
-      return false;
-    }
   }
 
   Future<void> _markEquipmentAvailable(Rental rental) async {
@@ -1568,5 +1304,354 @@ class _ReservationManagementScreenState
         ],
       ),
     );
+  }
+}
+
+// Separate stateful widget for the extend rental dialog
+class _ExtendRentalDialog extends StatefulWidget {
+  final Rental rental;
+  final TextEditingController newEndDateController;
+  final ReservationService reservationService;
+
+  const _ExtendRentalDialog({
+    required this.rental,
+    required this.newEndDateController,
+    required this.reservationService,
+  });
+
+  @override
+  State<_ExtendRentalDialog> createState() => _ExtendRentalDialogState();
+}
+
+class _ExtendRentalDialogState extends State<_ExtendRentalDialog> {
+  String _dateKey = '0';
+
+  Future<bool> _checkExtensionAvailability() async {
+    try {
+      final newEndDate = DateTime.tryParse(widget.newEndDateController.text);
+      if (newEndDate == null ||
+          newEndDate.isBefore(widget.rental.endDate) ||
+          newEndDate.isAtSameMomentAs(widget.rental.endDate)) {
+        return false;
+      }
+
+      return await widget.reservationService.checkAvailability(
+        equipmentId: widget.rental.equipmentId,
+        startDate: widget.rental.endDate,
+        endDate: newEndDate,
+        quantity: widget.rental.quantity,
+        excludeRentalId: widget.rental.id,
+      );
+    } catch (e) {
+      return false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Extend Rental',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF1E293B),
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Current end date: ${DateFormat('MMM dd, yyyy').format(widget.rental.endDate)}',
+                style: const TextStyle(
+                  color: Color(0xFF64748B),
+                ),
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                controller: widget.newEndDateController,
+                decoration: InputDecoration(
+                  labelText: 'New End Date',
+                  hintText: 'YYYY-MM-DD',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE8ECEF)),
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.calendar_today,
+                        color: Color(0xFF2B6C67)),
+                    onPressed: () async {
+                      final DateTime? picked = await showDatePicker(
+                        context: context,
+                        initialDate: widget.rental.endDate.add(
+                          const Duration(days: 7),
+                        ),
+                        firstDate: widget.rental.endDate.add(const Duration(days: 1)),
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null && mounted) {
+                        widget.newEndDateController.text = DateFormat(
+                          'yyyy-MM-dd',
+                        ).format(picked);
+                        setState(() {
+                          _dateKey = DateTime.now().millisecondsSinceEpoch.toString();
+                        });
+                      }
+                    },
+                  ),
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _dateKey = DateTime.now().millisecondsSinceEpoch.toString();
+                  });
+                },
+              ),
+              const SizedBox(height: 20),
+              FutureBuilder<bool>(
+                key: ValueKey(_dateKey),
+                future: _checkExtensionAvailability(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF2B6C67),
+                      ),
+                    );
+                  }
+
+                  if (snapshot.hasError || snapshot.data == false) {
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              snapshot.hasError
+                                  ? 'Error: ${snapshot.error}'
+                                  : 'Equipment not available for this period',
+                              style: const TextStyle(color: Colors.red, fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final newEndDate = DateTime.tryParse(
+                    widget.newEndDateController.text,
+                  );
+                  if (newEndDate != null &&
+                      newEndDate.isAfter(widget.rental.endDate)) {
+                    final extraDays = newEndDate
+                        .difference(widget.rental.endDate)
+                        .inDays;
+                    final dailyRate = widget.rental.durationInDays > 0
+                        ? widget.rental.totalCost / widget.rental.durationInDays
+                        : 0.0;
+                    final additionalCost =
+                        extraDays * dailyRate * widget.rental.quantity;
+
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0F9F8),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFF2B6C67).withOpacity(0.3),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.check_circle,
+                                  color: Color(0xFF2B6C67), size: 20),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Available for extension',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF2B6C67),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Additional Cost',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '\$${additionalCost.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF2B6C67),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'for $extraDays additional day${extraDays != 1 ? 's' : ''}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return const SizedBox();
+                },
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF2B6C67),
+                        side: const BorderSide(color: Color(0xFF2B6C67)),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF2B6C67), Color(0xFF1A4A47)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF2B6C67).withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () async {
+                          final newEndDate = DateTime.tryParse(
+                            widget.newEndDateController.text,
+                          );
+                          if (newEndDate == null ||
+                              newEndDate.isBefore(widget.rental.endDate) ||
+                              newEndDate.isAtSameMomentAs(widget.rental.endDate)) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please select a valid future date'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                            return;
+                          }
+
+                          // Check availability one more time before extending
+                          final isAvailable = await _checkExtensionAvailability();
+                          if (!isAvailable) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Equipment not available for this period'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                            return;
+                          }
+
+                          try {
+                            await widget.reservationService.extendRental(
+                              rentalId: widget.rental.id,
+                              newEndDate: newEndDate,
+                            );
+
+                            if (mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Rental extended successfully!'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error: ${e.toString()}'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        child: const Text(
+                          'Extend Rental',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    widget.newEndDateController.dispose();
+    super.dispose();
   }
 }
