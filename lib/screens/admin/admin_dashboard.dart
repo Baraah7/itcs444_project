@@ -176,7 +176,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       case 3: return DonationList();
       case 4: return MaintenanceManagementScreen();
       case 5: return AdminReportsScreen();
-      case 6: return UserDetailScreen(user: admin);
+      case 6: return UsersManagementScreen();
       case 7: return ProfileScreen();
       default: return _buildDashboardBody(context, auth, admin);
     }
@@ -1146,7 +1146,7 @@ Widget _buildRecentActivity(BuildContext context) {
   }
 
   Widget _buildUsersBody(BuildContext context) {
-    return const UsersManagement();
+    return const UsersManagementScreen();
   }
 
   // ============ NAVIGATION METHODS ============
