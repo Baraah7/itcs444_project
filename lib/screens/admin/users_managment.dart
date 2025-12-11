@@ -60,10 +60,6 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
             letterSpacing: -0.3,
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2B6C67)),
-          onPressed: () => Navigator.pop(context),
-        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(

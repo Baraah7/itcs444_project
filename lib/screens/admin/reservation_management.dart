@@ -504,7 +504,8 @@ class _ReservationManagementScreenState
               if (rental.isOverdue) ...[
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.red.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -959,9 +960,8 @@ class _ReservationManagementScreenState
         final rentals = snapshot.data!;
         final pending = rentals.where((r) => r.status == 'pending').length;
         final approved = rentals.where((r) => r.status == 'approved').length;
-        final checkedOut = rentals
-            .where((r) => r.status == 'checked_out')
-            .length;
+        final checkedOut =
+            rentals.where((r) => r.status == 'checked_out').length;
         final overdue = rentals.where((r) => r.isOverdue).length;
         final returned = rentals.where((r) => r.status == 'returned').length;
 
@@ -998,16 +998,16 @@ class _ReservationManagementScreenState
                 children: [
                   _statChip('Total', rentals.length.toString(),
                       const Color(0xFF2B6C67)),
-                  _statChip('Pending', pending.toString(),
-                      const Color(0xFFF59E0B)),
-                  _statChip('Approved', approved.toString(),
-                      const Color(0xFF3B82F6)),
+                  _statChip(
+                      'Pending', pending.toString(), const Color(0xFFF59E0B)),
+                  _statChip(
+                      'Approved', approved.toString(), const Color(0xFF3B82F6)),
                   _statChip('Picked Up', checkedOut.toString(),
                       const Color(0xFF10B981)),
-                  _statChip('Overdue', overdue.toString(),
-                      const Color(0xFFEF4444)),
-                  _statChip('Returned', returned.toString(),
-                      const Color(0xFF64748B)),
+                  _statChip(
+                      'Overdue', overdue.toString(), const Color(0xFFEF4444)),
+                  _statChip(
+                      'Returned', returned.toString(), const Color(0xFF64748B)),
                 ],
               ),
             ],
@@ -1066,10 +1066,6 @@ class _ReservationManagementScreenState
             letterSpacing: -0.3,
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2B6C67)),
-          onPressed: () => Navigator.pop(context),
-        ),
       ),
       body: Column(
         children: [
@@ -1095,8 +1091,8 @@ class _ReservationManagementScreenState
                       controller: _searchController,
                       decoration: InputDecoration(
                         hintText: 'Search by user, equipment...',
-                        prefixIcon: const Icon(Icons.search,
-                            color: Color(0xFF64748B)),
+                        prefixIcon:
+                            const Icon(Icons.search, color: Color(0xFF64748B)),
                         suffixIcon: _searchQuery.isNotEmpty
                             ? IconButton(
                                 icon: const Icon(Icons.clear,
@@ -1396,7 +1392,8 @@ class _ExtendRentalDialogState extends State<_ExtendRentalDialog> {
                         initialDate: widget.rental.endDate.add(
                           const Duration(days: 7),
                         ),
-                        firstDate: widget.rental.endDate.add(const Duration(days: 1)),
+                        firstDate:
+                            widget.rental.endDate.add(const Duration(days: 1)),
                         lastDate: DateTime(2100),
                       );
                       if (picked != null && mounted) {
@@ -1404,7 +1401,8 @@ class _ExtendRentalDialogState extends State<_ExtendRentalDialog> {
                           'yyyy-MM-dd',
                         ).format(picked);
                         setState(() {
-                          _dateKey = DateTime.now().millisecondsSinceEpoch.toString();
+                          _dateKey =
+                              DateTime.now().millisecondsSinceEpoch.toString();
                         });
                       }
                     },
@@ -1439,14 +1437,16 @@ class _ExtendRentalDialogState extends State<_ExtendRentalDialog> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                          const Icon(Icons.error_outline,
+                              color: Colors.red, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               snapshot.hasError
                                   ? 'Error: ${snapshot.error}'
                                   : 'Equipment not available for this period',
-                              style: const TextStyle(color: Colors.red, fontSize: 13),
+                              style: const TextStyle(
+                                  color: Colors.red, fontSize: 13),
                             ),
                           ),
                         ],
@@ -1459,9 +1459,8 @@ class _ExtendRentalDialogState extends State<_ExtendRentalDialog> {
                   );
                   if (newEndDate != null &&
                       newEndDate.isAfter(widget.rental.endDate)) {
-                    final extraDays = newEndDate
-                        .difference(widget.rental.endDate)
-                        .inDays;
+                    final extraDays =
+                        newEndDate.difference(widget.rental.endDate).inDays;
                     final dailyRate = widget.rental.durationInDays > 0
                         ? widget.rental.totalCost / widget.rental.durationInDays
                         : 0.0;
@@ -1577,11 +1576,13 @@ class _ExtendRentalDialogState extends State<_ExtendRentalDialog> {
                           );
                           if (newEndDate == null ||
                               newEndDate.isBefore(widget.rental.endDate) ||
-                              newEndDate.isAtSameMomentAs(widget.rental.endDate)) {
+                              newEndDate
+                                  .isAtSameMomentAs(widget.rental.endDate)) {
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Please select a valid future date'),
+                                  content:
+                                      Text('Please select a valid future date'),
                                   backgroundColor: Colors.red,
                                 ),
                               );
@@ -1590,12 +1591,14 @@ class _ExtendRentalDialogState extends State<_ExtendRentalDialog> {
                           }
 
                           // Check availability one more time before extending
-                          final isAvailable = await _checkExtensionAvailability();
+                          final isAvailable =
+                              await _checkExtensionAvailability();
                           if (!isAvailable) {
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Equipment not available for this period'),
+                                  content: Text(
+                                      'Equipment not available for this period'),
                                   backgroundColor: Colors.red,
                                 ),
                               );
@@ -1613,7 +1616,8 @@ class _ExtendRentalDialogState extends State<_ExtendRentalDialog> {
                               Navigator.pop(context);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Rental extended successfully!'),
+                                  content:
+                                      Text('Rental extended successfully!'),
                                   backgroundColor: Colors.green,
                                 ),
                               );

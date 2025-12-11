@@ -39,10 +39,6 @@ class _DonationDetailsState extends State<DonationDetails> {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)),
-          onPressed: () => Navigator.pop(context),
-        ),
         title: const Text(
           'Donation Details',
           style: TextStyle(
@@ -158,9 +154,9 @@ class _DonationDetailsState extends State<DonationDetails> {
                           ],
                         ),
                       ),
-                      
+
                       const SizedBox(height: 20),
-                      
+
                       // Main Card
                       Container(
                         decoration: BoxDecoration(
@@ -174,7 +170,8 @@ class _DonationDetailsState extends State<DonationDetails> {
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF2B6C67).withOpacity(0.05),
+                                color:
+                                    const Color(0xFF2B6C67).withOpacity(0.05),
                                 borderRadius: const BorderRadius.only(
                                   topLeft: Radius.circular(16),
                                   topRight: Radius.circular(16),
@@ -185,7 +182,8 @@ class _DonationDetailsState extends State<DonationDetails> {
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF2B6C67).withOpacity(0.1),
+                                      color: const Color(0xFF2B6C67)
+                                          .withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Icon(
@@ -202,7 +200,8 @@ class _DonationDetailsState extends State<DonationDetails> {
                                   const SizedBox(width: 16),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           '${d.itemType} Donation',
@@ -226,7 +225,7 @@ class _DonationDetailsState extends State<DonationDetails> {
                                 ],
                               ),
                             ),
-                            
+
                             // All Details
                             Padding(
                               padding: const EdgeInsets.all(16),
@@ -238,34 +237,47 @@ class _DonationDetailsState extends State<DonationDetails> {
                                   const Divider(height: 24),
                                   _buildDetailRow('Condition', d.condition),
                                   const Divider(height: 24),
-                                  _buildDetailRow('Quantity', '${d.quantity ?? 1}'),
+                                  _buildDetailRow(
+                                      'Quantity', '${d.quantity ?? 1}'),
                                   const Divider(height: 24),
-                                  _buildDetailRow('Description', d.description ?? 'N/A', isLong: true),
+                                  _buildDetailRow(
+                                      'Description', d.description ?? 'N/A',
+                                      isLong: true),
                                   const Divider(height: 24),
                                   _buildDetailRow('Donor Name', d.donorName),
                                   const Divider(height: 24),
-                                  _buildDetailRow('Donor Contact', d.donorContact),
+                                  _buildDetailRow(
+                                      'Donor Contact', d.donorContact),
                                   const Divider(height: 24),
-                                  _buildDetailRow('Submitted On', dateFormat.format(d.submissionDate)),
+                                  _buildDetailRow('Submitted On',
+                                      dateFormat.format(d.submissionDate)),
                                   const Divider(height: 24),
                                   _buildDetailRow('Status', d.status),
                                   if (d.approvalDate != null) ...[
                                     const Divider(height: 24),
-                                    _buildDetailRow('Approved On', dateFormat.format(d.approvalDate!)),
+                                    _buildDetailRow('Approved On',
+                                        dateFormat.format(d.approvalDate!)),
                                   ],
                                   if (d.rejectionDate != null) ...[
                                     const Divider(height: 24),
-                                    _buildDetailRow('Rejected On', dateFormat.format(d.rejectionDate!)),
+                                    _buildDetailRow('Rejected On',
+                                        dateFormat.format(d.rejectionDate!)),
                                   ],
                                   const Divider(height: 24),
-                                  _buildDetailRow('Comments', (d.comments == null || d.comments!.trim().isEmpty) ? 'N/A' : d.comments!, isLong: true),
+                                  _buildDetailRow(
+                                      'Comments',
+                                      (d.comments == null ||
+                                              d.comments!.trim().isEmpty)
+                                          ? 'N/A'
+                                          : d.comments!,
+                                      isLong: true),
                                 ],
                               ),
                             ),
                           ],
                         ),
                       ),
-                      
+
                       // Images
                       if (d.imagePaths != null && d.imagePaths!.isNotEmpty) ...[
                         const SizedBox(height: 20),
@@ -294,23 +306,24 @@ class _DonationDetailsState extends State<DonationDetails> {
                                     height: 120,
                                     width: 120,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) =>
-                                        Container(
-                                          height: 120,
-                                          width: 120,
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFF8FAFC),
-                                            borderRadius: BorderRadius.circular(12),
-                                            border: Border.all(
-                                              color: const Color(0xFFE8ECEF),
-                                            ),
-                                          ),
-                                          child: const Icon(
-                                            Icons.broken_image,
-                                            size: 40,
-                                            color: Color(0xFF94A3B8),
-                                          ),
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            Container(
+                                      height: 120,
+                                      width: 120,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF8FAFC),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: const Color(0xFFE8ECEF),
                                         ),
+                                      ),
+                                      child: const Icon(
+                                        Icons.broken_image,
+                                        size: 40,
+                                        color: Color(0xFF94A3B8),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               );
@@ -318,13 +331,13 @@ class _DonationDetailsState extends State<DonationDetails> {
                           ),
                         ),
                       ],
-                      
+
                       const SizedBox(height: 20),
                     ],
                   ),
                 ),
               ),
-              
+
               // Action Buttons (Fixed at bottom)
               if (isPending)
                 Container(
@@ -373,9 +386,8 @@ class _DonationDetailsState extends State<DonationDetails> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: _isProcessing
-                              ? null
-                              : () => _handleReject(d.id!),
+                          onPressed:
+                              _isProcessing ? null : () => _handleReject(d.id!),
                           icon: _isProcessing
                               ? const SizedBox(
                                   width: 16,
@@ -416,7 +428,8 @@ class _DonationDetailsState extends State<DonationDetails> {
 
   Widget _buildDetailRow(String label, String value, {bool isLong = false}) {
     return Row(
-      crossAxisAlignment: isLong ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+      crossAxisAlignment:
+          isLong ? CrossAxisAlignment.start : CrossAxisAlignment.center,
       children: [
         SizedBox(
           width: 110,
@@ -459,7 +472,7 @@ class _DonationDetailsState extends State<DonationDetails> {
 
     try {
       await DonationService().approveDonation(donationId);
-      
+
       if (mounted) {
         setState(() {
           _futureDonation = DonationService().fetchDonation(donationId);
@@ -477,7 +490,7 @@ class _DonationDetailsState extends State<DonationDetails> {
     } catch (e) {
       if (mounted) {
         setState(() => _isProcessing = false);
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
@@ -505,7 +518,7 @@ class _DonationDetailsState extends State<DonationDetails> {
 
     try {
       await DonationService().rejectDonation(donationId);
-      
+
       if (mounted) {
         setState(() {
           _futureDonation = DonationService().fetchDonation(donationId);
@@ -523,7 +536,7 @@ class _DonationDetailsState extends State<DonationDetails> {
     } catch (e) {
       if (mounted) {
         setState(() => _isProcessing = false);
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
