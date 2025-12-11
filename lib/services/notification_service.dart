@@ -6,6 +6,7 @@ Future<void> createAdminNotification({
   required String title,
   required String message,
   required String type, // e.g., 'reservation', 'donation', 'equipment', 'reservationDue'
+  String? excludeAdminId, // Optional: ID of admin to exclude from receiving notification
 }) {
   return FirebaseFirestore.instance.collection('adminNotifications').add({
     'title': title,
@@ -13,6 +14,7 @@ Future<void> createAdminNotification({
     'type': type,
     'createdAt': FieldValue.serverTimestamp(),
     'isRead': false,
+    'excludeAdminId': excludeAdminId, // Store the ID of admin who created the notification
   });
 }
 class NotificationService {

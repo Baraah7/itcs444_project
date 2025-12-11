@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class AdminNotificationsScreen extends StatelessWidget {
@@ -109,8 +110,18 @@ class AdminNotificationsScreen extends StatelessWidget {
             );
           }
 
-          final docs = snapshot.data?.docs ?? [];
-          if (docs.isEmpty) {
+          // Get current admin's ID to filter out their own notifications
+          final currentAdminId = FirebaseAuth.instance.currentUser?.uid;
+
+          // Filter out notifications where current admin is excluded
+          final filteredDocs = (snapshot.data?.docs ?? []).where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final excludeAdminId = data['excludeAdminId'] as String?;
+            // Show notification only if excludeAdminId is null or doesn't match current admin
+            return excludeAdminId == null || excludeAdminId != currentAdminId;
+          }).toList();
+
+          if (filteredDocs.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -144,9 +155,9 @@ class AdminNotificationsScreen extends StatelessWidget {
 
           return ListView.builder(
             padding: const EdgeInsets.all(8),
-            itemCount: docs.length,
+            itemCount: filteredDocs.length,
             itemBuilder: (context, index) {
-              final doc = docs[index];
+              final doc = filteredDocs[index];
               final data = doc.data() as Map<String, dynamic>;
               final title = data['title'] ?? 'Notification';
               final message = data['message'] ?? '';
