@@ -15,7 +15,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
   String _searchQuery = '';
   String _filterRole = 'all';
 
-  final List<String> _roleFilters = ['all', 'user', 'donor', 'admin'];
+  final List<String> _roleFilters = ['all', 'user', 'admin'];
 
   @override
   void initState() {

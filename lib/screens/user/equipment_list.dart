@@ -25,9 +25,6 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
     'Walker',
     'Wheelchair',
     'Crutches',
-    'Commode',
-    'Patient Lift',
-    'Other',
   ];
 
   @override
@@ -60,7 +57,7 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF2B6C67),
         title: const Text(
-          'Medical Equipment',
+          'Equipment',
           style: TextStyle(fontWeight: FontWeight.w500, color: Colors.white),
         ),
       ),
@@ -110,7 +107,7 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
               fontSize: 15,
             ),
             decoration: InputDecoration(
-              hintText: 'Search medical equipment...',
+              hintText: 'Search equipment...',
               hintStyle: const TextStyle(
                 color: Color(0xFF94A3B8),
               ),
@@ -866,10 +863,6 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
         return Icon(Icons.accessible, color: color, size: size);
       case 'crutches':
         return Icon(Icons.sports, color: color, size: size);
-      case 'commode':
-        return Icon(Icons.bathroom, color: color, size: size);
-      case 'patient lift':
-        return Icon(Icons.arrow_upward, color: color, size: size);
       default:
         return Icon(Icons.medical_services, color: color, size: size);
     }
@@ -905,7 +898,7 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Check back later for available medical equipment',
+            'Check back later for available equipment',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
