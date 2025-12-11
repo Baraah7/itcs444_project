@@ -5,7 +5,7 @@ import 'package:itcs444_project/screens/user/donation_history.dart';
 import 'package:itcs444_project/screens/user/equipment_list.dart';
 import 'package:itcs444_project/screens/user/my_reservations.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
+import '../../providers/auth_provider.dart' as CustomAuth;
 import '../shared/notifications_screen.dart';
 import 'settings.dart';
 import 'equipment_detail.dart';
@@ -31,7 +31,7 @@ class _UserDashboardState extends State<UserDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context);
+    final auth = Provider.of<CustomAuth.AuthProvider>(context);
     final user = auth.currentUser;
 
     return Scaffold(
@@ -101,7 +101,7 @@ class _UserDashboardState extends State<UserDashboard> {
     );
   }
 
-  Widget _getBodyForIndex(int index, BuildContext context, AuthProvider auth, dynamic user) {
+  Widget _getBodyForIndex(int index, BuildContext context, CustomAuth.AuthProvider auth, dynamic user) {
     switch (index) {
       case 0: return _buildDashboardBody(context, auth, user);
       case 1: return UserEquipmentPage();
@@ -112,7 +112,7 @@ class _UserDashboardState extends State<UserDashboard> {
     }
   }
 
-  Widget _buildSidebarDrawer(BuildContext context, dynamic user, AuthProvider auth) {
+  Widget _buildSidebarDrawer(BuildContext context, dynamic user, CustomAuth.AuthProvider auth) {
     final size = MediaQuery.of(context).size;
 
     return Drawer(
@@ -253,7 +253,7 @@ class _UserDashboardState extends State<UserDashboard> {
   }
 
   // ------------------- DASHBOARD BODY -------------------
-  Widget _buildDashboardBody(BuildContext context, AuthProvider auth, dynamic user) {
+  Widget _buildDashboardBody(BuildContext context, CustomAuth.AuthProvider auth, dynamic user) {
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -360,9 +360,12 @@ class _UserDashboardState extends State<UserDashboard> {
   }
 
   // ----------------- Recent Activities -----------------
-// ----------------- FIXED Recent Activities -----------------
   Widget _buildRecentActivity(dynamic user) {
     final userId = user?.docId;
+
+    // Debug logging
+    print('🔍 DEBUG - User ID for recent activity: $userId');
+    print('🔍 DEBUG - User object: ${user?.email}');
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -393,7 +396,7 @@ class _UserDashboardState extends State<UserDashboard> {
               _buildActivitySection(
                 title: "Reservations",
                 userId: userId,
-                collection: 'reservations',
+                collection: 'rentals',
                 icon: Icons.event_available,
                 emptyMessage: "No reservations",
               ),
@@ -427,19 +430,62 @@ class _UserDashboardState extends State<UserDashboard> {
     required IconData icon,
     required String emptyMessage,
   }) {
+    // Determine the field name based on collection
+    final String userIdField = collection == 'donations' ? 'donorID' : 'userId';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(icon, size: 18, color: const Color(0xFF2B6C67)),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1E293B),
-                fontSize: 16,
+            Row(
+              children: [
+                Icon(icon, size: 18, color: const Color(0xFF2B6C67)),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E293B),
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            TextButton(
+              onPressed: () {
+                // Navigate based on collection type
+                if (collection == 'donations') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const DonationHistory()),
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MyReservationsScreen()),
+                  );
+                }
+              },
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'View All',
+                    style: TextStyle(
+                      color: Color(0xFF2B6C67),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 12,
+                    color: Color(0xFF2B6C67),
+                  ),
+                ],
               ),
             ),
           ],
@@ -448,9 +494,7 @@ class _UserDashboardState extends State<UserDashboard> {
         StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection(collection)
-              .where('userId', isEqualTo: userId)
-              .orderBy('createdAt', descending: true)
-              .limit(3)
+              .where(userIdField, isEqualTo: userId)
               .snapshots(),
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
@@ -461,26 +505,62 @@ class _UserDashboardState extends State<UserDashboard> {
                 ),
               );
             }
-            
-            final docs = snap.data?.docs ?? [];
-            
+
+            // Debug logging
+            if (snap.hasError) {
+              print(' ERROR in $collection stream: ${snap.error}');
+              return _smallEmptyCard('Error loading $emptyMessage');
+            }
+
+            var docs = snap.data?.docs ?? [];
+            print(' DEBUG - $collection: Found ${docs.length} documents for user $userId');
+
             if (docs.isEmpty) {
               return _smallEmptyCard(emptyMessage);
             }
-            
+
+            // Sort documents by date in the app (to avoid Firestore index requirement)
+            docs.sort((a, b) {
+              final aData = a.data() as Map<String, dynamic>;
+              final bData = b.data() as Map<String, dynamic>;
+              final dateFieldName = collection == 'donations' ? 'submissionDate' : 'createdAt';
+
+              final aDate = aData[dateFieldName];
+              final bDate = bData[dateFieldName];
+
+              if (aDate == null && bDate == null) return 0;
+              if (aDate == null) return 1;
+              if (bDate == null) return -1;
+
+              final aTimestamp = aDate is Timestamp ? aDate.toDate() : DateTime.parse(aDate.toString());
+              final bTimestamp = bDate is Timestamp ? bDate.toDate() : DateTime.parse(bDate.toString());
+
+              return bTimestamp.compareTo(aTimestamp); // Descending order (newest first)
+            });
+
+            // Take only first 3
+            final limitedDocs = docs.take(3).toList();
+
             return Column(
-              children: docs.map((d) {
+              children: limitedDocs.map((d) {
                 final data = d.data() as Map<String, dynamic>;
-                final title = data['equipmentName'] ?? 
-                             (collection == 'donations' ? 'Donation' : 'Equipment');
+
+                // Get title based on collection type
+                final title = collection == 'donations'
+                    ? (data['itemName'] ?? 'Donation')
+                    : (data['equipmentName'] ?? 'Equipment');
+
                 final status = (data['status'] ?? 'pending').toString();
-                final date = (data['createdAt'] is Timestamp)
-                    ? (data['createdAt'] as Timestamp).toDate()
+
+                // Get date based on collection type
+                final dateFieldName = collection == 'donations' ? 'submissionDate' : 'createdAt';
+                final date = (data[dateFieldName] is Timestamp)
+                    ? (data[dateFieldName] as Timestamp).toDate()
                     : null;
-                
+
                 return _compactActivityRow(
-                  title: title, 
-                  status: status, 
+                  title: title,
+                  status: status,
                   date: date,
                   type: collection,
                 );
@@ -1086,7 +1166,7 @@ class _UserDashboardState extends State<UserDashboard> {
 
   // ------------------- HISTORY -------------------
   Widget _buildHistoryBody(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context);
+    final auth = Provider.of<CustomAuth.AuthProvider>(context);
     final userId = auth.currentUser?.docId;
 
     return StreamBuilder<QuerySnapshot>(
