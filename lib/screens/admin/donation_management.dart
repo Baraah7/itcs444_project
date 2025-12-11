@@ -63,17 +63,36 @@ class _DonationListState extends State<DonationList> {
           ),
         ),
       ),
-      body: Column(
-        children: [
-          _buildSearchAndFilters(),
-          _buildStatsBar(),
-          Expanded(child: _buildDonationsList()),
-        ],
+      body: FutureBuilder<List<Donation>>(
+        future: DonationService().fetchAllDonations(),
+        builder: (context, snapshot) {
+          final donations = snapshot.data ?? [];
+          return Column(
+            children: [
+              _buildSearchAndFilters(donations),
+              Expanded(child: _buildDonationsList()),
+            ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildSearchAndFilters() {
+  Widget _buildSearchAndFilters(List<Donation> donations) {
+    // Calculate counts for each status
+    final allCount = donations.length;
+    final pendingCount = donations.where((d) => d.status == 'Pending').length;
+    final approvedCount = donations.where((d) => d.status == 'Approved').length;
+    final rejectedCount = donations.where((d) => d.status == 'Rejected').length;
+
+    // Map status to count
+    Map<String, int> statusCounts = {
+      'All': allCount,
+      'Pending': pendingCount,
+      'Approved': approvedCount,
+      'Rejected': rejectedCount,
+    };
+
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.all(20),
@@ -118,8 +137,8 @@ class _DonationListState extends State<DonationList> {
             ),
           ),
           const SizedBox(height: 16),
-          
-          // Status Filters
+
+          // Status Filters with counts
           SizedBox(
             height: 44,
             child: ListView.builder(
@@ -128,11 +147,13 @@ class _DonationListState extends State<DonationList> {
               itemBuilder: (context, index) {
                 final status = _statusFilters[index];
                 final isSelected = _selectedStatus == status;
+                final count = statusCounts[status] ?? 0;
+
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: FilterChip(
                     label: Text(
-                      status,
+                      '$status ($count)',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -154,107 +175,12 @@ class _DonationListState extends State<DonationList> {
                           : const Color(0xFFE8ECEF),
                     ),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 21,
+                      horizontal: 8,
                       vertical: 8,
                     ),
                   ),
                 );
               },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatsBar() {
-    return FutureBuilder<List<Donation>>(
-      future: DonationService().fetchAllDonations(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const SizedBox();
-        }
-
-        final donations = snapshot.data!;
-        final pendingCount = donations.where((d) => d.status == 'Pending').length;
-        final approvedCount = donations.where((d) => d.status == 'Approved').length;
-        final rejectedCount = donations.where((d) => d.status == 'Rejected').length;
-
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            border: Border(
-              bottom: BorderSide(color: Color(0xFFE8ECEF)),
-            ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: _buildStatChip(
-                  label: 'Pending',
-                  count: pendingCount,
-                  color: const Color(0xFFF59E0B),
-                  icon: Icons.pending_actions,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildStatChip(
-                  label: 'Approved',
-                  count: approvedCount,
-                  color: const Color(0xFF10B981),
-                  icon: Icons.check_circle,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildStatChip(
-                  label: 'Rejected',
-                  count: rejectedCount,
-                  color: const Color(0xFFEF4444),
-                  icon: Icons.cancel,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildStatChip({
-    required String label,
-    required int count,
-    required Color color,
-    required IconData icon,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 8),
-          Text(
-            '$count',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: color,
-              fontWeight: FontWeight.w600,
             ),
           ),
         ],
