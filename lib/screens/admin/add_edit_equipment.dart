@@ -26,16 +26,9 @@ class _AddEditEquipmentPageState extends State<AddEditEquipmentPage> {
   
   // Medical equipment types for dropdown
   final List<String> _equipmentTypes = [
-    'Wheelchair',
-    'Crutches',
-    'Walker',
-    'Hospital Bed',
-    'Oxygen Tank',
-    'Nebulizer',
-    'Blood Pressure Monitor',
-    'Glucose Meter',
-    'Thermometer',
-    'First Aid Kit',
+    'Mobility Aid',
+    'Bathroom Aid',
+    'Hospital Furniture',
     'Other'
   ];
   

@@ -15,7 +15,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
   String _searchQuery = '';
   String _filterRole = 'all';
 
-  final List<String> _roleFilters = ['all', 'user', 'donor', 'admin'];
+  final List<String> _roleFilters = ['all', 'user', 'admin'];
 
   @override
   void initState() {
@@ -59,10 +59,6 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
             color: Color(0xFF1E293B),
             letterSpacing: -0.3,
           ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2B6C67)),
-          onPressed: () => Navigator.pop(context),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
