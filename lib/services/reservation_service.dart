@@ -99,17 +99,7 @@ class ReservationService {
 
       // Don't sync equipment on pending - wait for admin approval
 
-      // Send notification to user
-      await _notificationService.sendNotification(
-        userId: firebaseUser.uid,
-        title: 'Rental Request Submitted',
-        message:
-            'Your rental request for "$equipmentName" has been submitted and is pending approval.',
-        type: 'approval',
-        data: {'rentalId': rentalId},
-      );
-
-      // Notify admins
+      // Notify admins only (user already knows they submitted the request)
      await _notificationService.sendAdminNotification(
   title: 'New Rental Request',
   message: 'User ${firebaseUser.email} submitted a rental request for "$equipmentName".',
