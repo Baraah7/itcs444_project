@@ -80,7 +80,8 @@ class _DonationDetailsState extends State<DonationDetails> {
                       children: [
                         Text('Item Name: ${d.itemName}'),
                         Text('Donor Name: ${d.donorName}'),
-                        Text('Donor Contact: ${d.donorContact}'),
+                        Text('Donor Email: ${d.donorContact}'),
+                        Text('Donor Phone: ${d.donorPhone}'),
                         Text('Condition: ${d.condition}'),
                         Text('Description: ${d.description ?? "N/A"}'),
                         Text('Quantity: ${d.quantity ?? 1}'),
