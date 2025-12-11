@@ -48,37 +48,50 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // UPDATED LOGIN: fetches role from Firestore
+Future<bool> login(String email, String password, {bool rememberMe = false}) async {
+  try {
+    _isLoading = true;
+    notifyListeners();
 
-  Future<bool> login(String email, String password, {bool rememberMe = false}) async {
-    try {
-      _isLoading = true;
-      notifyListeners();
+    print('Attempting login for email: $email');
 
-      AppUser? user = await _authService.login(email, password);
+    // Fetch user document from Firestore
+    AppUser? user = await _authService.login(email, password);
 
-      if (user != null) {
-        _currentUser = user;
-        
-        if (rememberMe) {
-          await _saveCredentials(email, password);
-        } else {
-          await _clearCredentials();
-        }
-        
-        _isLoading = false;
-        notifyListeners();
-        return true;
-      } else {
-        _isLoading = false;
-        notifyListeners();
-        return false;
+    if (user != null) {
+      _currentUser = user;
+      print('User found: ${user.email}, role: ${user.role}, docId: ${user.docId}');
+
+      // Check role
+      if (user.role.toLowerCase() == 'admin') {
+        print('Admin login detected');
       }
-    } catch (e) {
+
+      // Save credentials if "remember me"
+      if (rememberMe) {
+        await _saveCredentials(email, password);
+      } else {
+        await _clearCredentials();
+      }
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } else {
+      print('Login failed: user not found or password incorrect');
       _isLoading = false;
       notifyListeners();
       return false;
     }
+  } catch (e) {
+    print('Login exception: $e');
+    _isLoading = false;
+    notifyListeners();
+    return false;
   }
+}
+  
 
   Future<void> logout() async {
     await _authService.logout();
@@ -89,11 +102,9 @@ class AuthProvider with ChangeNotifier {
   Future<void> _saveCredentials(String email, String password) async {
     final prefs = await SharedPreferences.getInstance();
     List<String> savedAccounts = prefs.getStringList('saved_accounts') ?? [];
-    
     String account = '$email:$password';
     savedAccounts.remove(account);
     savedAccounts.insert(0, account);
-    
     await prefs.setStringList('saved_accounts', savedAccounts);
   }
 
@@ -105,7 +116,6 @@ class AuthProvider with ChangeNotifier {
   Future<List<Map<String, String>>> getSavedAccounts() async {
     final prefs = await SharedPreferences.getInstance();
     List<String> savedAccounts = prefs.getStringList('saved_accounts') ?? [];
-    
     return savedAccounts.map((account) {
       final parts = account.split(':');
       return {'email': parts[0], 'password': parts[1]};

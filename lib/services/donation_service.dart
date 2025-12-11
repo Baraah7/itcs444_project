@@ -7,6 +7,7 @@ import 'notification_service.dart';
 class DonationService {
   final FirebaseFirestore db = FirebaseFirestore.instance;
   final FirebaseStorage storage = FirebaseStorage.instance;
+  final NotificationService _notificationService = NotificationService();
 
   Future<List<String>> uploadDonationImages(List<File> files) async {
     final List<String> downloadUrls = [];
@@ -80,11 +81,11 @@ class DonationService {
       print('✅ Donation submitted with ID: ${docRef.id}');
 
       // Notify admins about new donation
-      await _notifyAdmins(
-        'New Donation Submitted',
-        'User $donorName submitted a donation for "$itemName".',
-        'donation',
-        {'donationId': docRef.id},
+      await _notificationService.sendAdminNotification(
+        title: 'New Donation Submitted',
+        message: 'User $donorName submitted a donation for "$itemName".',
+        type: 'donation',
+        data: {'donationId': docRef.id},
       );
 
       return docRef.id;
@@ -203,36 +204,4 @@ class DonationService {
     return Donation.fromMap(doc.data(), doc.id);
   }).toList();
 }
-
-  // NOTIFY ADMINS
-  Future<void> _notifyAdmins(
-    String title,
-    String message,
-    String type, [
-    Map<String, dynamic>? data,
-  ]) async {
-    try {
-      print('🔔 Attempting to notify admins about donation...');
-      final admins = await db
-          .collection('users')
-          .where('role', isEqualTo: 'admin')
-          .get();
-
-      print('🔔 Found ${admins.docs.length} admin(s)');
-
-      for (var admin in admins.docs) {
-        print('🔔 Sending notification to admin: ${admin.id}');
-        await NotificationService().sendNotification(
-          userId: admin.id,
-          title: title,
-          message: message,
-          type: type,
-          data: data,
-        );
-        print('🔔 Notification sent successfully to ${admin.id}');
-      }
-    } catch (e) {
-      print('❌ Error notifying admins: $e');
-    }
-  }
 }
