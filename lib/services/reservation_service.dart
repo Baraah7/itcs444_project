@@ -378,33 +378,18 @@ class ReservationService {
         final equipmentName = rentalData['equipmentName'] as String;
         final userFullName = rentalData['userFullName'] as String;
 
-        await _notifyAdmins(
-          'Approved Reservation Cancelled',
-          'User $userFullName cancelled their approved reservation for "$equipmentName"',
-          'cancellation',
-          {'rentalId': rentalId},
+        await _notificationService.sendAdminNotification(
+          title: 'Approved Reservation Cancelled',
+          message: 'User $userFullName cancelled their approved reservation for "$equipmentName"',
+          type: 'cancellation',
+          data: {'rentalId': rentalId},
         );
       }
     } catch (e) {
       throw Exception('Failed to cancel rental: $e');
     }
   }
-Future<void> cancelReservation(String reservationId, String userEmail, String equipmentName) async {
-  final reservationRef = FirebaseFirestore.instance.collection('rentals').doc(reservationId);
-  final doc = await reservationRef.get();
 
-  if (doc.exists && doc['status'] == 'approved') {
-    await reservationRef.update({'status': 'cancelled'});
-
-    await createAdminNotification(
-      title: 'Reservation Cancelled',
-      message: 'User $userEmail cancelled their approved reservation for "$equipmentName".',
-      type: 'reservation',
-    );
-  } else {
-    await reservationRef.update({'status': 'cancelled'});
-  }
-}
   // HIDE RENTAL FROM MY RESERVATIONS (USER)
   Future<void> deleteRental(String rentalId) async {
     try {
@@ -578,38 +563,5 @@ Future<void> cancelReservation(String reservationId, String userEmail, String eq
       return 0;
     }
   }
-
-  // NOTIFY ADMINS
-  Future<void> _notifyAdmins(
-    String title,
-    String message,
-    String type, [
-    Map<String, dynamic>? data,
-  ]) async {
-    try {
-      print('🔔 Attempting to notify admins...');
-      final admins = await _firestore
-          .collection('users')
-          .where('role', isEqualTo: 'admin')
-          .get();
-
-      print('🔔 Found ${admins.docs.length} admin(s)');
-
-      for (var admin in admins.docs) {
-        print('🔔 Sending notification to admin: ${admin.id}');
-        await _notificationService.sendNotification(
-          userId: admin.id,
-          title: title,
-          message: message,
-          type: type,
-          data: data,
-        );
-        print('🔔 Notification sent successfully to ${admin.id}');
-      }
-    } catch (e) {
-      print('❌ Error notifying admins: $e');
-    }
-  }
-  
 
 }

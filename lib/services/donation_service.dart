@@ -80,23 +80,12 @@ class DonationService {
       print('✅ Donation submitted with ID: ${docRef.id}');
 
       // Notify admins about new donation
-      Future<void> submitDonation(String donationId, String userEmail, String itemName) async {
-  final donationRef = FirebaseFirestore.instance.collection('donations').doc(donationId);
-
-  await donationRef.set({
-    'status': 'pending',
-    'submissionDate': FieldValue.serverTimestamp(),
-    'userEmail': userEmail,
-    'itemName': itemName,
-  });
-
-  await createAdminNotification(
-    title: 'New Donation Submitted',
-    message: 'User $userEmail submitted a donation for "$itemName".',
-    type: 'donation',
-  );
-}
-
+      await _notifyAdmins(
+        'New Donation Submitted',
+        'User $donorName submitted a donation for "$itemName".',
+        'donation',
+        {'donationId': docRef.id},
+      );
 
       return docRef.id;
     } catch (e) {
