@@ -36,7 +36,8 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reports & Analytics', style: TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: false,
+        centerTitle: true,
+        
         actions: [
           IconButton(
             icon: const Icon(Icons.download),
@@ -72,13 +73,14 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
 
   Widget _buildOverviewTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(height: 8),
           // Key Metrics
-          _buildSectionHeader('Key Metrics'),
-          const SizedBox(height: 16),
+          _buildSectionHeader('Key Metrics', Icons.dashboard_rounded),
+          const SizedBox(height: 20),
           FutureBuilder<Map<String, dynamic>>(
             future: _reportsService.getUsageAnalytics(),
             builder: (context, snapshot) {
@@ -100,8 +102,8 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
           const SizedBox(height: 32),
           
           // Most Rented Equipment Chart
-          _buildSectionHeader('Most Rented Equipment'),
-          const SizedBox(height: 16),
+          _buildSectionHeader('Most Rented Equipment', Icons.star_rounded),
+          const SizedBox(height: 20),
           FutureBuilder<List<Map<String, dynamic>>>(
             future: _reportsService.getMostRentedEquipment(limit: 5),
             builder: (context, snapshot) {
@@ -114,10 +116,11 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
               if (!snapshot.hasData || snapshot.data!.isEmpty) {
                 return _buildEmptyWidget('No rental data available');
               }
-              return Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE8ECEF)),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -130,8 +133,8 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
           const SizedBox(height: 32),
           
           // Monthly Trends
-          _buildSectionHeader('Monthly Rental Trends'),
-          const SizedBox(height: 16),
+          _buildSectionHeader('Monthly Rental Trends', Icons.show_chart_rounded),
+          const SizedBox(height: 20),
           FutureBuilder<List<Map<String, dynamic>>>(
             future: _reportsService.getMonthlyTrends(),
             builder: (context, snapshot) {
@@ -154,13 +157,14 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
 
   Widget _buildUsageTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(height: 8),
           // Efficiency Insights
-          _buildSectionHeader('Efficiency Insights'),
-          const SizedBox(height: 16),
+          _buildSectionHeader('Efficiency Insights', Icons.insights_rounded),
+          const SizedBox(height: 20),
           FutureBuilder<Map<String, dynamic>>(
             future: _reportsService.getEfficiencyInsights(),
             builder: (context, snapshot) {
@@ -183,16 +187,16 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
                   const SizedBox(height: 32),
                   
                   if (insights['highPerforming']?.isNotEmpty ?? false) ...[
-                    _buildSectionHeader('High Performing Equipment'),
-                    const SizedBox(height: 12),
-                    _buildEquipmentList(insights['highPerforming'], Colors.green),
+                    _buildSectionHeader('High Performing Equipment', Icons.rocket_launch_rounded),
+                    const SizedBox(height: 16),
+                    _buildEquipmentList(insights['highPerforming'], const Color(0xFF10B981)),
                     const SizedBox(height: 24),
                   ],
                   
                   if (insights['underutilized']?.isNotEmpty ?? false) ...[
-                    _buildSectionHeader('Underutilized Equipment'),
-                    const SizedBox(height: 12),
-                    _buildEquipmentList(insights['underutilized'], Colors.orange),
+                    _buildSectionHeader('Underutilized Equipment', Icons.trending_down_rounded),
+                    const SizedBox(height: 16),
+                    _buildEquipmentList(insights['underutilized'], const Color(0xFFF59E0B)),
                     const SizedBox(height: 24),
                   ],
                 ],
@@ -201,8 +205,8 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
           ),
           
           // Most Donated Equipment
-          _buildSectionHeader('Most Donated Equipment'),
-          const SizedBox(height: 16),
+          _buildSectionHeader('Most Donated Equipment', Icons.volunteer_activism_rounded),
+          const SizedBox(height: 20),
           FutureBuilder<List<Map<String, dynamic>>>(
             future: _reportsService.getMostDonatedEquipment(limit: 5),
             builder: (context, snapshot) {
@@ -215,10 +219,11 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
               if (!snapshot.hasData || snapshot.data!.isEmpty) {
                 return _buildEmptyWidget('No donation data available');
               }
-              return Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE8ECEF)),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -234,12 +239,13 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
 
   Widget _buildOverdueTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader('Overdue Statistics'),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          _buildSectionHeader('Overdue Statistics', Icons.access_time_rounded),
+          const SizedBox(height: 20),
           FutureBuilder<Map<String, dynamic>>(
             future: _reportsService.getOverdueStatistics(),
             builder: (context, snapshot) {
@@ -262,12 +268,13 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
                   const SizedBox(height: 32),
                   
                   if (stats['overdueEquipment']?.isNotEmpty ?? false) ...[
-                    _buildSectionHeader('Overdue Equipment by Type'),
-                    const SizedBox(height: 16),
-                    Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
+                    _buildSectionHeader('Overdue Equipment by Type', Icons.category_rounded),
+                    const SizedBox(height: 20),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE8ECEF)),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
@@ -286,12 +293,13 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
 
   Widget _buildMaintenanceTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader('Maintenance Records'),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          _buildSectionHeader('Maintenance Records', Icons.handyman_rounded),
+          const SizedBox(height: 20),
           FutureBuilder<List<Map<String, dynamic>>>(
             future: _reportsService.getMaintenanceRecords(),
             builder: (context, snapshot) {
@@ -319,23 +327,66 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.w700,
-        color: Colors.black87,
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF2B6C67).withOpacity(0.1),
+            const Color(0xFF2B6C67).withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF2B6C67).withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFF2B6C67),
+                  Color(0xFF1A4A47),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1E293B),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildLoadingIndicator() {
-    return SizedBox(
+    return Container(
       height: 200,
-      child: Center(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE8ECEF)),
+      ),
+      child: const Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation(Theme.of(context).primaryColor),
+          valueColor: AlwaysStoppedAnimation(Color(0xFF2B6C67)),
         ),
       ),
     );
@@ -345,16 +396,36 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
     return Container(
       height: 200,
       padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE8ECEF)),
+      ),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 48),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(50),
+              ),
+              child: const Icon(
+                Icons.error_outline,
+                color: Color(0xFFEF4444),
+                size: 36,
+              ),
+            ),
             const SizedBox(height: 16),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.red),
+              style: const TextStyle(
+                color: Color(0xFFEF4444),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
@@ -366,16 +437,35 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
     return Container(
       height: 200,
       padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE8ECEF)),
+      ),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.info_outline, color: Colors.grey, size: 48),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF94A3B8).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(50),
+              ),
+              child: const Icon(
+                Icons.info_outline,
+                color: Color(0xFF94A3B8),
+                size: 36,
+              ),
+            ),
             const SizedBox(height: 16),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.grey),
+              style: const TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 14,
+              ),
             ),
           ],
         ),
@@ -385,10 +475,10 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
 
   Widget _buildMetricsGrid(Map<String, dynamic> analytics) {
     final metrics = [
-      _MetricItem('Total Rentals', analytics['totalRentals'].toString(), Icons.event_available, Colors.blue),
-      _MetricItem('Active Rentals', analytics['activeRentals'].toString(), Icons.schedule, Colors.green),
-      _MetricItem('Utilization Rate', '${analytics['utilizationRate'].toStringAsFixed(1)}%', Icons.trending_up, Colors.orange),
-      _MetricItem('Total Revenue', '\$${analytics['totalRevenue'].toStringAsFixed(0)}', Icons.attach_money, Colors.purple),
+      _MetricItem('Total Rentals', analytics['totalRentals'].toString(), Icons.event_available, const Color(0xFF2B6C67)),
+      _MetricItem('Active Rentals', analytics['activeRentals'].toString(), Icons.schedule, const Color(0xFF10B981)),
+      _MetricItem('Utilization Rate', '${analytics['utilizationRate'].toStringAsFixed(1)}%', Icons.trending_up, const Color(0xFFF59E0B)),
+      _MetricItem('Total Revenue', '\$${analytics['totalRevenue'].toStringAsFixed(0)}', Icons.attach_money, const Color(0xFF8B5CF6)),
     ];
 
     return GridView.builder(
@@ -396,8 +486,8 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
         childAspectRatio: 1.2,
       ),
       itemCount: metrics.length,
@@ -414,35 +504,74 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
   }
 
   Widget _buildMetricCard(String title, String value, IconData icon, Color color) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            color.withOpacity(0.03),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.2), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: color, size: 32),
-            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [color, color.withOpacity(0.7)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 22),
+                ),
+              ],
+            ),
+            const Spacer(),
             Text(
               value,
               style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
                 color: color,
+                letterSpacing: -0.5,
               ),
-              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               title,
               style: const TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF64748B),
               ),
-              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -451,24 +580,33 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
   }
 
   Widget _buildMonthlyTrendsChart(List<Map<String, dynamic>> data) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE8ECEF)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Last ${data.length} Months',
               style: const TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF64748B),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             SizedBox(
               height: 200,
               child: LineChart(
@@ -477,6 +615,12 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
                     show: true,
                     drawVerticalLine: false,
                     horizontalInterval: _calculateInterval(data),
+                    getDrawingHorizontalLine: (value) {
+                      return FlLine(
+                        color: const Color(0xFFE8ECEF),
+                        strokeWidth: 1,
+                      );
+                    },
                   ),
                   titlesData: FlTitlesData(
                     show: true,
@@ -491,7 +635,10 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
                             if (parts.length >= 2) {
                               return Text(
                                 '${parts[1]}/${parts[0].substring(2)}',
-                                style: const TextStyle(fontSize: 10),
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Color(0xFF64748B),
+                                ),
                               );
                             }
                           }
@@ -499,10 +646,19 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
                         },
                       ),
                     ),
-                    leftTitles: const AxisTitles(
+                    leftTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
                         reservedSize: 40,
+                        getTitlesWidget: (value, meta) {
+                          return Text(
+                            value.toInt().toString(),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Color(0xFF64748B),
+                            ),
+                          );
+                        },
                       ),
                     ),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -510,7 +666,7 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
                   ),
                   borderData: FlBorderData(
                     show: true,
-                    border: Border.all(color: Colors.grey.shade300),
+                    border: Border.all(color: const Color(0xFFE8ECEF)),
                   ),
                   lineBarsData: [
                     LineChartBarData(
@@ -521,10 +677,23 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
                         );
                       }).toList(),
                       isCurved: true,
-                      color: Theme.of(context).primaryColor,
+                      color: const Color(0xFF2B6C67),
                       barWidth: 3,
-                      belowBarData: BarAreaData(show: false),
-                      dotData: const FlDotData(show: true),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        color: const Color(0xFF2B6C67).withOpacity(0.1),
+                      ),
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, barData, index) {
+                          return FlDotCirclePainter(
+                            radius: 4,
+                            color: const Color(0xFF2B6C67),
+                            strokeWidth: 2,
+                            strokeColor: Colors.white,
+                          );
+                        },
+                      ),
                     ),
                   ],
                   minY: 0,
@@ -546,34 +715,57 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
   Widget _buildInsightsCard(Map<String, dynamic> insights) {
     final insightsList = (insights['insights'] as List<String>?) ?? [];
     
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE8ECEF)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(Icons.lightbulb_outline, color: Theme.of(context).primaryColor),
-                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2B6C67).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.lightbulb_outline,
+                    color: Color(0xFF2B6C67),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
                 const Text(
                   'Key Insights',
                   style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1E293B),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             if (insightsList.isEmpty)
               const Text(
                 'All equipment is performing within normal ranges.',
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 14,
+                ),
               )
             else
               ...insightsList.map((insight) => Padding(
@@ -581,11 +773,21 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('• ', style: TextStyle(fontSize: 16)),
+                    const Text(
+                      '• ',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF2B6C67),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     Expanded(
                       child: Text(
                         insight,
-                        style: const TextStyle(fontSize: 14),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF1E293B),
+                        ),
                       ),
                     ),
                   ],
@@ -605,30 +807,62 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
       separatorBuilder: (context, index) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final item = equipment[index];
-        return Card(
-          elevation: 1,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE8ECEF)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: color.withOpacity(0.1),
-              child: Icon(Icons.medical_services_outlined, color: color),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.construction,
+                color: color,
+                size: 20,
+              ),
             ),
             title: Text(
               item['name'] ?? 'Unknown Equipment',
-              style: const TextStyle(fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                color: Color(0xFF1E293B),
+              ),
             ),
             subtitle: Text(
               'Utilization: ${(item['utilizationRate'] ?? 0 * 100).toStringAsFixed(1)}%',
-            ),
-            trailing: Chip(
-              label: Text(
-                '${item['rentalCount'] ?? 0} rentals',
-                style: const TextStyle(color: Colors.white, fontSize: 12),
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF64748B),
               ),
-              backgroundColor: color,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            ),
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${item['rentalCount'] ?? 0} rentals',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
         );
@@ -638,10 +872,10 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
 
   Widget _buildOverdueMetrics(Map<String, dynamic> stats) {
     final metrics = [
-      _MetricItem('Overdue Items', stats['overdueCount']?.toString() ?? '0', Icons.warning, Colors.red),
-      _MetricItem('Overdue Rate', '${(stats['overdueRate'] ?? 0).toStringAsFixed(1)}%', Icons.trending_down, Colors.orange),
-      _MetricItem('Late Fees', '\$${(stats['totalLateFees'] ?? 0).toStringAsFixed(0)}', Icons.attach_money, Colors.green),
-      _MetricItem('Equipment Types', (stats['overdueEquipment']?.length ?? 0).toString(), Icons.category, Colors.purple),
+      _MetricItem('Overdue Items', stats['overdueCount']?.toString() ?? '0', Icons.warning, const Color(0xFFEF4444)),
+      _MetricItem('Overdue Rate', '${(stats['overdueRate'] ?? 0).toStringAsFixed(1)}%', Icons.trending_down, const Color(0xFFF59E0B)),
+      _MetricItem('Late Fees', '\$${(stats['totalLateFees'] ?? 0).toStringAsFixed(0)}', Icons.attach_money, const Color(0xFF10B981)),
+      _MetricItem('Equipment Types', (stats['overdueEquipment']?.length ?? 0).toString(), Icons.category, const Color(0xFF8B5CF6)),
     ];
 
     return GridView.builder(
@@ -649,8 +883,8 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
         childAspectRatio: 1.2,
       ),
       itemCount: metrics.length,
@@ -667,32 +901,65 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
   }
 
   Widget _buildMaintenanceCard(Map<String, dynamic> record) {
-    return Card(
-      elevation: 1,
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE8ECEF)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.purple.withOpacity(0.1),
-          child: const Icon(Icons.build_outlined, color: Colors.purple),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF8B5CF6).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(
+            Icons.build_outlined,
+            color: Color(0xFF8B5CF6),
+            size: 20,
+          ),
         ),
         title: Text(
           record['equipmentName'] ?? 'Unknown Equipment',
-          style: const TextStyle(fontWeight: FontWeight.w500),
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: Color(0xFF1E293B),
+          ),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (record['userFullName'] != null)
-              Text('User: ${record['userFullName']}'),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'User: ${record['userFullName']}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ),
             if (record['adminNotes'] != null && record['adminNotes'].toString().isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   'Notes: ${record['adminNotes']}',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF64748B),
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -706,16 +973,29 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
                 children: [
                   Text(
                     DateTime.parse(record['maintenanceDate']).toString().substring(0, 10),
-                    style: const TextStyle(fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                      color: Color(0xFF1E293B),
+                    ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
                     DateTime.parse(record['maintenanceDate']).toString().substring(11, 16),
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF64748B),
+                    ),
                   ),
                 ],
               )
-            : const Text('No date', style: TextStyle(color: Colors.grey)),
+            : const Text(
+                'No date',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF94A3B8),
+                ),
+              ),
       ),
     );
   }
@@ -723,43 +1003,143 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
   void _showExportMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.download_outlined),
-            title: const Text('Export as JSON'),
-            onTap: () {
-              Navigator.pop(context);
-              _handleExport('json');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.table_chart_outlined),
-            title: const Text('Export as CSV'),
-            onTap: () {
-              Navigator.pop(context);
-              _handleExport('csv');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.picture_as_pdf_outlined),
-            title: const Text('Generate PDF Summary'),
-            onTap: () {
-              Navigator.pop(context);
-              _handleExport('pdf');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.description_outlined),
-            title: const Text('View Summary'),
-            onTap: () {
-              Navigator.pop(context);
-              _handleExport('summary');
-            },
+      builder: (context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 20, right: 20, bottom: 16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2B6C67).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.download,
+                      color: Color(0xFF2B6C67),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Export Reports',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: Color(0xFFE8ECEF)),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2B6C67).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.download_outlined,
+                  color: Color(0xFF2B6C67),
+                  size: 20,
+                ),
+              ),
+              title: const Text(
+                'Export as JSON',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _handleExport('json');
+              },
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.table_chart_outlined,
+                  color: Color(0xFF10B981),
+                  size: 20,
+                ),
+              ),
+              title: const Text(
+                'Export as CSV',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _handleExport('csv');
+              },
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.picture_as_pdf_outlined,
+                  color: Color(0xFFEF4444),
+                  size: 20,
+                ),
+              ),
+              title: const Text(
+                'Generate PDF Summary',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _handleExport('pdf');
+              },
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.description_outlined,
+                  color: Color(0xFF8B5CF6),
+                  size: 20,
+                ),
+              ),
+              title: const Text(
+                'View Summary',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _handleExport('summary');
+              },
           ),
           const Divider(),
           ListTile(
@@ -769,7 +1149,8 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 
   void _handleExport(String format) async {
@@ -807,16 +1188,26 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: [
+            children: const [
               CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation(Theme.of(context).primaryColor),
+                valueColor: AlwaysStoppedAnimation(Color(0xFF2B6C67)),
               ),
-              const SizedBox(width: 20),
-              const Text('Generating report...'),
+              SizedBox(width: 20),
+              Text(
+                'Generating report...',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
             ],
           ),
         ),
