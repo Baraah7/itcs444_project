@@ -26,7 +26,6 @@ class _EquipmentPageState extends State<EquipmentPage> {
     'Gardening',
     'Cleaning',
     'Safety',
-    'Other',
   ];
 
   @override
