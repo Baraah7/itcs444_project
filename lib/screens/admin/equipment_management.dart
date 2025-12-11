@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'item_page.dart';
 import 'add_edit_equipment.dart';
+import '../../services/notification_service.dart';
 
 enum ViewType { list, grid }
 
@@ -1092,6 +1094,10 @@ class _EquipmentPageState extends State<EquipmentPage> {
           ElevatedButton(
             onPressed: () async {
               try {
+                // Get current admin's email
+                final currentUser = FirebaseAuth.instance.currentUser;
+                final adminEmail = currentUser?.email ?? 'An admin';
+
                 await FirebaseFirestore.instance
                     .collection('equipment')
                     .doc(equipmentId)
@@ -1109,6 +1115,14 @@ class _EquipmentPageState extends State<EquipmentPage> {
                   'notes': notesController.text,
                   'timestamp': FieldValue.serverTimestamp(),
                 });
+
+                // Notify other admins (excluding the current admin)
+                await createAdminNotification(
+                  title: 'Equipment Under Maintenance',
+                  message: '$adminEmail marked "$name" for maintenance. Reason: ${notesController.text}',
+                  type: 'maintenance',
+                  excludeAdminId: currentUser?.uid,
+                );
 
                 if (context.mounted) {
                   Navigator.pop(context);
