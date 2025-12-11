@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../providers/tracking_providers.dart';
 
 class AdminTrackingScreen extends StatefulWidget {
+  const AdminTrackingScreen({super.key});
+
   @override
   _AdminTrackingScreenState createState() => _AdminTrackingScreenState();
 }
@@ -20,19 +22,19 @@ class _AdminTrackingScreenState extends State<AdminTrackingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('All Rentals Tracking'),
+        title: const Text('All Rentals Tracking'),
       ),
       body: Consumer<TrackingProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
           return DefaultTabController(
             length: 2,
             child: Column(
               children: [
-                TabBar(
+                const TabBar(
                   tabs: [
                     Tab(text: 'Active Rentals'),
                     Tab(text: 'History'),
@@ -56,16 +58,16 @@ class _AdminTrackingScreenState extends State<AdminTrackingScreen> {
 
   Widget _buildActiveRentals(List rentals) {
     if (rentals.isEmpty) {
-      return Center(child: Text('No active rentals'));
+      return const Center(child: Text('No active rentals'));
     }
 
     return ListView.builder(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       itemCount: rentals.length,
       itemBuilder: (context, index) {
         final rental = rentals[index];
         return Card(
-          margin: EdgeInsets.only(bottom: 10),
+          margin: const EdgeInsets.only(bottom: 10),
           child: ListTile(
             leading: Icon(rental.statusIcon, color: rental.statusColor),
             title: Text(rental.equipmentName),
@@ -80,7 +82,7 @@ class _AdminTrackingScreenState extends State<AdminTrackingScreen> {
               ],
             ),
             trailing: Chip(
-              label: Text(rental.statusText, style: TextStyle(fontSize: 10)),
+              label: Text(rental.statusText, style: const TextStyle(fontSize: 10)),
               backgroundColor: rental.statusBadgeColor,
             ),
           ),
@@ -91,16 +93,16 @@ class _AdminTrackingScreenState extends State<AdminTrackingScreen> {
 
   Widget _buildHistory(List rentals) {
     if (rentals.isEmpty) {
-      return Center(child: Text('No rental history'));
+      return const Center(child: Text('No rental history'));
     }
 
     return ListView.builder(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       itemCount: rentals.length,
       itemBuilder: (context, index) {
         final rental = rentals[index];
         return Card(
-          margin: EdgeInsets.only(bottom: 10),
+          margin: const EdgeInsets.only(bottom: 10),
           child: ListTile(
             leading: Icon(rental.statusIcon, color: rental.statusColor),
             title: Text(rental.equipmentName),
@@ -112,7 +114,7 @@ class _AdminTrackingScreenState extends State<AdminTrackingScreen> {
               ],
             ),
             trailing: Chip(
-              label: Text(rental.statusText, style: TextStyle(fontSize: 10)),
+              label: Text(rental.statusText, style: const TextStyle(fontSize: 10)),
               backgroundColor: rental.statusBadgeColor,
             ),
           ),

@@ -465,8 +465,6 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     switch (role.toLowerCase()) {
       case 'admin':
         return const Color(0xFFEF4444);
-      case 'donor':
-        return const Color(0xFF8B5CF6);
       case 'user':
         return const Color(0xFF3B82F6);
       default:

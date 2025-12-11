@@ -4,6 +4,8 @@ import '../providers/notification_provider.dart';
 import '../providers/auth_provider.dart';
 
 class NotificationScreen extends StatefulWidget {
+  const NotificationScreen({super.key});
+
   @override
   _NotificationScreenState createState() => _NotificationScreenState();
 }
@@ -24,16 +26,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Notifications'),
+        title: const Text('Notifications'),
       ),
       body: Consumer<NotificationProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (provider.notifications.isEmpty) {
-            return Center(child: Text('No notifications'));
+            return const Center(child: Text('No notifications'));
           }
 
           return ListView.builder(
@@ -41,7 +43,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             itemBuilder: (context, index) {
               final notification = provider.notifications[index];
               return Card(
-                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 color: notification.isRead ? Colors.white : Colors.blue.shade50,
                 child: ListTile(
                   leading: _getNotificationIcon(notification.type),
@@ -50,8 +52,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(notification.message),
-                      SizedBox(height: 4),
-                      Text(_formatDate(notification.createdAt), style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      const SizedBox(height: 4),
+                      Text(_formatDate(notification.createdAt), style: const TextStyle(fontSize: 12, color: Colors.grey)),
                     ],
                   ),
                   onTap: () {
@@ -71,17 +73,17 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Icon _getNotificationIcon(String type) {
     switch (type) {
       case 'rental_reminder':
-        return Icon(Icons.alarm, color: Colors.orange);
+        return const Icon(Icons.alarm, color: Colors.orange);
       case 'overdue':
-        return Icon(Icons.warning, color: Colors.red);
+        return const Icon(Icons.warning, color: Colors.red);
       case 'donation':
-        return Icon(Icons.volunteer_activism, color: Colors.green);
+        return const Icon(Icons.volunteer_activism, color: Colors.green);
       case 'maintenance':
-        return Icon(Icons.build, color: Colors.purple);
+        return const Icon(Icons.build, color: Colors.purple);
       case 'approval':
-        return Icon(Icons.check_circle, color: Colors.blue);
+        return const Icon(Icons.check_circle, color: Colors.blue);
       default:
-        return Icon(Icons.notifications, color: Colors.grey);
+        return const Icon(Icons.notifications, color: Colors.grey);
     }
   }
 

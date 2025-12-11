@@ -86,9 +86,9 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(
+        border: const Border(
           bottom: BorderSide(
-            color: const Color(0xFFE8ECEF),
+            color: Color(0xFFE8ECEF),
             width: 1,
           ),
         ),
@@ -275,11 +275,11 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
   Widget _buildActiveFilters() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0F9F8),
+      decoration: const BoxDecoration(
+        color: Color(0xFFF0F9F8),
         border: Border(
           bottom: BorderSide(
-            color: const Color(0xFFE8ECEF),
+            color: Color(0xFFE8ECEF),
             width: 1,
           ),
         ),
@@ -342,29 +342,29 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
         }
 
         if (snapshot.hasError) {
-          return Center(
+          return const Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
+                Icon(
                   Icons.error_outline,
                   size: 48,
                   color: Color(0xFFEF4444),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Text(
                   'Error loading equipment',
                   style: TextStyle(
                     fontSize: 16,
-                    color: const Color(0xFF475569),
+                    color: Color(0xFF475569),
                     fontWeight: FontWeight.w500,
                 ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Text(
                   'Please try again later',
                   style: TextStyle(
-                    color: const Color(0xFF64748B),
+                    color: Color(0xFF64748B),
                   ),
                 ),
               ],
@@ -904,12 +904,12 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
             ),
           ),
           const SizedBox(height: 12),
-          Text(
+          const Text(
             'Check back later for available medical equipment',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
-              color: const Color(0xFF64748B),
+              color: Color(0xFF64748B),
               height: 1.5,
             ),
           ),
@@ -948,14 +948,14 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
             ),
           ),
           const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 40),
             child: Text(
               'Try adjusting your search or filters to find what you\'re looking for',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: const Color(0xFF64748B),
+                color: Color(0xFF64748B),
                 height: 1.5,
               ),
             ),

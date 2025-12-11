@@ -4,6 +4,8 @@ import '../providers/tracking_providers.dart';
 import '../providers/auth_provider.dart';
 
 class TrackingScreen extends StatefulWidget {
+  const TrackingScreen({super.key});
+
   @override
   _TrackingScreenState createState() => _TrackingScreenState();
 }
@@ -25,27 +27,27 @@ class _TrackingScreenState extends State<TrackingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('My Rentals'),
+        title: const Text('My Rentals'),
       ),
       body: Consumer<TrackingProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
           return SingleChildScrollView(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildStatsCard(provider.stats),
-                SizedBox(height: 20),
-                Text('Active Rentals', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
+                const SizedBox(height: 20),
+                const Text('Active Rentals', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
                 ...provider.activeRentals.map((rental) => _buildRentalCard(rental)),
-                SizedBox(height: 20),
-                Text('Rental History', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
+                const SizedBox(height: 20),
+                const Text('Rental History', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
                 ...provider.rentalHistory.map((rental) => _buildRentalCard(rental)),
               ],
             ),
@@ -58,7 +60,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
   Widget _buildStatsCard(Map<String, dynamic> stats) {
     return Card(
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -76,14 +78,14 @@ class _TrackingScreenState extends State<TrackingScreen> {
     return Column(
       children: [
         Text(value.toString(), style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color)),
-        Text(label, style: TextStyle(fontSize: 12)),
+        Text(label, style: const TextStyle(fontSize: 12)),
       ],
     );
   }
 
   Widget _buildRentalCard(rental) {
     return Card(
-      margin: EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 10),
       child: ListTile(
         leading: Icon(rental.statusIcon, color: rental.statusColor),
         title: Text(rental.equipmentName),
@@ -96,7 +98,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
           ],
         ),
         trailing: Chip(
-          label: Text(rental.statusText, style: TextStyle(fontSize: 10)),
+          label: Text(rental.statusText, style: const TextStyle(fontSize: 10)),
           backgroundColor: rental.statusBadgeColor,
         ),
       ),

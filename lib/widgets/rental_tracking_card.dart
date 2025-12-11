@@ -4,15 +4,15 @@ import '../models/rental_model.dart';
 class RentalTrackingCard extends StatelessWidget {
   final Rental rental;
 
-  const RentalTrackingCard({required this.rental});
+  const RentalTrackingCard({super.key, required this.rental});
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -22,11 +22,11 @@ class RentalTrackingCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     rental.equipmentName,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: rental.statusBadgeColor,
                     borderRadius: BorderRadius.circular(20),
@@ -39,14 +39,14 @@ class RentalTrackingCard extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             _buildInfoRow(Icons.calendar_today, 'Period', rental.dateRangeString),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             _buildInfoRow(Icons.attach_money, 'Total Cost', rental.formattedCost),
             if (rental.status == 'checked_out') ...[
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               _buildProgressBar(),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               if (rental.daysRemaining != null)
                 _buildInfoRow(
                   rental.isOverdue ? Icons.warning : Icons.timer,
@@ -65,7 +65,7 @@ class RentalTrackingCard extends StatelessWidget {
     return Row(
       children: [
         Icon(icon, size: 16, color: color ?? Colors.grey),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         Text('$label: ', style: TextStyle(color: Colors.grey[600])),
         Text(value, style: TextStyle(fontWeight: FontWeight.w500, color: color)),
       ],
@@ -80,10 +80,10 @@ class RentalTrackingCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('Progress', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-            Text('${rental.progressPercentage.toStringAsFixed(0)}%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            Text('${rental.progressPercentage.toStringAsFixed(0)}%', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
           ],
         ),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         LinearProgressIndicator(
           value: rental.progressPercentage / 100,
           backgroundColor: Colors.grey[200],
