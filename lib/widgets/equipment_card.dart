@@ -1,1 +1,0 @@
-//Equipment display card (used in lists)
