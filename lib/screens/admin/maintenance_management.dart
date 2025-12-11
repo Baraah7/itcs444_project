@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/equipment_service.dart';
 import '../../services/reservation_service.dart';
+import '../../services/notification_service.dart';
 import '../../models/equipment_model.dart';
 import '../../models/rental_model.dart';
 import '../../utils/theme.dart';
@@ -24,9 +26,20 @@ class _MaintenanceManagementScreenState extends State<MaintenanceManagementScree
     if (notes == null) return;
 
     try {
+      // Get current admin's email
+      final currentUser = FirebaseAuth.instance.currentUser;
+      final adminEmail = currentUser?.email ?? 'An admin';
+
       await _equipmentService.markEquipmentAvailable(equipmentId);
       await _addMaintenanceLog(equipmentId, 'completed', notes);
-      
+
+      // Notify other admins
+      await createAdminNotification(
+        title: 'Maintenance Completed',
+        message: '$adminEmail completed maintenance for "$equipmentName". ${notes.isNotEmpty ? "Notes: $notes" : ""}',
+        type: 'maintenance',
+      );
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -167,13 +180,24 @@ class _MaintenanceManagementScreenState extends State<MaintenanceManagementScree
     if (notes == null) return;
 
     try {
+      // Get current admin's email
+      final currentUser = FirebaseAuth.instance.currentUser;
+      final adminEmail = currentUser?.email ?? 'An admin';
+
       await _firestore.collection('equipment').doc(equipmentId).update({
         'status': 'maintenance',
         'availability': false,
         'updatedAt': FieldValue.serverTimestamp(),
       });
       await _addMaintenanceLog(equipmentId, 'started', notes);
-      
+
+      // Notify other admins
+      await createAdminNotification(
+        title: 'Equipment Under Maintenance',
+        message: '$adminEmail marked "$equipmentName" for maintenance. Reason: $notes',
+        type: 'maintenance',
+      );
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('$equipmentName marked for maintenance'), backgroundColor: Colors.purple),
