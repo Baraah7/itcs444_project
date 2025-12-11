@@ -1,6 +1,20 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/notification_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
+Future<void> createAdminNotification({
+  required String title,
+  required String message,
+  required String type, // e.g., 'reservation', 'donation', 'equipment', 'reservationDue'
+}) {
+  return FirebaseFirestore.instance.collection('adminNotifications').add({
+    'title': title,
+    'message': message,
+    'type': type,
+    'createdAt': FieldValue.serverTimestamp(),
+    'isRead': false,
+  });
+}
 class NotificationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -24,10 +38,44 @@ class NotificationService {
       createdAt: DateTime.now(),
       data: data,
     );
-
+    
     await _firestore.collection('notifications').doc(notification.id).set(notification.toMap());
     print('✅ Notification saved to Firestore with ID: ${notification.id}');
   }
+
+  Future<void> sendAdminNotification({
+  required String title,
+  required String message,
+  required String type,
+  Map<String, dynamic>? data,
+}) async {
+  print('📢 Creating ADMIN notification');
+  print('📢 Title: $title');
+  print('📢 Message: $message');
+
+  final id = _firestore.collection('adminNotifications').doc().id;
+
+  await _firestore.collection('adminNotifications').doc(id).set({
+    'id': id,
+    'title': title,
+    'message': message,
+    'type': type,
+    'createdAt': DateTime.now(),
+    'isRead': false,
+    'data': data,
+  });
+Stream<List<NotificationModel>> getAdminNotifications() {
+  return _firestore
+      .collection('adminNotifications')
+      .orderBy('createdAt', descending: true)
+      .snapshots()
+      .map((snapshot) =>
+          snapshot.docs.map((doc) => NotificationModel.fromMap(doc.data())).toList());
+}
+
+  print('✅ ADMIN Notification saved with ID: $id');
+}
+
 
   Stream<List<NotificationModel>> getUserNotifications(String userId) {
     return _firestore

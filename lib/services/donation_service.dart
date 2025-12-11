@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../models/donation_model.dart';
+import 'notification_service.dart';
 
 class DonationService {
   final FirebaseFirestore db = FirebaseFirestore.instance;
@@ -77,6 +78,26 @@ class DonationService {
       final docRef = await db.collection('donations').add(donation.toMap());
 
       print('✅ Donation submitted with ID: ${docRef.id}');
+
+      // Notify admins about new donation
+      Future<void> submitDonation(String donationId, String userEmail, String itemName) async {
+  final donationRef = FirebaseFirestore.instance.collection('donations').doc(donationId);
+
+  await donationRef.set({
+    'status': 'pending',
+    'submissionDate': FieldValue.serverTimestamp(),
+    'userEmail': userEmail,
+    'itemName': itemName,
+  });
+
+  await createAdminNotification(
+    title: 'New Donation Submitted',
+    message: 'User $userEmail submitted a donation for "$itemName".',
+    type: 'donation',
+  );
+}
+
+
       return docRef.id;
     } catch (e) {
       print("❌ Error submitting donation: $e");
@@ -193,4 +214,36 @@ class DonationService {
     return Donation.fromMap(doc.data(), doc.id);
   }).toList();
 }
+
+  // NOTIFY ADMINS
+  Future<void> _notifyAdmins(
+    String title,
+    String message,
+    String type, [
+    Map<String, dynamic>? data,
+  ]) async {
+    try {
+      print('🔔 Attempting to notify admins about donation...');
+      final admins = await db
+          .collection('users')
+          .where('role', isEqualTo: 'admin')
+          .get();
+
+      print('🔔 Found ${admins.docs.length} admin(s)');
+
+      for (var admin in admins.docs) {
+        print('🔔 Sending notification to admin: ${admin.id}');
+        await NotificationService().sendNotification(
+          userId: admin.id,
+          title: title,
+          message: message,
+          type: type,
+          data: data,
+        );
+        print('🔔 Notification sent successfully to ${admin.id}');
+      }
+    } catch (e) {
+      print('❌ Error notifying admins: $e');
+    }
+  }
 }

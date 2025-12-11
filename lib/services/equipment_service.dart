@@ -177,4 +177,5 @@ class EquipmentService {
       await batch.commit();
     }
   }
+  
 }

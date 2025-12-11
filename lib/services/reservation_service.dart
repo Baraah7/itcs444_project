@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/rental_model.dart';
 import 'notification_service.dart';
 import 'equipment_service.dart';
+import '../notification_screen.dart/AdminNotificationsScreen.dart';
+import '../services/notification_service.dart';
 
 class ReservationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -108,12 +110,12 @@ class ReservationService {
       );
 
       // Notify admins
-      await _notifyAdmins(
-        'New Rental Request',
-        'New rental request for "$equipmentName" by $userFullName',
-        'approval',
-        {'rentalId': rentalId},
-      );
+     await _notificationService.sendAdminNotification(
+  title: 'New Rental Request',
+  message: 'User ${firebaseUser.email} submitted a rental request for "$equipmentName".',
+  type: 'reservation_submitted',
+  data: {'rentalId': rentalId, 'userId': firebaseUser.uid},
+);
 
       return rentalId;
     } catch (e) {
@@ -350,8 +352,8 @@ class ReservationService {
         throw Exception('Not authorized to cancel this rental');
       }
 
-      // Only allow cancellation if status is pending
-      if (status != 'pending') {
+      // Only allow cancellation if status is pending or approved
+      if (status != 'pending' && status != 'approved') {
         throw Exception('Cannot cancel rental with status: $status');
       }
 
@@ -370,11 +372,39 @@ class ReservationService {
         rentalStatus: 'cancelled',
         quantity: quantity,
       );
+
+      // Notify admins if it was an approved reservation
+      if (status == 'approved') {
+        final equipmentName = rentalData['equipmentName'] as String;
+        final userFullName = rentalData['userFullName'] as String;
+
+        await _notifyAdmins(
+          'Approved Reservation Cancelled',
+          'User $userFullName cancelled their approved reservation for "$equipmentName"',
+          'cancellation',
+          {'rentalId': rentalId},
+        );
+      }
     } catch (e) {
       throw Exception('Failed to cancel rental: $e');
     }
   }
+Future<void> cancelReservation(String reservationId, String userEmail, String equipmentName) async {
+  final reservationRef = FirebaseFirestore.instance.collection('rentals').doc(reservationId);
+  final doc = await reservationRef.get();
 
+  if (doc.exists && doc['status'] == 'approved') {
+    await reservationRef.update({'status': 'cancelled'});
+
+    await createAdminNotification(
+      title: 'Reservation Cancelled',
+      message: 'User $userEmail cancelled their approved reservation for "$equipmentName".',
+      type: 'reservation',
+    );
+  } else {
+    await reservationRef.update({'status': 'cancelled'});
+  }
+}
   // HIDE RENTAL FROM MY RESERVATIONS (USER)
   Future<void> deleteRental(String rentalId) async {
     try {
@@ -580,4 +610,6 @@ class ReservationService {
       print('❌ Error notifying admins: $e');
     }
   }
+  
+
 }
