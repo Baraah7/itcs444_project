@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DebugMaintenanceScreen extends StatelessWidget {
-  const DebugMaintenanceScreen({Key? key}) : super(key: key);
+  const DebugMaintenanceScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

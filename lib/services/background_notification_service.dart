@@ -8,7 +8,7 @@ class BackgroundNotificationService {
   Timer? _timer;
 
   void startMonitoring() {
-    _timer = Timer.periodic(Duration(hours: 6), (timer) {
+    _timer = Timer.periodic(const Duration(hours: 6), (timer) {
       _checkRentals();
       _checkDonations();
       _checkMaintenance();
@@ -21,7 +21,7 @@ class BackgroundNotificationService {
 
   Future<void> _checkRentals() async {
     final now = DateTime.now();
-    final threeDaysLater = now.add(Duration(days: 3));
+    final threeDaysLater = now.add(const Duration(days: 3));
 
     final rentals = await _firestore
         .collection('rentals')

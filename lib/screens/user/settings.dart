@@ -52,7 +52,7 @@ class _SettingsState extends State<Settings> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => ProfileScreen()),
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
               );
             },
           ),
@@ -86,20 +86,20 @@ class _SettingsState extends State<Settings> {
                         color: const Color(0xFFF0F9F8),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.help,
-                        color: const Color(0xFF2B6C67),
+                        color: Color(0xFF2B6C67),
                         size: 20,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Expanded(
+                    const Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Help & Support',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 15,
                               color: Color(0xFF1E293B),
@@ -107,7 +107,7 @@ class _SettingsState extends State<Settings> {
                           ),
                           Text(
                             'FAQs, contact information, and support',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
                               color: Color(0xFF64748B),
                             ),
@@ -640,7 +640,7 @@ class _SettingsState extends State<Settings> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Privacy Policy'),
-        content: SingleChildScrollView(
+        content: const SingleChildScrollView(
           child: Text(
             'Care Center Privacy Policy\n\n'
             '1. Information Collection\n'
@@ -666,7 +666,7 @@ class _SettingsState extends State<Settings> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Terms of Service'),
-        content: SingleChildScrollView(
+        content: const SingleChildScrollView(
           child: Text(
             'Care Center Terms of Service\n\n'
             '1. Acceptance of Terms\n'

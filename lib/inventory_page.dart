@@ -177,7 +177,22 @@ class _InventoryPageState extends State<InventoryPage> {
   }
 
   void _openEquipmentForm({Equipment? item}) {
-    // This would open a form to add/edit equipment.
-    // For brevity, this is not fully implemented here.
+    // Navigate to equipment form or show dialog
+    // Implementation depends on your form structure
+  }
+
+  // ======================================================
+  // INPUT FIELD WIDGET
+  // ======================================================
+  Widget _field(TextEditingController c, String label,
+      {bool isNumber = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: TextField(
+        controller: c,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
+      ),
+    );
   }
 }
