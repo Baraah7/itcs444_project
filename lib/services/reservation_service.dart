@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/rental_model.dart';
 import 'notification_service.dart';
 import 'equipment_service.dart';
+import '../notification_screen.dart/AdminNotificationsScreen.dart';
+import '../services/notification_service.dart';
 
 class ReservationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -108,12 +110,12 @@ class ReservationService {
       );
 
       // Notify admins
-      await _notifyAdmins(
-        'New Rental Request',
-        'New rental request for "$equipmentName" by $userFullName',
-        'approval',
-        {'rentalId': rentalId},
-      );
+     await _notificationService.sendAdminNotification(
+  title: 'New Rental Request',
+  message: 'User ${firebaseUser.email} submitted a rental request for "$equipmentName".',
+  type: 'reservation_submitted',
+  data: {'rentalId': rentalId, 'userId': firebaseUser.uid},
+);
 
       return rentalId;
     } catch (e) {
@@ -350,8 +352,8 @@ class ReservationService {
         throw Exception('Not authorized to cancel this rental');
       }
 
-      // Only allow cancellation if status is pending
-      if (status != 'pending') {
+      // Only allow cancellation if status is pending or approved
+      if (status != 'pending' && status != 'approved') {
         throw Exception('Cannot cancel rental with status: $status');
       }
 
@@ -370,6 +372,19 @@ class ReservationService {
         rentalStatus: 'cancelled',
         quantity: quantity,
       );
+
+      // Notify admins if it was an approved reservation
+      if (status == 'approved') {
+        final equipmentName = rentalData['equipmentName'] as String;
+        final userFullName = rentalData['userFullName'] as String;
+
+        await _notificationService.sendAdminNotification(
+          title: 'Approved Reservation Cancelled',
+          message: 'User $userFullName cancelled their approved reservation for "$equipmentName"',
+          type: 'cancellation',
+          data: {'rentalId': rentalId},
+        );
+      }
     } catch (e) {
       throw Exception('Failed to cancel rental: $e');
     }
@@ -549,35 +564,4 @@ class ReservationService {
     }
   }
 
-  // NOTIFY ADMINS
-  Future<void> _notifyAdmins(
-    String title,
-    String message,
-    String type, [
-    Map<String, dynamic>? data,
-  ]) async {
-    try {
-      print('🔔 Attempting to notify admins...');
-      final admins = await _firestore
-          .collection('users')
-          .where('role', isEqualTo: 'admin')
-          .get();
-
-      print('🔔 Found ${admins.docs.length} admin(s)');
-
-      for (var admin in admins.docs) {
-        print('🔔 Sending notification to admin: ${admin.id}');
-        await _notificationService.sendNotification(
-          userId: admin.id,
-          title: title,
-          message: message,
-          type: type,
-          data: data,
-        );
-        print('🔔 Notification sent successfully to ${admin.id}');
-      }
-    } catch (e) {
-      print('❌ Error notifying admins: $e');
-    }
-  }
 }

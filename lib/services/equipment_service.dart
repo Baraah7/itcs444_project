@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/equipment_model.dart';
-
+import 'notification_service.dart';
 class EquipmentService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -177,4 +177,16 @@ class EquipmentService {
       await batch.commit();
     }
   }
+  Future<void> markEquipmentUnderMaintenance(String equipmentId, String adminName, String equipmentName) async {
+  final equipmentRef = FirebaseFirestore.instance.collection('equipment').doc(equipmentId);
+
+  await equipmentRef.update({'status': 'underMaintenance'});
+
+  await createAdminNotification(
+    title: 'Equipment Under Maintenance',
+    message: 'Equipment "$equipmentName" was marked under maintenance by $adminName.',
+    type: 'equipment',
+  );
+}
+
 }

@@ -14,6 +14,7 @@ import '../shared/notifications_screen.dart';
 import '../admin/settings.dart';
 import 'admin_reports_screen.dart';
 import 'user_detail_screen.dart';
+import '../../notification_screen.dart/AdminNotificationsScreen.dart';
 import '../../reports/reports_dashboard.dart';
 
 class AdminDashboard extends StatefulWidget {
@@ -96,51 +97,51 @@ class _AdminDashboardState extends State<AdminDashboard> {
       appBar: AppBar(
         actions: [
           StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('notifications')
-                .where('userId', isEqualTo: admin?.docId)
-                .where('isRead', isEqualTo: false)
-                .snapshots(),
-            builder: (context, snapshot) {
-              final unreadCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
-              return Stack(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.notifications_outlined),
-                    onPressed: () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(builder: (_) => const NotificationsScreen()),
-                                     ),
-                  ),
-                  if (unreadCount > 0)
-                    Positioned(
-                      right: 8,
-                      top: 8,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: Text(
-                          unreadCount > 9 ? '9+' : '$unreadCount',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
+  stream: FirebaseFirestore.instance
+      .collection('adminNotifications')
+      .where('isRead', isEqualTo: false) // optional
+      .snapshots(),
+  builder: (context, snapshot) {
+    final unreadCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
+    return Stack(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.notifications_outlined),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AdminNotificationsScreen()),
           ),
+        ),
+        if (unreadCount > 0)
+          Positioned(
+            right: 8,
+            top: 8,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(
+                minWidth: 16,
+                minHeight: 16,
+              ),
+              child: Text(
+                unreadCount > 9 ? '9+' : '$unreadCount',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
+    );
+  },
+),
+
           IconButton(
                       icon: const Icon(Icons.settings_outlined, color: Color(0xFF2B6C67)),
                       onPressed: () => Navigator.push(
@@ -1254,6 +1255,8 @@ Widget _buildRecentActivity(BuildContext context) {
     );
   }
 }
+
+
 
 class SidebarItem {
   final IconData icon;

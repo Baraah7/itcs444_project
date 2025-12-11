@@ -45,11 +45,25 @@ class BackgroundNotificationService {
         );
         
         // Notify admin
-        await _notifyAdmins(
-          'Upcoming Return',
-          'Rental "${data['equipmentName']}" by ${data['userFullName']} due in $daysRemaining days',
-          'rental_reminder',
-        );
+        Future<void> checkDueReservations() async {
+  final now = DateTime.now();
+  final snapshot = await FirebaseFirestore.instance
+      .collection('rentals')
+      .where('status', isEqualTo: 'approved')
+      .get();
+
+  for (var doc in snapshot.docs) {
+    final endDate = (doc['endDate'] as Timestamp).toDate();
+    if (endDate.isBefore(now) || endDate.isAtSameMomentAs(now)) {
+      await createAdminNotification(
+        title: 'Reservation Due',
+        message: 'Reservation for "${doc['equipmentName']}" by ${doc['userEmail']} is due today.',
+        type: 'reservationDue',
+      );
+    }
+  }
+}
+
       }
       
       // Send overdue notifications
