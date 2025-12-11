@@ -13,6 +13,7 @@ import '../admin/reservation_management.dart';
 import '../shared/notifications_screen.dart';
 import '../admin/settings.dart';
 import 'admin_reports_screen.dart';
+import 'user_detail_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -49,7 +50,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Future<int> getPendingReservationsCount() async {
     try {
       final reservationSnapshot = await FirebaseFirestore.instance
-          .collection('reservations')
+          .collection('rentals')
           .where('status', isEqualTo: 'pending')
           .get();
       return reservationSnapshot.docs.length;
@@ -170,13 +171,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget _getBodyForIndex(int index, BuildContext context, AuthProvider auth, dynamic admin) {
     switch (index) {
       case 0: return _buildDashboardBody(context, auth, admin);
-      case 1: return const EquipmentPage();
-      case 2: return const ReservationManagementScreen();
-      case 3: return const DonationList();
-      case 4: return const MaintenanceManagementScreen();
-      case 5: return const AdminReportsScreen();
-      case 6: return const UsersManagement();
-      case 7: return const ProfileScreen();
+      case 1: return EquipmentPage();
+      case 2: return ReservationManagementScreen();
+      case 3: return DonationList();
+      case 4: return MaintenanceManagementScreen();
+      case 5: return AdminReportsScreen();
+      case 6: return UsersManagementScreen();
+      case 7: return ProfileScreen();
       default: return _buildDashboardBody(context, auth, admin);
     }
   }
@@ -357,79 +358,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
             
             const SizedBox(height: 20),
 
-            // GridView.count(
-            //   shrinkWrap: true,
-            //   physics: const NeverScrollableScrollPhysics(),
-            //   crossAxisCount: 2,
-            //   crossAxisSpacing: 15,
-            //   mainAxisSpacing: 15,
-
-            //   children: [
-            //     _dashboardTile(
-            //       icon: Icons.inventory,
-            //       color: Colors.blue,
-            //       label: "Equipment",
-            //       onTap: () => Navigator.pushNamed(context, '/equipment-management'),
-            //     ),
-
-            //     _dashboardTile(
-            //       icon: Icons.event_available,
-            //       color: Colors.green,
-            //       label: "Reservations",
-            //       // onTap: () => Navigator.pushNamed(context, '/reservation-management'),
-            //       onTap: () {
-            //         Navigator.push(
-            //           context, 
-            //           MaterialPageRoute(builder: (_)=> const ReservationManagementScreen()));
-            //       },
-            //     ),
-
-            //     _dashboardTile(
-            //       icon: Icons.volunteer_activism,
-            //       color: Colors.orange,
-            //       label: "Donations",
-            //       onTap: () => Navigator.push(
-            //         context,
-            //         MaterialPageRoute(
-            //           builder: (context) => DonationList(),
-            //         ),
-            //       ),
-            //     ),
-
-            //     _dashboardTile(
-            //       icon: Icons.build,
-            //       color: Colors.red,
-            //       label: "Maintenance",
-            //       onTap: () => Navigator.pushNamed(context, '/maintenance-management'),
-            //     ),
-
-            //     _dashboardTile(
-            //       icon: Icons.bar_chart,
-            //       color: Colors.purple,
-            //       label: "Reports",
-            //       onTap: () => Navigator.pushNamed(context, '/admin-reports'),
-            //     ),
-
-            //     _dashboardTile(
-            //       icon: Icons.notifications,
-            //       color: Colors.teal,
-            //       label: "Notifications",
-            //       onTap: () => Navigator.pushNamed(context, '/notifications'),
-            //     ),
-
-            //     _dashboardTile(
-            //       icon: Icons.bug_report,
-            //       color: Colors.pink,
-            //       label: "Debug Rentals",
-            //       onTap: () => Navigator.push(
-            //         context,
-            //         MaterialPageRoute(builder: (_) => const DebugRentalsScreen()),
-            //       ),
-            //     ),
-            //   ],
-            // ),
-
-            const SizedBox(height: 30),
           ],
         ),
       ),
@@ -526,14 +454,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 return _statCard(
                   icon: Icons.inventory,
                   value: "...",
-                  label: "Total                 Items",
+                  label: "Total                  Items",
                   color: const Color(0xFF2B6C67),
                 );
               }
               return _statCard(
                 icon: Icons.inventory,
                 value: snapshot.data.toString(),
-                label: "Total                 Items",
+                label: "Total                  Items",
                 color: const Color(0xFF2B6C67),
               );
             },
@@ -541,8 +469,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: FutureBuilder<int>(
-            future: getPendingReservationsCount(),
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('rentals')
+                .where('status', isEqualTo: 'pending')
+                .snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
                 return _statCard(
@@ -554,7 +485,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               }
               return _statCard(
                 icon: Icons.event_available,
-                value: snapshot.data.toString(),
+                value: snapshot.data!.docs.length.toString(),
                 label: "Pending Reservations",
                 color: const Color(0xFFF59E0B),
               );
@@ -563,8 +494,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: FutureBuilder<int>(
-            future: getPendingDonationsCount(),
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('donations')
+                .where('status', isEqualTo: 'Pending')
+                .snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
                 return _statCard(
@@ -576,7 +510,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               }
               return _statCard(
                 icon: Icons.volunteer_activism,
-                value: snapshot.data.toString(),
+                value: snapshot.data!.docs.length.toString(),
                 label: "Pending Donations",
                 color: const Color(0xFFF59E0B),
               );
@@ -661,40 +595,52 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 110,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              _quickActionCard(
-                title: "Add Equipment",
-                subtitle: "Add new equipment to inventory",
-                icon: Icons.add_circle_outline,
-                onTap: () => _navigateToAddEquipment(),
-              ),
-              const SizedBox(width: 12),
-              _quickActionCard(
-                title: "View Reports",
-                subtitle: "Analytics and insights",
-                icon: Icons.bar_chart_outlined,
-                onTap: () => setState(() => _selectedIndex = 5),
-              ),
-              const SizedBox(width: 12),
-              _quickActionCard(
-                title: "Manage Users",
-                subtitle: "View and manage users",
-                icon: Icons.people_outline,
-                onTap: () => setState(() => _selectedIndex = 6),
-              ),
-              const SizedBox(width: 12),
-              _quickActionCard(
-                title: "Send Alert",
-                subtitle: "Send notification to users",
-                icon: Icons.notifications_active_outlined,
-                onTap: () => _sendAlert(),
-              ),
-            ],
-          ),
+        Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: _quickActionCard(
+                    title: "Add Equipment",
+                    subtitle: "Add new equipment to inventory",
+                    icon: Icons.add_circle_outline,
+                    onTap: () => _navigateToAddEquipment(),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _quickActionCard(
+                    title: "View Reports",
+                    subtitle: "Analytics and insights",
+                    icon: Icons.bar_chart_outlined,
+                    onTap: () => setState(() => _selectedIndex = 5),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _quickActionCard(
+                    title: "Manage Users",
+                    subtitle: "View and manage users",
+                    icon: Icons.people_outline,
+                    onTap: () => setState(() => _selectedIndex = 6),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _quickActionCard(
+                    title: "Send Alert",
+                    subtitle: "Send notification to users",
+                    icon: Icons.notifications_active_outlined,
+                    onTap: () => _sendAlert(),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ],
     );
@@ -709,7 +655,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 220,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -727,7 +672,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               height: 48,
@@ -752,7 +696,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     title,
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
-                      fontSize: 15,
+                      fontSize: 14,
                       color: Color(0xFF1E293B),
                     ),
                   ),
@@ -760,10 +704,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   Text(
                     subtitle,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       color: Color(0xFF64748B),
-                      height: 1.4,
+                      height: 1.3,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -778,41 +724,14 @@ Widget _buildRecentActivity(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              "Recent Activity",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1E293B),
-                letterSpacing: -0.3,
-              ),
-            ),
-            TextButton(
-              onPressed: () {},
-              child: const Row(
-                children: [
-                  Text(
-                    "View All",
-                    style: TextStyle(
-                      color: Color(0xFF2B6C67),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      letterSpacing: -0.1,
-                    ),
-                  ),
-                  SizedBox(width: 4),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 14,
-                    color: Color(0xFF2B6C67),
-                  ),
-                ],
-              ),
-            ),
-          ],
+        const Text(
+          "Recent Activity",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1E293B),
+            letterSpacing: -0.3,
+          ),
         ),
         const SizedBox(height: 12),
         Container(
@@ -824,108 +743,31 @@ Widget _buildRecentActivity(BuildContext context) {
               color: const Color(0xFFE8ECEF),
             ),
           ),
-          child: Row(
+          child: Column(
             children: [
-              // Reservations Column
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Recent Reservations",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF475569),
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('reservations')
-                          .orderBy('createdAt', descending: true)
-                          .limit(2)
-                          .snapshots(),
-                      builder: (context, snap) {
-                        if (snap.connectionState == ConnectionState.waiting) {
-                          return const SizedBox(
-                            height: 68,
-                            child: Center(
-                                child: CircularProgressIndicator(color: Color(0xFF2B6C67))),
-                          );
-                        }
-                        final docs = snap.data?.docs ?? [];
-                        if (docs.isEmpty) {
-                          return _smallEmptyCard("No reservations");
-                        }
-                        return Column(
-                          children: docs.map((d) {
-                            final data = d.data() as Map<String, dynamic>;
-                            final title = data['equipmentName'] ?? 'Equipment';
-                            final status = (data['status'] ?? 'pending').toString();
-                            final date = (data['createdAt'] is Timestamp)
-                                ? (data['createdAt'] as Timestamp).toDate()
-                                : null;
-                            return _buildActivityRow(
-                                title: title, status: status, date: date);
-                          }).toList(),
-                        );
-                      },
-                    ),
-                  ],
-                ),
+              // Reservations Section
+              _buildActivitySection(
+                title: "Reservations",
+                collection: 'rentals',
+                icon: Icons.event_available,
+                emptyMessage: "No reservations",
+                onViewAll: () => setState(() => _selectedIndex = 2),
               ),
-                  
-              const SizedBox(width: 16),
-                  
-              // Donations Column
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Recent Donations",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF475569),
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('donations')
-                          .orderBy('createdAt', descending: true)
-                          .limit(2)
-                          .snapshots(),
-                      builder: (context, snap) {
-                        if (snap.connectionState == ConnectionState.waiting) {
-                          return const SizedBox(
-                            height: 68,
-                            child: Center(
-                                child: CircularProgressIndicator(color: Color(0xFF2B6C67))),
-                          );
-                        }
-                        final docs = snap.data?.docs ?? [];
-                        if (docs.isEmpty) {
-                          return _smallEmptyCard("No donations");
-                        }
-                        return Column(
-                          children: docs.map((d) {
-                            final data = d.data() as Map<String, dynamic>;
-                            final title = data['equipmentName'] ?? 'Donation';
-                            final status = (data['status'] ?? 'pending').toString();
-                            final date = (data['createdAt'] is Timestamp)
-                                ? (data['createdAt'] as Timestamp).toDate()
-                                : null;
-                            return _buildActivityRow(
-                                title: title, status: status, date: date);
-                          }).toList(),
-                        );
-                      },
-                    ),
-                  ],
-                ),
+
+              const SizedBox(height: 20),
+
+              // Divider
+              const Divider(height: 1, color: Color(0xFFE8ECEF)),
+
+              const SizedBox(height: 20),
+
+              // Donations Section
+              _buildActivitySection(
+                title: "Donations",
+                collection: 'donations',
+                icon: Icons.volunteer_activism,
+                emptyMessage: "No donations",
+                onViewAll: () => setState(() => _selectedIndex = 3),
               ),
             ],
           ),
@@ -934,24 +776,142 @@ Widget _buildRecentActivity(BuildContext context) {
     );
   }
 
+  Widget _buildActivitySection({
+    required String title,
+    required String collection,
+    required IconData icon,
+    required String emptyMessage,
+    required VoidCallback onViewAll,
+  }) {
+    final String dateField = collection == 'donations' ? 'submissionDate' : 'createdAt';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 18, color: const Color(0xFF2B6C67)),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E293B),
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            TextButton(
+              onPressed: onViewAll,
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 0),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'View All',
+                    style: TextStyle(
+                      color: Color(0xFF2B6C67),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 12,
+                    color: Color(0xFF2B6C67),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection(collection)
+              .orderBy(dateField, descending: true)
+              .limit(3)
+              .snapshots(),
+          builder: (context, snap) {
+            if (snap.connectionState == ConnectionState.waiting) {
+              return const SizedBox(
+                height: 80,
+                child: Center(
+                  child: CircularProgressIndicator(color: Color(0xFF2B6C67)),
+                ),
+              );
+            }
+
+            if (snap.hasError) {
+              print('❌ ERROR in $collection stream: ${snap.error}');
+              return _smallEmptyCard('Error loading $emptyMessage');
+            }
+
+            final docs = snap.data?.docs ?? [];
+
+            if (docs.isEmpty) {
+              return _smallEmptyCard(emptyMessage);
+            }
+
+            return Column(
+              children: docs.map((d) {
+                final data = d.data() as Map<String, dynamic>;
+
+                // Get title based on collection type
+                final title = collection == 'donations'
+                    ? (data['itemName'] ?? 'Donation')
+                    : (data['equipmentName'] ?? 'Equipment');
+
+                final status = (data['status'] ?? 'pending').toString();
+
+                // Get date based on collection type
+                final date = (data[dateField] is Timestamp)
+                    ? (data[dateField] as Timestamp).toDate()
+                    : null;
+
+                return _compactActivityRow(
+                  title: title,
+                  status: status,
+                  date: date,
+                  type: collection,
+                );
+              }).toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
   Widget _smallEmptyCard(String text) {
     return Container(
-      height: 68,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE8ECEF)),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.info_outline, color: Color(0xFF64748B)),
-          const SizedBox(width: 8),
+          const Icon(Icons.info_outline, color: Color(0xFF94A3B8), size: 20),
+          const SizedBox(width: 10),
           Text(
             text,
             style: const TextStyle(
-              color: Color(0xFF475569),
-              fontSize: 13,
+              color: Color(0xFF64748B),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -959,48 +919,82 @@ Widget _buildRecentActivity(BuildContext context) {
     );
   }
 
-  Widget _buildActivityRow({required String title, required String status, DateTime? date}) {
+  Widget _compactActivityRow({
+    required String title,
+    required String status,
+    DateTime? date,
+    required String type,
+  }) {
     Color badgeColor;
     String badgeText;
-    
+    IconData statusIcon;
+
     if (status.toLowerCase() == 'approved' || status.toLowerCase() == 'completed') {
       badgeColor = const Color(0xFF10B981);
       badgeText = 'Approved';
+      statusIcon = Icons.check_circle;
     } else if (status.toLowerCase() == 'pending') {
       badgeColor = const Color(0xFFF59E0B);
       badgeText = 'Pending';
-    } else {
+      statusIcon = Icons.schedule;
+    } else if (status.toLowerCase() == 'rejected') {
       badgeColor = const Color(0xFFEF4444);
-      badgeText = 'Declined';
+      badgeText = 'Rejected';
+      statusIcon = Icons.cancel;
+    } else if (status.toLowerCase() == 'cancelled') {
+      badgeColor = const Color(0xFF64748B);
+      badgeText = 'Cancelled';
+      statusIcon = Icons.cancel_outlined;
+    } else {
+      badgeColor = const Color(0xFF64748B);
+      badgeText = status.substring(0, 1).toUpperCase() + status.substring(1);
+      statusIcon = Icons.info_outline;
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: const Color(0xFFE8ECEF)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1E293B).withOpacity(0.03),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
+          // Icon Container
           Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: const Color(0xFFF0F9F8),
-              borderRadius: BorderRadius.circular(8),
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF2B6C67).withOpacity(0.1),
+                  const Color(0xFF1A4A47).withOpacity(0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(
-              Icons.event_note,
-              color: Color(0xFF2B6C67),
+            child: Icon(
+              type == 'donations' ? Icons.volunteer_activism : Icons.event_note,
+              color: const Color(0xFF2B6C67),
               size: 20,
             ),
           ),
+
           const SizedBox(width: 12),
+
+          // Text Content
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   title,
@@ -1009,38 +1003,90 @@ Widget _buildRecentActivity(BuildContext context) {
                     fontSize: 14,
                     color: Color(0xFF1E293B),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  date != null ? "${date.day}/${date.month}/${date.year}" : "",
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF64748B),
-                  ),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.access_time,
+                      size: 12,
+                      color: Color(0xFF94A3B8),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      date != null ? _formatDate(date) : "N/A",
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
+
+          const SizedBox(width: 8),
+
+          // Status Badge
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             decoration: BoxDecoration(
               color: badgeColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: badgeColor.withOpacity(0.2)),
+              border: Border.all(color: badgeColor.withOpacity(0.3)),
             ),
-            child: Text(
-              badgeText,
-              style: TextStyle(
-                color: badgeColor,
-                fontWeight: FontWeight.w700,
-                fontSize: 11,
-                letterSpacing: 0.3,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  statusIcon,
+                  size: 12,
+                  color: badgeColor,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  badgeText,
+                  style: TextStyle(
+                    color: badgeColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
             ),
-          )
+          ),
         ],
       ),
     );
+  }
+
+  // Helper method to format dates
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays == 0) {
+      if (difference.inHours == 0) {
+        if (difference.inMinutes == 0) {
+          return "Just now";
+        }
+        return "${difference.inMinutes}m ago";
+      }
+      return "${difference.inHours}h ago";
+    } else if (difference.inDays == 1) {
+      return "Yesterday";
+    } else if (difference.inDays < 7) {
+      return "${difference.inDays}d ago";
+    } else if (difference.inDays < 30) {
+      final weeks = (difference.inDays / 7).floor();
+      return "${weeks}w ago";
+    } else {
+      return "${date.day}/${date.month}/${date.year}";
+    }
   }
 
   Widget _buildReportsBody(BuildContext context) {
@@ -1100,7 +1146,7 @@ Widget _buildRecentActivity(BuildContext context) {
   }
 
   Widget _buildUsersBody(BuildContext context) {
-    return const UsersManagement();
+    return const UsersManagementScreen();
   }
 
   // ============ NAVIGATION METHODS ============

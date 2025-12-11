@@ -138,7 +138,7 @@ packages:
     source: hosted
     version: "6.0.0"
   cupertino_icons:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: cupertino_icons
       sha256: ba631d1c7f7bef6b729a622b7b752645a2d076dba9976925b8f25725a30e1ee6
@@ -346,10 +346,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_iconpicker
-      sha256: b2f33c2e4b1cd09bddbcca9019fcf8e54a676acb35c1992d93b91b4274c2cf77
+      sha256: a471b93b9cc64a0b97a86fb55c643a23e4883fa64311b44757784c69165aeaa7
       url: "https://pub.dev"
     source: hosted
-    version: "3.6.6"
+    version: "4.0.3"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -580,10 +580,10 @@ packages:
     dependency: transitive
     description:
       name: meta
-      sha256: "23f08335362185a5ea2ad3a4e597f1375e78bce8a040df5c600c8d3552ef2394"
+      sha256: e3641ec5d63ebf0d9b41bd43201a66e3fc79a65db5f61fc181f04cd27aab950c
       url: "https://pub.dev"
     source: hosted
-    version: "1.17.0"
+    version: "1.16.0"
   mime:
     dependency: transitive
     description:
@@ -849,10 +849,10 @@ packages:
     dependency: transitive
     description:
       name: test_api
-      sha256: ab2726c1a94d3176a45960b6234466ec367179b87dd74f1611adb1f3b5fb9d55
+      sha256: "522f00f556e73044315fa4585ec3270f1808a4b186c936e612cab0b565ff1e00"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.7"
+    version: "0.7.6"
   typed_data:
     dependency: transitive
     description:
