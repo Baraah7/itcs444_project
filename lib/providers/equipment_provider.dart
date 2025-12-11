@@ -1,1 +1,0 @@
-//Equipment list + search/filter state
