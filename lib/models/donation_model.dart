@@ -21,6 +21,7 @@ class Donation {
   final String status;
   final String donorName;
   final String donorContact;
+  final String donorPhone;
   final String? description;
   final List<String>? imagePaths; // CHANGED: from images to imagePaths
   final int? quantity;
@@ -35,6 +36,7 @@ class Donation {
     required this.itemName,
     required this.donorName,
     required this.donorContact,
+    required this.donorPhone,
     required this.itemType,
     required this.status,
     required this.condition,
@@ -54,6 +56,7 @@ class Donation {
       itemName: data['itemName'] ?? '',
       donorName: data['donorName'] ?? '',
       donorContact: data['donorContact'] ?? '',
+      donorPhone: data['donorPhone'] ?? '',
       status: data['status'] ?? '',
       itemType: data['itemType'] ?? '',
       condition: data['condition'] ?? '',
@@ -76,6 +79,7 @@ class Donation {
       'itemName': itemName,
       'donorName': donorName,
       'donorContact': donorContact,
+      'donorPhone': donorPhone,
       'itemType': itemType,
       'status': status,
       'condition': condition,

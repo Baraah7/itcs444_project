@@ -15,6 +15,16 @@ class _DonationDetailsState extends State<DonationDetails> {
   late Future<Donation> _futureDonation;
   bool _isProcessing = false;
 
+  final Map<String, int> defaultIconCodes = {
+    'Electronics': Icons.devices.codePoint,
+    'Furniture': Icons.chair.codePoint,
+    'Books': Icons.book.codePoint,
+    'Clothing': Icons.checkroom.codePoint,
+    'Sports': Icons.sports.codePoint,
+    'Toys': Icons.toys.codePoint,
+    'Other': Icons.category.codePoint,
+  };
+
   @override
   void initState() {
     super.initState();
@@ -66,13 +76,13 @@ class _DonationDetailsState extends State<DonationDetails> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(
-                    Icons.error,
-                    size: 60,
+                    Icons.error_outline,
+                    size: 64,
                     color: Color(0xFFEF4444),
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Error loading donation',
+                    'Error Loading Donation',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
