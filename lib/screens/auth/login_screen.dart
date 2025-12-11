@@ -129,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Welcome Back",
+                        "Welcome",
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
@@ -244,20 +244,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
                                           color: const Color(0xFF475569),
-                                        ),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.pushNamed(
-                                              context, "/forgot-password");
-                                        },
-                                        child: Text(
-                                          "Forgot Password?",
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF2B6C67),
-                                          ),
                                         ),
                                       ),
                                     ],
