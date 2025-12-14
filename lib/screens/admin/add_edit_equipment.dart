@@ -346,7 +346,7 @@ class _AddEditEquipmentPageState extends State<AddEditEquipmentPage> {
                               children: [
                                 Text(
                                   widget.equipmentId == null 
-                                      ? 'Add Medical Equipment' 
+                                      ? 'Add Equipment' 
                                       : 'Update Equipment Details',
                                   style: const TextStyle(
                                     fontSize: 16,
@@ -682,7 +682,7 @@ class _AddEditEquipmentPageState extends State<AddEditEquipmentPage> {
                               ),
                               const SizedBox(width: 12),
                               const Text(
-                                'Tips for adding medical equipment:',
+                                'Tips for adding equipment:',
                                 style: TextStyle(
                                   color: Color(0xFF065F46),
                                   fontWeight: FontWeight.w600,

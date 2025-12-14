@@ -2,6 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../user/my_reservations.dart';
+import '../user/donation_history.dart';
+import '../../widgets/notification_card.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
@@ -71,6 +74,7 @@ class NotificationsScreen extends StatelessWidget {
           }
 
           return ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             itemCount: snapshot.data!.docs.length,
             itemBuilder: (context, index) {
               final doc = snapshot.data!.docs[index];
@@ -79,43 +83,21 @@ class NotificationsScreen extends StatelessWidget {
               final title = data['title'] ?? 'Notification';
               final message = data['message'] ?? '';
               final type = data['type'] ?? 'info';
-              final createdAt = data['createdAt'] is Timestamp ? data['createdAt'] as Timestamp : null;
+              final createdAt = (data['createdAt'] is Timestamp)
+                  ? (data['createdAt'] as Timestamp).toDate()
+                  : (data['createdAt'] is String)
+                      ? DateTime.tryParse(data['createdAt'] as String)
+                      : null;
 
-              return Dismissible(
-                key: Key(doc.id),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  color: Colors.red,
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 20),
-                  child: const Icon(Icons.delete, color: Colors.white),
-                ),
-                onDismissed: (_) => _deleteNotification(doc.id),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: _getTypeColor(type).withOpacity(0.1),
-                    child: Icon(_getTypeIcon(type), color: _getTypeColor(type)),
-                  ),
-                  title: Text(
-                    title,
-                    style: TextStyle(
-                      fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
-                    ),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(message),
-                      if (createdAt != null)
-                        Text(
-                          _formatTime(createdAt.toDate()),
-                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                        ),
-                    ],
-                  ),
-                  tileColor: isRead ? null : Colors.blue.withOpacity(0.05),
-                  onTap: () => _markAsRead(doc.id, isRead),
-                ),
+              return NotificationCard(
+                notificationId: doc.id,
+                title: title,
+                message: message,
+                type: type,
+                isRead: isRead,
+                createdAt: createdAt,
+                collection: 'notifications',
+                onTap: () => _handleNotificationTap(context, type),
               );
             },
           );
@@ -124,56 +106,26 @@ class NotificationsScreen extends StatelessWidget {
     );
   }
 
-  IconData _getTypeIcon(String type) {
+  void _handleNotificationTap(BuildContext context, String type) {
+    // Navigate to appropriate screen based on notification type
     switch (type) {
-      case 'reservation':
-        return Icons.event_available;
-      case 'donation':
-        return Icons.volunteer_activism;
+      case 'rental_reminder':
+      case 'overdue':
       case 'approval':
-        return Icons.check_circle;
-      case 'rejection':
-        return Icons.cancel;
-      case 'reminder':
-        return Icons.alarm;
-      default:
-        return Icons.info;
-    }
-  }
-
-  Color _getTypeColor(String type) {
-    switch (type) {
-      case 'reservation':
-        return Colors.blue;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const MyReservationsScreen()),
+        );
+        break;
       case 'donation':
-        return Colors.orange;
-      case 'approval':
-        return Colors.green;
-      case 'rejection':
-        return Colors.red;
-      case 'reminder':
-        return Colors.purple;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const DonationHistory()),
+        );
+        break;
       default:
-        return Colors.grey;
+        break;
     }
-  }
-
-  String _formatTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inMinutes < 1) return 'Just now';
-    if (difference.inMinutes < 60) return '${difference.inMinutes}m ago';
-    if (difference.inHours < 24) return '${difference.inHours}h ago';
-    if (difference.inDays < 7) return '${difference.inDays}d ago';
-    return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-  }
-
-  void _markAsRead(String notificationId, bool isRead) {
-    FirebaseFirestore.instance
-        .collection('notifications')
-        .doc(notificationId)
-        .update({'isRead': true});
   }
 
   void _markAllAsRead(String? userId) {
@@ -188,12 +140,5 @@ class NotificationsScreen extends StatelessWidget {
         doc.reference.update({'isRead': true});
       }
     });
-  }
-
-  void _deleteNotification(String notificationId) {
-    FirebaseFirestore.instance
-        .collection('notifications')
-        .doc(notificationId)
-        .delete();
   }
 }

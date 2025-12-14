@@ -1,66 +1,40 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../../screens/admin/donation_management.dart';
+import '../../screens/admin/reservation_management.dart';
+import '../../screens/admin/maintenance_management.dart';
+import '../../widgets/notification_card.dart';
 
 class AdminNotificationsScreen extends StatelessWidget {
   const AdminNotificationsScreen({super.key});
 
-  IconData _getIconForType(String type) {
+  void _handleNotificationTap(BuildContext context, String type) {
+    // Navigate to appropriate screen based on notification type
     switch (type) {
       case 'donation':
-        return Icons.volunteer_activism;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const DonationList()),
+        );
+        break;
       case 'reservation_submitted':
-        return Icons.event_note;
       case 'cancellation':
-        return Icons.cancel;
       case 'overdue':
-        return Icons.warning;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ReservationManagementScreen()),
+        );
+        break;
       case 'maintenance':
-        return Icons.build;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const MaintenanceManagementScreen()),
+        );
+        break;
       default:
-        return Icons.notifications;
+        break;
     }
-  }
-
-  Color _getColorForType(String type) {
-    switch (type) {
-      case 'donation':
-        return Colors.green;
-      case 'reservation_submitted':
-        return Colors.blue;
-      case 'cancellation':
-        return Colors.orange;
-      case 'overdue':
-        return Colors.red;
-      case 'maintenance':
-        return Colors.purple;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inDays < 1) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
-    } else {
-      return "${date.day}/${date.month}/${date.year}";
-    }
-  }
-
-  Future<void> _markAsRead(String docId, bool currentReadStatus) async {
-    await FirebaseFirestore.instance
-        .collection('adminNotifications')
-        .doc(docId)
-        .update({'isRead': !currentReadStatus});
   }
 
   @override
@@ -154,7 +128,7 @@ class AdminNotificationsScreen extends StatelessWidget {
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             itemCount: filteredDocs.length,
             itemBuilder: (context, index) {
               final doc = filteredDocs[index];
@@ -163,81 +137,21 @@ class AdminNotificationsScreen extends StatelessWidget {
               final message = data['message'] ?? '';
               final type = data['type'] ?? '';
               final isRead = data['isRead'] ?? false;
-              final date = (data['createdAt'] as Timestamp?)?.toDate();
+              final date = (data['createdAt'] is Timestamp)
+                  ? (data['createdAt'] as Timestamp).toDate()
+                  : (data['createdAt'] is String)
+                      ? DateTime.tryParse(data['createdAt'] as String)
+                      : null;
 
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                elevation: isRead ? 0 : 2,
-                color: isRead ? Colors.grey[100] : Colors.white,
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  leading: CircleAvatar(
-                    backgroundColor: _getColorForType(type).withOpacity(0.1),
-                    child: Icon(
-                      _getIconForType(type),
-                      color: _getColorForType(type),
-                    ),
-                  ),
-                  title: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: TextStyle(
-                            fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                      if (!isRead)
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: Colors.blue,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                    ],
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 4),
-                      Text(
-                        message,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        date != null ? _formatDate(date) : '',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                    ],
-                  ),
-                  trailing: IconButton(
-                    icon: Icon(
-                      isRead ? Icons.mark_email_read : Icons.mark_email_unread,
-                      color: Colors.grey[600],
-                    ),
-                    tooltip: isRead ? 'Mark as unread' : 'Mark as read',
-                    onPressed: () => _markAsRead(doc.id, isRead),
-                  ),
-                  onTap: () {
-                    if (!isRead) {
-                      _markAsRead(doc.id, isRead);
-                    }
-                  },
-                ),
+              return NotificationCard(
+                notificationId: doc.id,
+                title: title,
+                message: message,
+                type: type,
+                isRead: isRead,
+                createdAt: date,
+                collection: 'adminNotifications',
+                onTap: () => _handleNotificationTap(context, type),
               );
             },
           );
