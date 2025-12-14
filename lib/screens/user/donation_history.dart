@@ -116,7 +116,7 @@ class _DonationHistoryState extends State<DonationHistory> {
                       selectedFilter == 'All'
                           ? 'All Donations'
                           : '$selectedFilter Donations',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF475569),
@@ -399,9 +399,6 @@ class _DonationHistoryState extends State<DonationHistory> {
 
                   // Sort by date (newest first)
                   donations.sort((a, b) {
-                    if (a.submissionDate == null) {
-                      return 0;
-                    }
                     return b.submissionDate.compareTo(a.submissionDate);
                   });
 

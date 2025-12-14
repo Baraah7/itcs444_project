@@ -128,7 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         "Welcome",
                         style: TextStyle(
                           fontSize: 24,
@@ -235,10 +235,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
+                                  const Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      const Text(
+                                      Text(
                                         "Password",
                                         style: TextStyle(
                                           fontSize: 14,
@@ -487,7 +487,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     backgroundColor: Colors.transparent,
                                   ),
-                                  child: Text(
+                                  child: const Text(
                                     "Donate as Guest",
                                     style: TextStyle(
                                       fontSize: 16,

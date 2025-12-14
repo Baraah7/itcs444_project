@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/rental_model.dart';
 import 'notification_service.dart';
 import 'equipment_service.dart';
-import '../notification_screen.dart/AdminNotificationsScreen.dart';
+import '../notification_screen.dart/admin_notifications_screen.dart';
 import '../services/notification_service.dart';
 
 class ReservationService {
@@ -147,7 +147,7 @@ class ReservationService {
       int excludedRentalQuantity = 0;
 
       for (final rentalDoc in overlappingQuery.docs) {
-        final rentalData = rentalDoc.data() as Map<String, dynamic>;
+        final rentalData = rentalDoc.data();
 
         // Track the quantity of the rental we're extending
         if (excludeRentalId != null && rentalDoc.id == excludeRentalId) {

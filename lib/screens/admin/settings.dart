@@ -5,7 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../shared/profile_screen.dart';
 
 class AdminSettings extends StatefulWidget {
-  const AdminSettings({Key? key}) : super(key: key);
+  const AdminSettings({super.key});
 
   @override
   State<AdminSettings> createState() => _AdminSettingsState();
@@ -494,7 +494,7 @@ class _AdminSettingsState extends State<AdminSettings> {
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: const Color(0xFF2B6C67),
+        activeThumbColor: const Color(0xFF2B6C67),
       ),
     );
   }

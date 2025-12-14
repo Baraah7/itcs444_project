@@ -897,7 +897,7 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
             ),
           ),
           const SizedBox(height: 12),
-          Text(
+          const Text(
             'Check back later for available equipment',
             textAlign: TextAlign.center,
             style: TextStyle(

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../screens/admin/donation_management.dart';
 import '../../screens/admin/reservation_management.dart';
 import '../../screens/admin/maintenance_management.dart';
-import '../../widgets/notification_card.dart';
+import '../../tracking/notification_card.dart';
 
 class AdminNotificationsScreen extends StatelessWidget {
   const AdminNotificationsScreen({super.key});

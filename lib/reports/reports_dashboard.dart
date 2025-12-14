@@ -616,8 +616,8 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
                     drawVerticalLine: false,
                     horizontalInterval: _calculateInterval(data),
                     getDrawingHorizontalLine: (value) {
-                      return FlLine(
-                        color: const Color(0xFFE8ECEF),
+                      return const FlLine(
+                        color: Color(0xFFE8ECEF),
                         strokeWidth: 1,
                       );
                     },
@@ -1191,11 +1191,11 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+        child: const Padding(
+          padding: EdgeInsets.all(24),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation(Color(0xFF2B6C67)),
               ),

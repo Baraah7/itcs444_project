@@ -662,7 +662,7 @@ class DonationFormState extends State<DonationForm> {
         border: Border.all(color: const Color(0xFFE8ECEF)),
       ),
       child: DropdownButtonFormField<String>(
-        value: value,
+        initialValue: value,
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(

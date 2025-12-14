@@ -227,12 +227,11 @@ class _UserDonationDetailsState extends State<UserDonationDetails> {
                               value: d.donorContact,
                               icon: Icons.email,
                             ),
-                            if (d.donorPhone != null &&
-                                d.donorPhone!.isNotEmpty) ...[
+                            if (d.donorPhone.isNotEmpty) ...[
                               _buildDivider(),
                               _buildInfoRow(
                                 label: 'Phone',
-                                value: d.donorPhone!,
+                                value: d.donorPhone,
                                 icon: Icons.phone,
                               ),
                             ],
@@ -378,7 +377,7 @@ class _UserDonationDetailsState extends State<UserDonationDetails> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => DonationForm(),
+                          builder: (context) => const DonationForm(),
                         ),
                       );
                     },

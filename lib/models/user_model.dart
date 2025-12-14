@@ -29,7 +29,6 @@ class AppUser {
 
   factory AppUser.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-      if (data == null) throw Exception("User data is null");
 
     return AppUser(
       docId: doc.id,

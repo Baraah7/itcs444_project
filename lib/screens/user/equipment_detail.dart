@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../../utils/theme.dart';
 import '../user/reservation_screen.dart';
 
 class EquipmentDetailPage extends StatelessWidget {

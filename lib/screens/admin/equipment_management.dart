@@ -97,7 +97,7 @@ class _EquipmentPageState extends State<EquipmentPage> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => AddEditEquipmentPage()),
+                  MaterialPageRoute(builder: (_) => const AddEditEquipmentPage()),
                 );
               },
               tooltip: 'Add Equipment',

@@ -14,7 +14,7 @@ import '../shared/notifications_screen.dart';
 import '../admin/settings.dart';
 import 'admin_reports_screen.dart';
 import 'user_detail_screen.dart';
-import '../../notification_screen.dart/AdminNotificationsScreen.dart';
+import '../../notification_screen.dart/admin_notifications_screen.dart';
 import '../../reports/reports_dashboard.dart';
 
 class AdminDashboard extends StatefulWidget {
@@ -173,12 +173,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget _getBodyForIndex(int index, BuildContext context, AuthProvider auth, dynamic admin) {
     switch (index) {
       case 0: return _buildDashboardBody(context, auth, admin);
-      case 1: return EquipmentPage();
-      case 2: return ReservationManagementScreen();
-      case 3: return DonationList();
-      case 4: return MaintenanceManagementScreen();
-      case 5: return ReportsDashboard();
-      case 6: return UsersManagementScreen();
+      case 1: return const EquipmentPage();
+      case 2: return const ReservationManagementScreen();
+      case 3: return const DonationList();
+      case 4: return const MaintenanceManagementScreen();
+      case 5: return const ReportsDashboard();
+      case 6: return const UsersManagementScreen();
       case 7: return const AdminSettings();
       default: return _buildDashboardBody(context, auth, admin);
     }

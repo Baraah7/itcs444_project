@@ -103,12 +103,12 @@ class _ReservationManagementScreenState
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
+                    const Text(
                       'Rental Details',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E293B),
+                        color: Color(0xFF1E293B),
                         letterSpacing: -0.3,
                       ),
                     ),
@@ -190,7 +190,7 @@ class _ReservationManagementScreenState
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.warning, color: Colors.red, size: 20),
+                        const Icon(Icons.warning, color: Colors.red, size: 20),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -317,9 +317,9 @@ class _ReservationManagementScreenState
                   ),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.person,
-                  color: const Color(0xFF2B6C67),
+                  color: Color(0xFF2B6C67),
                   size: 20,
                 ),
               ),
@@ -460,10 +460,10 @@ class _ReservationManagementScreenState
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.category,
                       size: 14,
-                      color: const Color(0xFF2B6C67),
+                      color: Color(0xFF2B6C67),
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -485,10 +485,10 @@ class _ReservationManagementScreenState
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.inventory,
                       size: 14,
-                      color: const Color(0xFF2B6C67),
+                      color: Color(0xFF2B6C67),
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -511,13 +511,13 @@ class _ReservationManagementScreenState
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.red.withOpacity(0.3)),
                   ),
-                  child: Row(
+                  child: const Row(
                     children: [
                       Icon(Icons.warning, size: 14, color: Colors.red),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4),
                       Text(
                         'Overdue',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           color: Colors.red,
                           fontWeight: FontWeight.w600,
@@ -712,7 +712,7 @@ class _ReservationManagementScreenState
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.warning_amber_rounded,
                       color: Colors.red,
                       size: 22,
@@ -982,12 +982,12 @@ class _ReservationManagementScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'Reservation Statistics',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1E293B),
+                  color: Color(0xFF1E293B),
                   letterSpacing: -0.3,
                 ),
               ),
@@ -1057,12 +1057,12 @@ class _ReservationManagementScreenState
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
-        title: Text(
+        title: const Text(
           'Reservation Management',
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF1E293B),
+            color: Color(0xFF1E293B),
             letterSpacing: -0.3,
           ),
         ),
@@ -1188,12 +1188,12 @@ class _ReservationManagementScreenState
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.error,
-                              size: 60, color: const Color(0xFFEF4444)),
+                          const Icon(Icons.error,
+                              size: 60, color: Color(0xFFEF4444)),
                           const SizedBox(height: 16),
-                          Text(
+                          const Text(
                             'Error loading reservations',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               color: Color(0xFF1E293B),
                               fontWeight: FontWeight.w600,
@@ -1244,10 +1244,12 @@ class _ReservationManagementScreenState
                   filteredRentals.sort((a, b) {
                     if (a.isOverdue && !b.isOverdue) return -1;
                     if (!a.isOverdue && b.isOverdue) return 1;
-                    if (a.status == 'pending' && b.status != 'pending')
+                    if (a.status == 'pending' && b.status != 'pending') {
                       return -1;
-                    if (a.status != 'pending' && b.status == 'pending')
+                    }
+                    if (a.status != 'pending' && b.status == 'pending') {
                       return 1;
+                    }
                     return b.createdAt.compareTo(a.createdAt);
                   });
 
@@ -1256,10 +1258,10 @@ class _ReservationManagementScreenState
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.event_available,
                             size: 80,
-                            color: const Color(0xFFE8ECEF),
+                            color: Color(0xFFE8ECEF),
                           ),
                           const SizedBox(height: 20),
                           Text(
@@ -1355,12 +1357,12 @@ class _ExtendRentalDialogState extends State<_ExtendRentalDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
+              const Text(
                 'Extend Rental',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1E293B),
+                  color: Color(0xFF1E293B),
                   letterSpacing: -0.3,
                 ),
               ),
@@ -1478,12 +1480,12 @@ class _ExtendRentalDialogState extends State<_ExtendRentalDialog> {
                       ),
                       child: Column(
                         children: [
-                          Row(
+                          const Row(
                             children: [
-                              const Icon(Icons.check_circle,
+                              Icon(Icons.check_circle,
                                   color: Color(0xFF2B6C67), size: 20),
-                              const SizedBox(width: 8),
-                              const Text(
+                              SizedBox(width: 8),
+                              Text(
                                 'Available for extension',
                                 style: TextStyle(
                                   fontSize: 14,
