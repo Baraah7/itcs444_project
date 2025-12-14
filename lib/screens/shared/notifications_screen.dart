@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../user/my_reservations.dart';
 import '../user/donation_history.dart';
-import '../../widgets/notification_card.dart';
+import '../../tracking/notification_card.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});

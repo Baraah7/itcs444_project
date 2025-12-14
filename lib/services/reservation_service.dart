@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/rental_model.dart';
 import 'notification_service.dart';
 import 'equipment_service.dart';
-import '../notification_screen.dart/AdminNotificationsScreen.dart';
+import '../widgets/AdminNotificationsScreen.dart';
 import '../services/notification_service.dart';
 
 class ReservationService {

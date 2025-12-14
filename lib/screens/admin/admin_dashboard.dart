@@ -14,7 +14,7 @@ import '../shared/notifications_screen.dart';
 import '../admin/settings.dart';
 import 'admin_reports_screen.dart';
 import 'user_detail_screen.dart';
-import '../../notification_screen.dart/AdminNotificationsScreen.dart';
+import '../../widgets/AdminNotificationsScreen.dart';
 import '../../reports/reports_dashboard.dart';
 
 class AdminDashboard extends StatefulWidget {
