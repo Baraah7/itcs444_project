@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/reservation_service.dart';
+import '../../services/notification_service.dart';
 import '../../models/rental_model.dart';
 import 'equipment_detail.dart';
+import 'equipment_list.dart';
 
 class MyReservationsScreen extends StatefulWidget {
   const MyReservationsScreen({super.key});
@@ -88,6 +91,23 @@ class _MyReservationsScreenState extends State<MyReservationsScreen>
           _buildReservationsList(isHistory: false),
           _buildReservationsList(isHistory: true),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const UserEquipmentPage()),
+          );
+        },
+        backgroundColor: const Color(0xFF2B6C67),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          'New Reservation',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }
@@ -530,6 +550,25 @@ class _MyReservationsScreenState extends State<MyReservationsScreen>
             if (!isHistory) ...[
               const SizedBox(height: 16),
               _buildProgressTracker(rental),
+              if (rental.status == 'approved' || rental.status == 'checked_out') ...[
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _requestMoreTime(rental),
+                    icon: const Icon(Icons.access_time, size: 18),
+                    label: const Text('Request More Time'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF2B6C67),
+                      side: const BorderSide(color: Color(0xFF2B6C67)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ],
         ),
@@ -754,6 +793,124 @@ class _MyReservationsScreenState extends State<MyReservationsScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _requestMoreTime(Rental rental) async {
+    final TextEditingController daysController = TextEditingController(text: '7');
+    final TextEditingController reasonController = TextEditingController();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.access_time, color: Color(0xFF2B6C67)),
+            SizedBox(width: 8),
+            Text('Request More Time'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Request extension for "${rental.equipmentName}"',
+              style: const TextStyle(color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: daysController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Additional Days',
+                hintText: 'Enter number of days',
+                prefixIcon: const Icon(Icons.calendar_today),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: 'Reason (Optional)',
+                hintText: 'Why do you need more time?',
+                prefixIcon: const Icon(Icons.comment),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2B6C67),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Submit Request'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final days = int.tryParse(daysController.text) ?? 7;
+      final reason = reasonController.text;
+
+      try {
+        // Create extension request in Firestore
+        await FirebaseFirestore.instance.collection('extension_requests').add({
+          'rentalId': rental.id,
+          'equipmentId': rental.equipmentId,
+          'equipmentName': rental.equipmentName,
+          'userId': rental.userId,
+          'userFullName': rental.userFullName,
+          'currentEndDate': rental.endDate.toIso8601String(),
+          'requestedDays': days,
+          'newEndDate': rental.endDate.add(Duration(days: days)).toIso8601String(),
+          'reason': reason,
+          'status': 'pending',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        // Notify admins
+        await createAdminNotification(
+          title: 'Extension Request',
+          message: '${rental.userFullName} requested $days more days for "${rental.equipmentName}"',
+          type: 'extension_request',
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Extension request submitted successfully'),
+              backgroundColor: Color(0xFF10B981),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error submitting request: $e'),
+              backgroundColor: const Color(0xFFEF4444),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _cancelRental(String rentalId) async {

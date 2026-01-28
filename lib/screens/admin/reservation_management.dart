@@ -157,7 +157,6 @@ class _ReservationManagementScreenState
                     'Returned Date',
                     format.format(rental.actualReturnDate!),
                   ),
-                _detailRow('Total Cost', rental.formattedCost),
                 if (rental.adminNotes != null &&
                     rental.adminNotes!.isNotEmpty) ...[
                   const SizedBox(height: 16),
@@ -391,56 +390,21 @@ class _ReservationManagementScreenState
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFE8ECEF)),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Period',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF64748B),
-                        ),
-                      ),
-                      Text(
-                        '${format.format(rental.startDate)} - ${format.format(rental.endDate)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1E293B),
-                        ),
-                      ),
-                    ],
+                const Text(
+                  'Period',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF64748B),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Container(
-                  width: 1,
-                  height: 40,
-                  color: const Color(0xFFE8ECEF),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      const Text(
-                        'Cost',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF64748B),
-                        ),
-                      ),
-                      Text(
-                        rental.formattedCost,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                          color: Color(0xFF2B6C67),
-                        ),
-                      ),
-                    ],
+                Text(
+                  '${format.format(rental.startDate)} - ${format.format(rental.endDate)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E293B),
                   ),
                 ),
               ],
@@ -1067,239 +1031,256 @@ class _ReservationManagementScreenState
           ),
         ),
       ),
-      body: Column(
-        children: [
-          // Search and Filter Bar
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE8ECEF)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF1E293B).withOpacity(0.03),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Search by user, equipment...',
-                        prefixIcon:
-                            const Icon(Icons.search, color: Color(0xFF64748B)),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear,
-                                    color: Color(0xFF64748B)),
-                                onPressed: () => _searchController.clear(),
-                              )
-                            : null,
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 16),
-                        hintStyle: const TextStyle(
-                          color: Color(0xFF94A3B8),
-                          fontSize: 14,
+      body: StreamBuilder<List<Rental>>(
+        stream: _reservationService.getAllRentals(),
+        builder: (context, snapshot) {
+          return CustomScrollView(
+            slivers: [
+              // Search and Filter Bar
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFE8ECEF)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF1E293B).withOpacity(0.03),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              hintText: 'Search by user, equipment...',
+                              prefixIcon:
+                                  const Icon(Icons.search, color: Color(0xFF64748B)),
+                              suffixIcon: _searchQuery.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear,
+                                          color: Color(0xFF64748B)),
+                                      onPressed: () => _searchController.clear(),
+                                    )
+                                  : null,
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 16),
+                              hintStyle: const TextStyle(
+                                color: Color(0xFF94A3B8),
+                                fontSize: 14,
+                              ),
+                            ),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
                         ),
                       ),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF1E293B),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE8ECEF)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF1E293B).withOpacity(0.03),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE8ECEF)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF1E293B).withOpacity(0.03),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: DropdownButton<String>(
+                          value: _filterStatus,
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _filterStatus = newValue ?? 'all';
+                            });
+                          },
+                          underline: const SizedBox(),
+                          items: _statusFilters.map<DropdownMenuItem<String>>((
+                            String value,
+                          ) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(
+                                value == 'all'
+                                    ? 'All Status'
+                                    : value.replaceAll('_', ' ').toUpperCase(),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF1E293B),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
                       ),
                     ],
                   ),
-                  child: DropdownButton<String>(
-                    value: _filterStatus,
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _filterStatus = newValue ?? 'all';
-                      });
-                    },
-                    underline: const SizedBox(),
-                    items: _statusFilters.map<DropdownMenuItem<String>>((
-                      String value,
-                    ) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(
-                          value == 'all'
-                              ? 'All Status'
-                              : value.replaceAll('_', ' ').toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF1E293B),
+                ),
+              ),
+
+              // Statistics Card
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _buildStatisticsCard(),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 20)),
+
+              // Reservations List
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                sliver: Builder(
+                  builder: (context) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const SliverFillRemaining(
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF2B6C67),
                           ),
                         ),
                       );
-                    }).toList(),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Statistics Card
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: _buildStatisticsCard(),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Reservations List
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: StreamBuilder<List<Rental>>(
-                stream: _reservationService.getAllRentals(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF2B6C67),
-                      ),
-                    );
-                  }
-
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.error,
-                              size: 60, color: Color(0xFFEF4444)),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Error loading reservations',
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Color(0xFF1E293B),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '${snapshot.error}',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: Color(0xFF64748B)),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  final allRentals = snapshot.data ?? [];
-
-                  // Apply filters
-                  List<Rental> filteredRentals = allRentals;
-
-                  // Apply status filter
-                  if (_filterStatus != 'all') {
-                    filteredRentals = filteredRentals
-                        .where((r) => r.status == _filterStatus)
-                        .toList();
-                  }
-
-                  // Apply search filter
-                  if (_searchQuery.isNotEmpty) {
-                    filteredRentals = filteredRentals.where((rental) {
-                      return rental.userFullName
-                              .toLowerCase()
-                              .contains(_searchQuery.toLowerCase()) ||
-                          rental.equipmentName
-                              .toLowerCase()
-                              .contains(_searchQuery.toLowerCase()) ||
-                          rental.itemType
-                              .toLowerCase()
-                              .contains(_searchQuery.toLowerCase()) ||
-                          rental.id
-                              .toLowerCase()
-                              .contains(_searchQuery.toLowerCase());
-                    }).toList();
-                  }
-
-                  // Sort: overdue first, then pending, then by date
-                  filteredRentals.sort((a, b) {
-                    if (a.isOverdue && !b.isOverdue) return -1;
-                    if (!a.isOverdue && b.isOverdue) return 1;
-                    if (a.status == 'pending' && b.status != 'pending') {
-                      return -1;
                     }
-                    if (a.status != 'pending' && b.status == 'pending') {
-                      return 1;
-                    }
-                    return b.createdAt.compareTo(a.createdAt);
-                  });
 
-                  if (filteredRentals.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.event_available,
-                            size: 80,
-                            color: Color(0xFFE8ECEF),
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            _filterStatus == 'all'
-                                ? 'No reservations found'
-                                : 'No ${_filterStatus.replaceAll('_', ' ')} reservations',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              color: Color(0xFF64748B),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          if (_searchQuery.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Text(
-                                'Search: "$_searchQuery"',
-                                style: const TextStyle(
-                                  color: Color(0xFF94A3B8),
+                    if (snapshot.hasError) {
+                      return SliverFillRemaining(
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.error,
+                                  size: 60, color: Color(0xFFEF4444)),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Error loading reservations',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Color(0xFF1E293B),
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            ),
-                        ],
+                              const SizedBox(height: 8),
+                              Text(
+                                '${snapshot.error}',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(color: Color(0xFF64748B)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
+                    final allRentals = snapshot.data ?? [];
+
+                    // Apply filters
+                    List<Rental> filteredRentals = allRentals;
+
+                    // Apply status filter
+                    if (_filterStatus != 'all') {
+                      filteredRentals = filteredRentals
+                          .where((r) => r.status == _filterStatus)
+                          .toList();
+                    }
+
+                    // Apply search filter
+                    if (_searchQuery.isNotEmpty) {
+                      filteredRentals = filteredRentals.where((rental) {
+                        return rental.userFullName
+                                .toLowerCase()
+                                .contains(_searchQuery.toLowerCase()) ||
+                            rental.equipmentName
+                                .toLowerCase()
+                                .contains(_searchQuery.toLowerCase()) ||
+                            rental.itemType
+                                .toLowerCase()
+                                .contains(_searchQuery.toLowerCase()) ||
+                            rental.id
+                                .toLowerCase()
+                                .contains(_searchQuery.toLowerCase());
+                      }).toList();
+                    }
+
+                    // Sort: overdue first, then pending, then by date
+                    filteredRentals.sort((a, b) {
+                      if (a.isOverdue && !b.isOverdue) return -1;
+                      if (!a.isOverdue && b.isOverdue) return 1;
+                      if (a.status == 'pending' && b.status != 'pending') {
+                        return -1;
+                      }
+                      if (a.status != 'pending' && b.status == 'pending') {
+                        return 1;
+                      }
+                      return b.createdAt.compareTo(a.createdAt);
+                    });
+
+                    if (filteredRentals.isEmpty) {
+                      return SliverFillRemaining(
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.event_available,
+                                size: 80,
+                                color: Color(0xFFE8ECEF),
+                              ),
+                              const SizedBox(height: 20),
+                              Text(
+                                _filterStatus == 'all'
+                                    ? 'No reservations found'
+                                    : 'No ${_filterStatus.replaceAll('_', ' ')} reservations',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  color: Color(0xFF64748B),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              if (_searchQuery.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    'Search: "$_searchQuery"',
+                                    style: const TextStyle(
+                                      color: Color(0xFF94A3B8),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
+                    return SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          return _buildRentalCard(filteredRentals[index]);
+                        },
+                        childCount: filteredRentals.length,
                       ),
                     );
-                  }
-
-                  return ListView.builder(
-                    itemCount: filteredRentals.length,
-                    itemBuilder: (context, index) {
-                      return _buildRentalCard(filteredRentals[index]);
-                    },
-                  );
-                },
+                  },
+                ),
               ),
-            ),
-          ),
-        ],
+
+              // Bottom padding
+              const SliverToBoxAdapter(child: SizedBox(height: 20)),
+            ],
+          );
+        },
       ),
     );
   }
@@ -1463,11 +1444,6 @@ class _ExtendRentalDialogState extends State<_ExtendRentalDialog> {
                       newEndDate.isAfter(widget.rental.endDate)) {
                     final extraDays =
                         newEndDate.difference(widget.rental.endDate).inDays;
-                    final dailyRate = widget.rental.durationInDays > 0
-                        ? widget.rental.totalCost / widget.rental.durationInDays
-                        : 0.0;
-                    final additionalCost =
-                        extraDays * dailyRate * widget.rental.quantity;
 
                     return Container(
                       padding: const EdgeInsets.all(16),
@@ -1495,28 +1471,11 @@ class _ExtendRentalDialogState extends State<_ExtendRentalDialog> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'Additional Cost',
-                            style: TextStyle(
+                          const SizedBox(height: 8),
+                          Text(
+                            'Extension: $extraDays additional day${extraDays != 1 ? 's' : ''}',
+                            style: const TextStyle(
                               fontSize: 14,
-                              color: Color(0xFF64748B),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '\$${additionalCost.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF2B6C67),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'for $extraDays additional day${extraDays != 1 ? 's' : ''}',
-                            style: const TextStyle(
-                              fontSize: 12,
                               color: Color(0xFF64748B),
                             ),
                           ),

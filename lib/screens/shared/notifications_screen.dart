@@ -112,18 +112,30 @@ class NotificationsScreen extends StatelessWidget {
       case 'rental_reminder':
       case 'overdue':
       case 'approval':
+      case 'reservation_submitted':
+      case 'cancellation':
+      case 'checked_out':
+      case 'returned':
+      case 'extended':
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const MyReservationsScreen()),
         );
         break;
       case 'donation':
+      case 'donation_approved':
+      case 'donation_rejected':
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const DonationHistory()),
         );
         break;
       default:
+        // For any unknown type, show the reservations screen as fallback
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const MyReservationsScreen()),
+        );
         break;
     }
   }

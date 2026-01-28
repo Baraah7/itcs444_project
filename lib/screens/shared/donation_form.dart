@@ -50,15 +50,8 @@ class DonationFormState extends State<DonationForm> {
     'Needs Repairs',
   ];
 
-  final List<String> itemTypes = [
-    'Wheelchair',
-    'Electrical Bed',
-    'Mechanical Bed',
-    'Shower Chair',
-    'Walker',
-    'Walker with Wheels',
-    'Crutches',
-  ];
+  List<String> itemTypes = [];
+  bool _loadingItemTypes = true;
 
   String? condVal;
   String? itemVal;
@@ -70,6 +63,54 @@ class DonationFormState extends State<DonationForm> {
   void initState() {
     super.initState();
     _prefillFromUser();
+    _loadEquipmentTypes();
+  }
+
+  Future<void> _loadEquipmentTypes() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('equipment')
+          .get();
+
+      final types = snapshot.docs
+          .map((doc) => (doc.data()['name'] ?? '').toString())
+          .where((name) => name.isNotEmpty)
+          .toSet()
+          .toList();
+
+      types.sort();
+
+      if (mounted) {
+        setState(() {
+          itemTypes = types.isNotEmpty ? types : [
+            'Wheelchair',
+            'Electrical Bed',
+            'Mechanical Bed',
+            'Shower Chair',
+            'Walker',
+            'Walker with Wheels',
+            'Crutches',
+          ];
+          _loadingItemTypes = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading equipment types: $e');
+      if (mounted) {
+        setState(() {
+          itemTypes = [
+            'Wheelchair',
+            'Electrical Bed',
+            'Mechanical Bed',
+            'Shower Chair',
+            'Walker',
+            'Walker with Wheels',
+            'Crutches',
+          ];
+          _loadingItemTypes = false;
+        });
+      }
+    }
   }
 
   Future<void> _prefillFromUser() async {

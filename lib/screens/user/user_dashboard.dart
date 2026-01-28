@@ -337,9 +337,9 @@ class _UserDashboardState extends State<UserDashboard> {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  "Welcome back to Care Center App",
+                  "Welcome back to UCO Parents Care Center",
                   style: TextStyle(
-                    fontSize: 16, 
+                    fontSize: 16,
                     color: Color.fromARGB(255, 233, 248, 246),
                     height: 1.4,
                   ),
@@ -558,11 +558,26 @@ class _UserDashboardState extends State<UserDashboard> {
                     ? (data[dateFieldName] as Timestamp).toDate()
                     : null;
 
-                return _compactActivityRow(
-                  title: title,
-                  status: status,
-                  date: date,
-                  type: collection,
+                return GestureDetector(
+                  onTap: () {
+                    if (collection == 'donations') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const DonationHistory()),
+                      );
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const MyReservationsScreen()),
+                      );
+                    }
+                  },
+                  child: _compactActivityRow(
+                    title: title,
+                    status: status,
+                    date: date,
+                    type: collection,
+                  ),
                 );
               }).toList(),
             );

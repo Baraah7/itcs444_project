@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/user_model.dart';
 import 'user_detail_screen.dart';
 
@@ -118,6 +119,10 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                   role: data['role'] ?? 'user',
                   contactPref: data['contactPref'] ?? 'email',
                   profileImageUrl: data['profileImageUrl'],
+                  isBanned: data['isBanned'] ?? false,
+                  bannedUntil: data['bannedUntil'] != null
+                      ? (data['bannedUntil'] as Timestamp).toDate()
+                      : null,
                 );
               })
               .toList();
@@ -361,13 +366,17 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
 
   Widget _buildUserCard(AppUser user) {
     final roleColor = _getRoleColor(user.role);
-    
+    final bool isCurrentlyBanned = user.isBanned &&
+        (user.bannedUntil == null || user.bannedUntil!.isAfter(DateTime.now()));
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Color(0xFFE8ECEF)),
+        side: BorderSide(
+          color: isCurrentlyBanned ? const Color(0xFFEF4444) : const Color(0xFFE8ECEF),
+        ),
       ),
       child: InkWell(
         onTap: () {
@@ -384,17 +393,40 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
           child: Row(
             children: [
               // Avatar
-              CircleAvatar(
-                radius: 28,
-                backgroundColor: roleColor.withOpacity(0.1),
-                child: Text(
-                  user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : '?',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: roleColor,
+              Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: isCurrentlyBanned
+                        ? const Color(0xFFEF4444).withOpacity(0.1)
+                        : roleColor.withOpacity(0.1),
+                    child: Text(
+                      user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : '?',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: isCurrentlyBanned ? const Color(0xFFEF4444) : roleColor,
+                      ),
+                    ),
                   ),
-                ),
+                  if (isCurrentlyBanned)
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFEF4444),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.block,
+                          size: 14,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(width: 16),
               // User Info
@@ -402,13 +434,35 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '${user.firstName} ${user.lastName}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1E293B),
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${user.firstName} ${user.lastName}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                        ),
+                        if (isCurrentlyBanned)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEF4444).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              user.bannedUntil == null ? 'BANNED' : 'BANNED',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFFEF4444),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -426,6 +480,17 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                         color: Color(0xFF94A3B8),
                       ),
                     ),
+                    if (isCurrentlyBanned && user.bannedUntil != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          'Until: ${_formatDate(user.bannedUntil!)}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFFEF4444),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -445,16 +510,390 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.chevron_right,
-                color: Color(0xFF94A3B8),
+              const SizedBox(width: 4),
+              // Actions Menu
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, color: Color(0xFF64748B)),
+                onSelected: (value) {
+                  switch (value) {
+                    case 'ban':
+                      _showBanDialog(user);
+                      break;
+                    case 'unban':
+                      _unbanUser(user);
+                      break;
+                    case 'contact':
+                      _showContactDialog(user);
+                      break;
+                  }
+                },
+                itemBuilder: (context) => [
+                  if (isCurrentlyBanned)
+                    const PopupMenuItem(
+                      value: 'unban',
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Color(0xFF10B981), size: 20),
+                          SizedBox(width: 12),
+                          Text('Unban User'),
+                        ],
+                      ),
+                    )
+                  else
+                    const PopupMenuItem(
+                      value: 'ban',
+                      child: Row(
+                        children: [
+                          Icon(Icons.block, color: Color(0xFFEF4444), size: 20),
+                          SizedBox(width: 12),
+                          Text('Ban User'),
+                        ],
+                      ),
+                    ),
+                  const PopupMenuItem(
+                    value: 'contact',
+                    child: Row(
+                      children: [
+                        Icon(Icons.message, color: Color(0xFF3B82F6), size: 20),
+                        SizedBox(width: 12),
+                        Text('Contact User'),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  void _showBanDialog(AppUser user) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.block, color: Color(0xFFEF4444), size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Text('Ban User'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Ban ${user.firstName} ${user.lastName}?',
+              style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Select ban duration:',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            _buildBanOption('1 Day', () => _banUser(user, const Duration(days: 1))),
+            _buildBanOption('1 Week', () => _banUser(user, const Duration(days: 7))),
+            _buildBanOption('1 Month', () => _banUser(user, const Duration(days: 30))),
+            _buildBanOption('Permanent', () => _banUser(user, null)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBanOption(String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: () {
+        Navigator.pop(context);
+        onTap();
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE8ECEF)),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF1E293B),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _banUser(AppUser user, Duration? duration) async {
+    try {
+      final DateTime? bannedUntil = duration != null
+          ? DateTime.now().add(duration)
+          : null;
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.docId)
+          .update({
+        'isBanned': true,
+        'bannedUntil': bannedUntil != null ? Timestamp.fromDate(bannedUntil) : null,
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              duration != null
+                  ? '${user.firstName} has been banned until ${_formatDate(bannedUntil!)}'
+                  : '${user.firstName} has been permanently banned',
+            ),
+            backgroundColor: const Color(0xFFEF4444),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to ban user: $e'),
+            backgroundColor: const Color(0xFFEF4444),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _unbanUser(AppUser user) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.docId)
+          .update({
+        'isBanned': false,
+        'bannedUntil': null,
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${user.firstName} has been unbanned'),
+            backgroundColor: const Color(0xFF10B981),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to unban user: $e'),
+            backgroundColor: const Color(0xFFEF4444),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showContactDialog(AppUser user) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3B82F6).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.message, color: Color(0xFF3B82F6), size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Text('Contact User'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Contact ${user.firstName} ${user.lastName}',
+              style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 16),
+            _buildContactOption(
+              icon: Icons.email,
+              label: 'Email',
+              subtitle: user.email,
+              color: const Color(0xFF3B82F6),
+              onTap: () => _contactViaEmail(user),
+            ),
+            _buildContactOption(
+              icon: Icons.phone,
+              label: 'Phone',
+              subtitle: user.phoneNumber.isNotEmpty ? user.phoneNumber : 'Not available',
+              color: const Color(0xFF10B981),
+              onTap: user.phoneNumber.isNotEmpty ? () => _contactViaPhone(user) : null,
+            ),
+            _buildContactOption(
+              icon: Icons.chat,
+              label: 'WhatsApp',
+              subtitle: user.phoneNumber.isNotEmpty ? user.phoneNumber : 'Not available',
+              color: const Color(0xFF25D366),
+              onTap: user.phoneNumber.isNotEmpty ? () => _contactViaWhatsApp(user) : null,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactOption({
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required Color color,
+    VoidCallback? onTap,
+  }) {
+    final bool isEnabled = onTap != null;
+    return InkWell(
+      onTap: isEnabled ? () {
+        Navigator.pop(context);
+        onTap();
+      } : null,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: isEnabled ? const Color(0xFFF8FAFC) : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE8ECEF)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isEnabled ? color.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: isEnabled ? color : Colors.grey, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isEnabled ? const Color(0xFF1E293B) : Colors.grey,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isEnabled ? const Color(0xFF64748B) : Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isEnabled)
+              Icon(Icons.chevron_right, color: color, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _contactViaEmail(AppUser user) async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: user.email,
+      queryParameters: {
+        'subject': 'UCO Parents Care Center - Message',
+      },
+    );
+    if (await canLaunchUrl(emailUri)) {
+      await launchUrl(emailUri);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open email app'),
+            backgroundColor: Color(0xFFEF4444),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _contactViaPhone(AppUser user) async {
+    final Uri phoneUri = Uri(scheme: 'tel', path: user.phoneNumber);
+    if (await canLaunchUrl(phoneUri)) {
+      await launchUrl(phoneUri);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open phone app'),
+            backgroundColor: Color(0xFFEF4444),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _contactViaWhatsApp(AppUser user) async {
+    final String phone = user.phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
+    final Uri whatsappUri = Uri.parse('https://wa.me/$phone');
+    if (await canLaunchUrl(whatsappUri)) {
+      await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open WhatsApp'),
+            backgroundColor: Color(0xFFEF4444),
+          ),
+        );
+      }
+    }
   }
 
   Color _getRoleColor(String role) {

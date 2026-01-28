@@ -11,7 +11,9 @@ class AppUser {
   final String contactPref;
   final int id;
   final String username;
-  final String? profileImageUrl; // New field
+  final String? profileImageUrl;
+  final bool isBanned;
+  final DateTime? bannedUntil;
 
   AppUser({
     this.docId,
@@ -25,6 +27,8 @@ class AppUser {
     required this.id,
     required this.username,
     this.profileImageUrl,
+    this.isBanned = false,
+    this.bannedUntil,
   });
 
   factory AppUser.fromFirestore(DocumentSnapshot doc) {
@@ -42,6 +46,10 @@ class AppUser {
       id: data['id'] ?? 0,
       username: data['username'] ?? '',
       profileImageUrl: data['profileImageUrl'],
+      isBanned: data['isBanned'] ?? false,
+      bannedUntil: data['bannedUntil'] != null
+          ? (data['bannedUntil'] as Timestamp).toDate()
+          : null,
     );
   }
 
@@ -57,11 +65,12 @@ class AppUser {
       'contact_pref': contactPref,
       'id': id,
       'username': username,
-      'profileImageUrl': profileImageUrl, // Save URL
+      'profileImageUrl': profileImageUrl,
+      'isBanned': isBanned,
+      'bannedUntil': bannedUntil != null ? Timestamp.fromDate(bannedUntil!) : null,
     };
   }
 
-  // ADD THIS ↓
   AppUser copyWith({
     String? docId,
     String? cpr,
@@ -73,6 +82,9 @@ class AppUser {
     String? contactPref,
     int? id,
     String? username,
+    String? profileImageUrl,
+    bool? isBanned,
+    DateTime? bannedUntil,
   }) {
     return AppUser(
       docId: docId ?? this.docId,
@@ -85,6 +97,9 @@ class AppUser {
       contactPref: contactPref ?? this.contactPref,
       id: id ?? this.id,
       username: username ?? this.username,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      isBanned: isBanned ?? this.isBanned,
+      bannedUntil: bannedUntil ?? this.bannedUntil,
     );
   }
 }

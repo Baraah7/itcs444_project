@@ -478,7 +478,6 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
       _MetricItem('Total Rentals', analytics['totalRentals'].toString(), Icons.event_available, const Color(0xFF2B6C67)),
       _MetricItem('Active Rentals', analytics['activeRentals'].toString(), Icons.schedule, const Color(0xFF10B981)),
       _MetricItem('Utilization Rate', '${analytics['utilizationRate'].toStringAsFixed(1)}%', Icons.trending_up, const Color(0xFFF59E0B)),
-      _MetricItem('Total Revenue', '\$${analytics['totalRevenue'].toStringAsFixed(0)}', Icons.attach_money, const Color(0xFF8B5CF6)),
     ];
 
     return GridView.builder(
@@ -874,7 +873,6 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
     final metrics = [
       _MetricItem('Overdue Items', stats['overdueCount']?.toString() ?? '0', Icons.warning, const Color(0xFFEF4444)),
       _MetricItem('Overdue Rate', '${(stats['overdueRate'] ?? 0).toStringAsFixed(1)}%', Icons.trending_down, const Color(0xFFF59E0B)),
-      _MetricItem('Late Fees', '\$${(stats['totalLateFees'] ?? 0).toStringAsFixed(0)}', Icons.attach_money, const Color(0xFF10B981)),
       _MetricItem('Equipment Types', (stats['overdueEquipment']?.length ?? 0).toString(), Icons.category, const Color(0xFF8B5CF6)),
     ];
 
@@ -1351,7 +1349,6 @@ class _ReportsDashboardState extends State<ReportsDashboard> with SingleTickerPr
                       _buildSummaryItem('Total Equipment', '${summary['totalEquipmentItems'] ?? 0}'),
                       _buildSummaryItem('Total Rentals', '${summary['totalRentals'] ?? 0}'),
                       _buildSummaryItem('Utilization Rate', '${(summary['utilizationRate'] ?? 0).toStringAsFixed(1)}%'),
-                      _buildSummaryItem('Total Revenue', '\$${(summary['totalRevenue'] ?? 0).toStringAsFixed(2)}'),
                       _buildSummaryItem('Overdue Rate', '${(summary['overdueRate'] ?? 0).toStringAsFixed(1)}%'),
                       
                       const SizedBox(height: 24),

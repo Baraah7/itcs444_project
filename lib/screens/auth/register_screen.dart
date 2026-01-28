@@ -20,10 +20,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
 
   String selectedRole = "Renter";
   String selectedContactPref = "Email";
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   InputDecoration _inputStyle(String label, IconData icon) {
     return InputDecoration(
@@ -129,7 +131,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           const SizedBox(height: 8),
                       Text(
-                        "Join Care Center today",
+                        "Join UCO Parents Care Center",
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.white.withOpacity(0.85),
@@ -381,6 +383,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             }
                             if (value.length < 6) {
                               return "Minimum 6 characters required";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Confirm Password
+                        TextFormField(
+                          controller: _confirmPasswordController,
+                          obscureText: _obscureConfirmPassword,
+                          style: const TextStyle(
+                            color: Color(0xFF1E293B),
+                          ),
+                          decoration: _inputStyle("Confirm Password", Icons.lock_outline).copyWith(
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscureConfirmPassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                color: const Color(0xFF64748B),
+                              ),
+                              onPressed: () {
+                                setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
+                              },
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return "Please confirm your password";
+                            }
+                            if (value != _passwordController.text) {
+                              return "Passwords do not match";
                             }
                             return null;
                           },

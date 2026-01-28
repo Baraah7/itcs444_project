@@ -282,23 +282,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: Colors.white.withOpacity(0.85),
                   ),
                 ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    user?.role.toUpperCase() ?? 'USER',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -374,12 +357,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   title: 'Account Information',
                   icon: Icons.account_circle_outlined,
                   children: [
-                    _profileInfoRow(
-                      icon: Icons.group,
-                      label: 'Role',
-                      value: user?.role ?? 'User',
-                      valueColor: const Color(0xFF2B6C67),
-                    ),
                     _profileInfoRow(
                       icon: Icons.calendar_today,
                       label: 'Member Since',

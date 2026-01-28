@@ -93,6 +93,56 @@ class _MaintenanceManagementScreenState extends State<MaintenanceManagementScree
     );
   }
 
+  Future<void> _showDeleteEquipmentDialog(String equipmentId, String equipmentName) async {
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.delete, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Delete Equipment'),
+          ],
+        ),
+        content: Text('Are you sure you want to delete "$equipmentName"? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await _firestore.collection('equipment').doc(equipmentId).delete();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('$equipmentName deleted successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error deleting equipment: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showMaintenanceDetails(Equipment equipment) async {
     final logs = await _firestore
         .collection('maintenance_logs')
@@ -219,30 +269,6 @@ class _MaintenanceManagementScreenState extends State<MaintenanceManagementScree
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Maintenance Management'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.add_circle),
-              onPressed: () async {
-                // Test: Mark first equipment as maintenance
-                final equip = await _firestore.collection('equipment').limit(1).get();
-                if (equip.docs.isNotEmpty) {
-                  await equip.docs.first.reference.update({'status': 'maintenance'});
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Test: Marked first equipment for maintenance')),
-                    );
-                  }
-                }
-              },
-              tooltip: 'Test: Add Maintenance Item',
-            ),
-            IconButton(
-              icon: const Icon(Icons.bug_report),
-              onPressed: () => Navigator.push(context, MaterialPageRoute(
-                builder: (_) => _DebugScreen(),
-              )),
-            ),
-          ],
           bottom: const TabBar(
             tabs: [
               Tab(icon: Icon(Icons.build), text: 'Under Maintenance'),
@@ -289,9 +315,6 @@ class _MaintenanceManagementScreenState extends State<MaintenanceManagementScree
               return data['status'] == 'maintenance';
             }).toList() ?? [];
             
-            print('🔧 Maintenance Rentals: ${maintenanceRentals.length}');
-            print('🔧 Maintenance Equipment: ${maintenanceEquipment.length}');
-            
             if (maintenanceRentals.isEmpty && maintenanceEquipment.isEmpty) {
               return Center(
                 child: Column(
@@ -325,10 +348,35 @@ class _MaintenanceManagementScreenState extends State<MaintenanceManagementScree
                         ),
                         title: Text(data['name'] ?? 'Unknown'),
                         subtitle: Text('${data['type'] ?? 'N/A'} - ${data['condition'] ?? 'N/A'}'),
-                        trailing: ElevatedButton(
-                          onPressed: () => _markAsAvailable(doc.id, data['name'] ?? 'Equipment'),
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                          child: const Text('Complete'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () => _markAsAvailable(doc.id, data['name'] ?? 'Equipment'),
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                              child: const Text('Complete'),
+                            ),
+                            PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_vert),
+                              onSelected: (value) {
+                                if (value == 'delete') {
+                                  _showDeleteEquipmentDialog(doc.id, data['name'] ?? 'Equipment');
+                                }
+                              },
+                              itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.delete, color: Colors.red, size: 20),
+                                      SizedBox(width: 8),
+                                      Text('Delete Item', style: TextStyle(color: Colors.red)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -408,13 +456,39 @@ class _MaintenanceManagementScreenState extends State<MaintenanceManagementScree
                 ),
                 title: Text(name),
                 subtitle: Text('$type - $condition - Status: $status'),
-                trailing: status == 'maintenance'
-                    ? Chip(label: const Text('Maintenance'), backgroundColor: Colors.purple.withOpacity(0.2))
-                    : IconButton(
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (status == 'maintenance')
+                      Chip(label: const Text('Maintenance'), backgroundColor: Colors.purple.withOpacity(0.2))
+                    else
+                      IconButton(
                         icon: const Icon(Icons.build, color: Colors.purple),
                         onPressed: () => _markForMaintenance(doc.id, name),
                         tooltip: 'Mark for Maintenance',
                       ),
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert),
+                      onSelected: (value) {
+                        if (value == 'delete') {
+                          _showDeleteEquipmentDialog(doc.id, name);
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete, color: Colors.red, size: 20),
+                              SizedBox(width: 8),
+                              Text('Delete Item', style: TextStyle(color: Colors.red)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -424,53 +498,3 @@ class _MaintenanceManagementScreenState extends State<MaintenanceManagementScree
   }
 }
 
-class _DebugScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Debug Maintenance')),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('rentals').snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-          
-          final allRentals = snapshot.data!.docs;
-          final maintenanceRentals = allRentals.where((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            return data['status'] == 'maintenance';
-          }).toList();
-          
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Text('Total Rentals: ${allRentals.length}', style: const TextStyle(fontSize: 18)),
-              Text('Maintenance Rentals: ${maintenanceRentals.length}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const Divider(height: 24),
-              if (maintenanceRentals.isEmpty)
-                const Text('No rentals with maintenance status!', style: TextStyle(color: Colors.red, fontSize: 16)),
-              ...maintenanceRentals.map((doc) {
-                final data = doc.data() as Map<String, dynamic>;
-                return Card(
-                  child: ListTile(
-                    title: Text(data['equipmentName'] ?? 'Unknown'),
-                    subtitle: Text('Status: ${data['status']}\nUser: ${data['userFullName']}\nID: ${doc.id}'),
-                  ),
-                );
-              }),
-              const Divider(height: 24),
-              const Text('All Rental Statuses:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              ...allRentals.map((doc) {
-                final data = doc.data() as Map<String, dynamic>;
-                return ListTile(
-                  dense: true,
-                  title: Text(data['equipmentName'] ?? 'Unknown'),
-                  trailing: Chip(label: Text(data['status'] ?? 'unknown')),
-                );
-              }),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
