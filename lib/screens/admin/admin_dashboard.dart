@@ -6,16 +6,14 @@ import 'package:itcs444_project/screens/admin/users_managment.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/theme.dart';
-import '../shared/profile_screen.dart';
 import 'equipment_management.dart';
 import 'add_edit_equipment.dart';
 import '../admin/reservation_management.dart';
-import '../shared/notifications_screen.dart';
 import '../admin/settings.dart';
-import 'admin_reports_screen.dart';
-import 'user_detail_screen.dart';
 import '../../notification_screen.dart/admin_notifications_screen.dart';
 import '../../reports/reports_dashboard.dart';
+import 'admin_donation_details.dart';
+import '../user/reservation_details.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -94,7 +92,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final admin = auth.currentUser;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: Color(0xFF1A4A47),
+        elevation: 0,
+        centerTitle: false,
         actions: [
           StreamBuilder<QuerySnapshot>(
   stream: FirebaseFirestore.instance
@@ -143,7 +146,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 ),
 
           IconButton(
-                      icon: const Icon(Icons.settings_outlined, color: Color(0xFF2B6C67)),
+                      icon: const Icon(Icons.settings_outlined, color: Colors.white),
                       onPressed: () => Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => const AdminSettings()),
@@ -880,11 +883,26 @@ Widget _buildRecentActivity(BuildContext context) {
                     ? (data[dateField] as Timestamp).toDate()
                     : null;
 
-                return _compactActivityRow(
-                  title: title,
-                  status: status,
-                  date: date,
-                  type: collection,
+                return GestureDetector(
+                  onTap: () {
+                    if (collection == 'donations') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => DonationDetails(donationID: d.id)),
+                      );
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => ReservationDetailsPage(rentalId: d.id)),
+                      );
+                    }
+                  },
+                  child: _compactActivityRow(
+                    title: title,
+                    status: status,
+                    date: date,
+                    type: collection,
+                  ),
                 );
               }).toList(),
             );
@@ -1165,7 +1183,279 @@ Widget _buildRecentActivity(BuildContext context) {
   }
 
   void _sendAlert() {
-    // Implement send alert
+    final titleController = TextEditingController();
+    final messageController = TextEditingController();
+    String selectedAudience = 'all';
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.notifications_active, color: Color(0xFF2B6C67)),
+              SizedBox(width: 12),
+              Text(
+                'Send Alert',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Send a notification to users',
+                  style: TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Title Field
+                TextField(
+                  controller: titleController,
+                  decoration: InputDecoration(
+                    labelText: 'Alert Title',
+                    hintText: 'Enter alert title',
+                    prefixIcon: const Icon(Icons.title, color: Color(0xFF64748B)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF2B6C67), width: 2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Message Field
+                TextField(
+                  controller: messageController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: 'Message',
+                    hintText: 'Enter alert message',
+                    prefixIcon: const Padding(
+                      padding: EdgeInsets.only(bottom: 48),
+                      child: Icon(Icons.message, color: Color(0xFF64748B)),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF2B6C67), width: 2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Audience Selection
+                const Text(
+                  'Send To',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFFE8ECEF)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      RadioListTile<String>(
+                        title: const Text('All Users'),
+                        subtitle: const Text('Send to everyone'),
+                        value: 'all',
+                        groupValue: selectedAudience,
+                        activeColor: const Color(0xFF2B6C67),
+                        onChanged: (value) {
+                          setDialogState(() => selectedAudience = value!);
+                        },
+                      ),
+                      const Divider(height: 1),
+                      RadioListTile<String>(
+                        title: const Text('Users with Active Rentals'),
+                        subtitle: const Text('Users currently renting equipment'),
+                        value: 'active_rentals',
+                        groupValue: selectedAudience,
+                        activeColor: const Color(0xFF2B6C67),
+                        onChanged: (value) {
+                          setDialogState(() => selectedAudience = value!);
+                        },
+                      ),
+                      const Divider(height: 1),
+                      RadioListTile<String>(
+                        title: const Text('Users with Overdue Rentals'),
+                        subtitle: const Text('Users with overdue equipment'),
+                        value: 'overdue',
+                        groupValue: selectedAudience,
+                        activeColor: const Color(0xFF2B6C67),
+                        onChanged: (value) {
+                          setDialogState(() => selectedAudience = value!);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Color(0xFF64748B)),
+              ),
+            ),
+            ElevatedButton.icon(
+              onPressed: () async {
+                if (titleController.text.trim().isEmpty ||
+                    messageController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please fill in all fields'),
+                      backgroundColor: Color(0xFFEF4444),
+                    ),
+                  );
+                  return;
+                }
+
+                Navigator.pop(context);
+                await _sendNotificationToUsers(
+                  title: titleController.text.trim(),
+                  message: messageController.text.trim(),
+                  audience: selectedAudience,
+                );
+              },
+              icon: const Icon(Icons.send, size: 18),
+              label: const Text('Send Alert'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2B6C67),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _sendNotificationToUsers({
+    required String title,
+    required String message,
+    required String audience,
+  }) async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(color: Color(0xFF2B6C67)),
+        ),
+      );
+
+      // Get target user IDs based on audience
+      List<String> userIds = [];
+
+      if (audience == 'all') {
+        // Get all users
+        final usersSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('role', isEqualTo: 'user')
+            .get();
+        userIds = usersSnapshot.docs.map((doc) => doc.id).toList();
+      } else if (audience == 'active_rentals') {
+        // Get users with active rentals
+        final rentalsSnapshot = await FirebaseFirestore.instance
+            .collection('rentals')
+            .where('status', whereIn: ['approved', 'checked_out'])
+            .get();
+        userIds = rentalsSnapshot.docs
+            .map((doc) => doc.data()['userId'] as String)
+            .toSet()
+            .toList();
+      } else if (audience == 'overdue') {
+        // Get users with overdue rentals
+        final now = DateTime.now();
+        final rentalsSnapshot = await FirebaseFirestore.instance
+            .collection('rentals')
+            .where('status', isEqualTo: 'checked_out')
+            .get();
+
+        for (var doc in rentalsSnapshot.docs) {
+          final endDateStr = doc.data()['endDate'];
+          if (endDateStr != null) {
+            final endDate = DateTime.parse(endDateStr);
+            if (endDate.isBefore(now)) {
+              userIds.add(doc.data()['userId'] as String);
+            }
+          }
+        }
+        userIds = userIds.toSet().toList();
+      }
+
+      // Create notifications for each user
+      final batch = FirebaseFirestore.instance.batch();
+      for (String userId in userIds) {
+        final notifRef = FirebaseFirestore.instance.collection('notifications').doc();
+        batch.set(notifRef, {
+          'userId': userId,
+          'title': title,
+          'message': message,
+          'type': 'admin_alert',
+          'isRead': false,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      await batch.commit();
+
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Alert sent to ${userIds.length} user(s)'),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error sending alert: $e'),
+            backgroundColor: const Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   Widget _dashboardTile({

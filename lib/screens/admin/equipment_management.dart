@@ -19,7 +19,7 @@ class _EquipmentPageState extends State<EquipmentPage> {
   String _searchQuery = '';
   String _selectedType = 'All';
   bool _showOnlyAvailable = false;
-  ViewType _currentView = ViewType.list;
+  ViewType _currentView = ViewType.grid;
   
   final List<String> _equipmentTypes = [
     'All',
@@ -57,66 +57,24 @@ class _EquipmentPageState extends State<EquipmentPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: const Color(0xFF2B6C67),
         elevation: 0,
-        centerTitle: false,
+        centerTitle: true,
         title: const Text(
           'Equipment Management',
           style: TextStyle(
-            color: Color(0xFF1E293B),
-            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
             fontSize: 20,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              _currentView == ViewType.list ? Icons.grid_view : Icons.list,
-              color: const Color(0xFF2B6C67),
-            ),
-            onPressed: () {
-              setState(() {
-                _currentView = _currentView == ViewType.list 
-                  ? ViewType.grid 
-                  : ViewType.list;
-              });
-            },
-            tooltip: _currentView == ViewType.list ? 'Grid View' : 'List View',
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2B6C67),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.add, color: Colors.white, size: 20),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AddEditEquipmentPage()),
-                );
-              },
-              tooltip: 'Add Equipment',
-            ),
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            color: const Color(0xFFE8ECEF),
-            height: 1,
-          ),
-        ),
       ),
-      body: Column(
-        children: [
-          _buildFilterSection(),
-          if (_hasActiveFilters()) _buildActiveFilters(),
-          Expanded(child: _buildEquipmentList()),
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: _buildFilterSection()),
+          if (_hasActiveFilters()) SliverToBoxAdapter(child: _buildActiveFilters()),
+          SliverFillRemaining(child: _buildEquipmentList()),
         ],
       ),
     );
@@ -239,6 +197,47 @@ class _EquipmentPageState extends State<EquipmentPage> {
                     color: const Color(0xFF64748B),
                   ),
                 ),
+              
+              // Grid/List Toggle Button
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: IconButton(
+                  icon: Icon(
+                    _currentView == ViewType.list ? Icons.grid_view : Icons.list,
+                    color: const Color(0xFF2B6C67),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _currentView = _currentView == ViewType.list 
+                        ? ViewType.grid 
+                        : ViewType.list;
+                    });
+                  },
+                  tooltip: _currentView == ViewType.list ? 'Grid View' : 'List View',
+                ),
+              ),
+              
+              // Add Equipment Button
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: IconButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2B6C67),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.add, color: Colors.white, size: 20),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AddEditEquipmentPage()),
+                    );
+                  },
+                  tooltip: 'Add Equipment',
+                ),
+              ),
             ],
           ),
         ],

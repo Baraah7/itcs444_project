@@ -55,6 +55,8 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        iconTheme: IconThemeData(color: Colors.white),
+        centerTitle: false,
         backgroundColor: const Color(0xFF2B6C67),
         title: const Text(
           'Equipment',
@@ -706,30 +708,6 @@ class _UserEquipmentPageState extends State<UserEquipmentPage> {
                                           ? const Color(0xFF1E293B)
                                           : const Color(0xFF94A3B8),
                                       letterSpacing: -0.1,
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 3,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: available
-                                        ? const Color(0xFF10B981)
-                                            .withOpacity(0.1)
-                                        : const Color(0xFFEF4444)
-                                            .withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    available ? '✓' : '✗',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                      color: available
-                                          ? const Color(0xFF10B981)
-                                          : const Color(0xFFEF4444),
                                     ),
                                   ),
                                 ),

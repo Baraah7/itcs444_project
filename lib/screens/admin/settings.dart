@@ -111,14 +111,14 @@ class _AdminSettingsState extends State<AdminSettings> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Color.fromARGB(255, 25, 119, 112),
         elevation: 0,
-        centerTitle: false,
+        centerTitle: true,
         title: const Text(
           'Settings',
           style: TextStyle(
-            color: Color(0xFF1E293B),
-            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
             fontSize: 20,
           ),
         ),
@@ -140,8 +140,8 @@ class _AdminSettingsState extends State<AdminSettings> {
                     : const Icon(Icons.save, size: 20),
                 label: const Text('Save'),
                 style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF2B6C67),
-                  backgroundColor: const Color(0xFF2B6C67).withOpacity(0.1),
+                  foregroundColor: const Color.fromARGB(255, 255, 255, 255),
+                  backgroundColor: const Color.fromARGB(255, 255, 255, 255).withOpacity(0.1),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -150,13 +150,6 @@ class _AdminSettingsState extends State<AdminSettings> {
               ),
             ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            color: const Color(0xFFE8ECEF),
-            height: 1,
-          ),
-        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

@@ -197,20 +197,13 @@ class OverdueMetricsCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildMetricItem(
-                  'Late Fees',
-                  '\$${overdueData['totalLateFees'].toStringAsFixed(0)}',
-                  Icons.attach_money,
-                  Colors.green,
-                ),
-              ),
-              Expanded(
-                child: _buildMetricItem(
                   'Equipment Types',
                   overdueData['overdueEquipment'].length.toString(),
                   Icons.category,
                   Colors.purple,
                 ),
               ),
+              const Expanded(child: SizedBox()),
             ],
           ),
         ],

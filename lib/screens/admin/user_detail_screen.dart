@@ -27,7 +27,10 @@ class _UserDetailScreenState extends State<UserDetailScreen> with SingleTickerPr
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.user.firstName} ${widget.user.lastName}'),
+        iconTheme: IconThemeData(color: Colors.white),
+        centerTitle: true,
+        backgroundColor: Color.fromARGB(255, 30, 111, 92),
+        title: Text('${widget.user.firstName} ${widget.user.lastName}', style: TextStyle(color: Colors.white),),
       ),
       body: Column(
         children: [

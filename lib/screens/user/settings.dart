@@ -23,21 +23,15 @@ class _SettingsState extends State<Settings> {
         title: const Text(
           'Settings',
           style: TextStyle(
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w500,
             letterSpacing: -0.3,
+            color: Colors.white,
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF2B6C67),
         foregroundColor: const Color(0xFF1E293B),
         elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            height: 1,
-            color: const Color(0xFFE8ECEF),
-          ),
-        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

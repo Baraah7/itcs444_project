@@ -273,16 +273,17 @@ class _AddEditEquipmentPageState extends State<AddEditEquipmentPage> {
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        centerTitle: true,
+        backgroundColor: const Color(0xFF2B6C67),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2B6C67)),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           widget.equipmentId == null ? 'Add New Equipment' : 'Edit Equipment',
           style: const TextStyle(
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF1E293B),
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
             fontSize: 20,
             letterSpacing: -0.3,
           ),

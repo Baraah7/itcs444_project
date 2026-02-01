@@ -49,23 +49,16 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF2B6C67),
         elevation: 0,
-        centerTitle: false,
+        centerTitle: true,
         title: const Text(
           'Users Management',
           style: TextStyle(
             fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF1E293B),
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
             letterSpacing: -0.3,
-          ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            color: const Color(0xFFE8ECEF),
-            height: 1,
           ),
         ),
       ),
@@ -727,7 +720,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF3B82F6).withOpacity(0.1),
+                color: Color.fromARGB(255, 35, 132, 110).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.message, color: Color(0xFF3B82F6), size: 20),

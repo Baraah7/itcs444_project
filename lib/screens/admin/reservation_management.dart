@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/reservation_service.dart';
 import '../../services/equipment_service.dart';
+import '../../services/notification_service.dart';
 import '../../models/rental_model.dart';
-import '../../utils/theme.dart';
 
 class ReservationManagementScreen extends StatefulWidget {
   const ReservationManagementScreen({super.key});
@@ -17,6 +18,7 @@ class _ReservationManagementScreenState
     extends State<ReservationManagementScreen> {
   final ReservationService _reservationService = ReservationService();
   final EquipmentService _equipmentService = EquipmentService();
+  final NotificationService _notificationService = NotificationService();
   final TextEditingController _searchController = TextEditingController();
   final Map<String, String> _selectedNotes = {};
 
@@ -348,30 +350,43 @@ class _ReservationManagementScreenState
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: rental.statusBadgeColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: rental.statusColor),
+                  gradient: LinearGradient(
+                    colors: [
+                      rental.statusColor.withOpacity(0.1),
+                      rental.statusColor.withOpacity(0.05),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: rental.statusColor.withOpacity(0.3)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: rental.statusColor.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      rental.statusIcon,
-                      size: 14,
-                      color: rental.statusColor,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      rental.statusText,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
                         color: rental.statusColor,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      rental.statusText.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: rental.statusColor,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ],
@@ -896,6 +911,478 @@ class _ReservationManagementScreenState
     }
   }
 
+  void _showExtensionRequests() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.75,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8ECEF),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0F9F8),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.access_time,
+                      color: Color(0xFF2B6C67),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Extension Requests',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: Color(0xFFE8ECEF)),
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('extension_requests')
+                    .where('status', isEqualTo: 'pending')
+                    .orderBy('createdAt', descending: true)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: Color(0xFF2B6C67)),
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error_outline, size: 48, color: Color(0xFFEF4444)),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Error loading requests',
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_circle_outline, size: 64, color: Colors.grey[400]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No pending extension requests',
+                            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: snapshot.data!.docs.length,
+                    itemBuilder: (context, index) {
+                      final doc = snapshot.data!.docs[index];
+                      final data = doc.data() as Map<String, dynamic>;
+                      return _buildExtensionRequestCard(doc.id, data);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExtensionRequestCard(String requestId, Map<String, dynamic> data) {
+    final userName = data['userName'] ?? 'Unknown User';
+    final equipmentName = data['equipmentName'] ?? 'Unknown Equipment';
+    final requestedDays = data['requestedDays'] ?? 0;
+    final reason = data['reason'] ?? 'No reason provided';
+    final rentalId = data['rentalId'] ?? '';
+    final userId = data['userId'] ?? '';
+    final currentEndDate = data['currentEndDate'] != null
+        ? (data['currentEndDate'] as Timestamp).toDate()
+        : DateTime.now();
+    final createdAt = data['createdAt'] != null
+        ? (data['createdAt'] as Timestamp).toDate()
+        : DateTime.now();
+    final format = DateFormat('MMM dd, yyyy');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE8ECEF)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1E293B).withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.schedule,
+                  color: Color(0xFFF59E0B),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      userName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                    Text(
+                      equipmentName,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '+$requestedDays days',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFF59E0B),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.event, size: 16, color: Color(0xFF64748B)),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Current end: ${format.format(currentEndDate)}',
+                      style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.event_available, size: 16, color: Color(0xFF2B6C67)),
+                    const SizedBox(width: 8),
+                    Text(
+                      'New end: ${format.format(currentEndDate.add(Duration(days: requestedDays)))}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF2B6C67),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Reason:',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            reason,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF1E293B),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Requested: ${DateFormat('MMM dd, yyyy HH:mm').format(createdAt)}',
+            style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 44,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF10B981), Color(0xFF059669)],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: () => _approveExtensionRequest(
+                      requestId: requestId,
+                      rentalId: rentalId,
+                      userId: userId,
+                      requestedDays: requestedDays,
+                      currentEndDate: currentEndDate,
+                      equipmentName: equipmentName,
+                    ),
+                    icon: const Icon(Icons.check, size: 18),
+                    label: const Text('Approve'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Container(
+                  height: 44,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: () => _rejectExtensionRequest(
+                      requestId: requestId,
+                      userId: userId,
+                      equipmentName: equipmentName,
+                    ),
+                    icon: const Icon(Icons.close, size: 18),
+                    label: const Text('Reject'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _approveExtensionRequest({
+    required String requestId,
+    required String rentalId,
+    required String userId,
+    required int requestedDays,
+    required DateTime currentEndDate,
+    required String equipmentName,
+  }) async {
+    try {
+      final newEndDate = currentEndDate.add(Duration(days: requestedDays));
+
+      // Check availability for the extension period
+      final rental = await FirebaseFirestore.instance
+          .collection('rentals')
+          .doc(rentalId)
+          .get();
+
+      if (!rental.exists) {
+        throw Exception('Rental not found');
+      }
+
+      final rentalData = rental.data()!;
+      final equipmentId = rentalData['equipmentId'];
+      final quantity = rentalData['quantity'] ?? 1;
+
+      final isAvailable = await _reservationService.checkAvailability(
+        equipmentId: equipmentId,
+        startDate: currentEndDate,
+        endDate: newEndDate,
+        quantity: quantity,
+        excludeRentalId: rentalId,
+      );
+
+      if (!isAvailable) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Equipment not available for the requested extension period'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Update the rental end date
+      await _reservationService.extendRental(
+        rentalId: rentalId,
+        newEndDate: newEndDate,
+      );
+
+      // Update the extension request status
+      await FirebaseFirestore.instance
+          .collection('extension_requests')
+          .doc(requestId)
+          .update({
+        'status': 'approved',
+        'processedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Send notification to user
+      await _notificationService.sendNotification(
+        userId: userId,
+        title: 'Extension Request Approved',
+        message: 'Your extension request for $equipmentName has been approved. New end date: ${DateFormat('MMM dd, yyyy').format(newEndDate)}',
+        type: 'extended',
+        data: {'rentalId': rentalId},
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Extension request approved successfully'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _rejectExtensionRequest({
+    required String requestId,
+    required String userId,
+    required String equipmentName,
+  }) async {
+    try {
+      // Update the extension request status
+      await FirebaseFirestore.instance
+          .collection('extension_requests')
+          .doc(requestId)
+          .update({
+        'status': 'rejected',
+        'processedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Send notification to user
+      await _notificationService.sendNotification(
+        userId: userId,
+        title: 'Extension Request Rejected',
+        message: 'Your extension request for $equipmentName has been rejected. Please return the equipment by the original end date.',
+        type: 'extended',
+        data: {'rentalId': requestId},
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Extension request rejected'),
+            backgroundColor: Color(0xFF64748B),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   Widget _buildStatisticsCard() {
     return StreamBuilder<List<Rental>>(
       stream: _reservationService.getAllRentals(),
@@ -1018,18 +1505,19 @@ class _ReservationManagementScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF2B6C67),
         elevation: 0,
-        centerTitle: false,
+        centerTitle: true,
         title: const Text(
           'Reservation Management',
           style: TextStyle(
             fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF1E293B),
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
             letterSpacing: -0.3,
           ),
         ),
+
       ),
       body: StreamBuilder<List<Rental>>(
         stream: _reservationService.getAllRentals(),
@@ -1123,6 +1611,64 @@ class _ReservationManagementScreenState
                             );
                           }).toList(),
                         ),
+                      ),
+                      const SizedBox(width: 12),
+                      StreamBuilder<QuerySnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection('extension_requests')
+                            .where('status', isEqualTo: 'pending')
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          final count = snapshot.hasData ? snapshot.data!.docs.length : 0;
+                          return Stack(
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFFE8ECEF)),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF1E293B).withOpacity(0.03),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.access_time, color: Color(0xFF2B6C67)),
+                                  tooltip: 'Extension Requests',
+                                  onPressed: () => _showExtensionRequests(),
+                                ),
+                              ),
+                              if (count > 0)
+                                Positioned(
+                                  right: 8,
+                                  top: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFEF4444),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 16,
+                                      minHeight: 16,
+                                    ),
+                                    child: Text(
+                                      count > 9 ? '9+' : '$count',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ),

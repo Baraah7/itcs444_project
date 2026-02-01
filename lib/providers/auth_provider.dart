@@ -52,6 +52,7 @@ class AuthProvider with ChangeNotifier {
 Future<bool> login(String email, String password, {bool rememberMe = false}) async {
   try {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     print('Attempting login for email: $email');
@@ -60,6 +61,28 @@ Future<bool> login(String email, String password, {bool rememberMe = false}) asy
     AppUser? user = await _authService.login(email, password);
 
     if (user != null) {
+      // Check if user is banned
+      if (user.isBanned) {
+        // Check if ban has expired
+        if (user.bannedUntil != null && user.bannedUntil!.isAfter(DateTime.now())) {
+          // User is still banned
+          final banEndDate = '${user.bannedUntil!.day}/${user.bannedUntil!.month}/${user.bannedUntil!.year}';
+          _errorMessage = 'Your account has been suspended until $banEndDate. Please contact support.';
+          await _authService.logout(); // Sign out the user
+          _isLoading = false;
+          notifyListeners();
+          return false;
+        } else if (user.bannedUntil == null) {
+          // Permanently banned (no end date)
+          _errorMessage = 'Your account has been permanently suspended. Please contact support.';
+          await _authService.logout();
+          _isLoading = false;
+          notifyListeners();
+          return false;
+        }
+        // Ban has expired, continue with login
+      }
+
       _currentUser = user;
       print('User found: ${user.email}, role: ${user.role}, docId: ${user.docId}');
 
@@ -80,12 +103,14 @@ Future<bool> login(String email, String password, {bool rememberMe = false}) asy
       return true;
     } else {
       print('Login failed: user not found or password incorrect');
+      _errorMessage = 'Invalid email or password';
       _isLoading = false;
       notifyListeners();
       return false;
     }
   } catch (e) {
     print('Login exception: $e');
+    _errorMessage = 'Login failed. Please try again.';
     _isLoading = false;
     notifyListeners();
     return false;

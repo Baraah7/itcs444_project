@@ -18,6 +18,7 @@ class _MaintenanceManagementScreenState extends State<MaintenanceManagementScree
   final EquipmentService _equipmentService = EquipmentService();
   final ReservationService _reservationService = ReservationService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String _selectedView = 'maintenance'; // 'maintenance' or 'all'
 
   Future<void> _markAsAvailable(String equipmentId, String equipmentName) async {
     final notes = await _showNotesDialog('Complete Maintenance', 'Add completion notes (optional)');
@@ -264,23 +265,84 @@ class _MaintenanceManagementScreenState extends State<MaintenanceManagementScree
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Maintenance Management'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(icon: Icon(Icons.build), text: 'Under Maintenance'),
-              Tab(icon: Icon(Icons.inventory), text: 'All Equipment'),
-            ],
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF2B6C67),
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          'Maintenance Management',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
           ),
         ),
-        body: TabBarView(
-          children: [
-            _buildMaintenanceTab(),
-            _buildAllEquipmentTab(),
-          ],
+      ),
+      body: Column(
+        children: [
+          _buildViewSelector(),
+          Expanded(
+            child: _selectedView == 'maintenance'
+                ? _buildMaintenanceTab()
+                : _buildAllEquipmentTab(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildViewSelector() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          _viewSelectorButton('Under Maintenance', _selectedView == 'maintenance'),
+          const SizedBox(width: 12),
+          _viewSelectorButton('All Equipment', _selectedView == 'all'),
+        ],
+      ),
+    );
+  }
+
+  Widget _viewSelectorButton(String label, bool isSelected) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedView = label == 'Under Maintenance' ? 'maintenance' : 'all';
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color.fromARGB(255, 222, 235, 234) : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? const Color(0xFF2B6C67) : const Color(0xFFE8ECEF),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                label == 'Under Maintenance' ? Icons.build_circle_outlined : Icons.inventory_2_outlined,
+                size: 18,
+                color: isSelected ? const Color(0xFF2B6C67) : const Color(0xFF64748B),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? const Color(0xFF2B6C67) : const Color(0xFF64748B),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -320,64 +382,159 @@ class _MaintenanceManagementScreenState extends State<MaintenanceManagementScree
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.build_circle, size: 80, color: Colors.grey[300]),
+                    Icon(Icons.build_circle_outlined, size: 80, color: Colors.grey[300]),
                     const SizedBox(height: 16),
-                    const Text('No items under maintenance', style: TextStyle(fontSize: 18, color: Colors.grey)),
+                    const Text(
+                      'No items under maintenance',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    Text('Rentals: ${rentalSnapshot.data?.docs.length ?? 0}, Equipment: ${equipSnapshot.data?.docs.length ?? 0}', 
-                      style: TextStyle(color: Colors.grey[600])),
+                    Text(
+                      'All equipment is currently available',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
                   ],
                 ),
               );
             }
             
             return ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               children: [
                 if (maintenanceEquipment.isNotEmpty) ...[
-                  const Text('Equipment Under Maintenance', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
+                  const Text(
+                    'Equipment Under Maintenance',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   ...maintenanceEquipment.map((doc) {
                     final data = doc.data() as Map<String, dynamic>;
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.purple.withOpacity(0.1),
-                          child: const Icon(Icons.build, color: Colors.purple),
-                        ),
-                        title: Text(data['name'] ?? 'Unknown'),
-                        subtitle: Text('${data['type'] ?? 'N/A'} - ${data['condition'] ?? 'N/A'}'),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ElevatedButton(
-                              onPressed: () => _markAsAvailable(doc.id, data['name'] ?? 'Equipment'),
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                              child: const Text('Complete'),
-                            ),
-                            PopupMenuButton<String>(
-                              icon: const Icon(Icons.more_vert),
-                              onSelected: (value) {
-                                if (value == 'delete') {
-                                  _showDeleteEquipmentDialog(doc.id, data['name'] ?? 'Equipment');
-                                }
-                              },
-                              itemBuilder: (context) => [
-                                const PopupMenuItem(
-                                  value: 'delete',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.delete, color: Colors.red, size: 20),
-                                      SizedBox(width: 8),
-                                      Text('Delete Item', style: TextStyle(color: Colors.red)),
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE8ECEF)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF1E293B).withOpacity(0.03),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      const Color(0xFF8B5CF6).withOpacity(0.1),
+                                      const Color(0xFF7C3AED).withOpacity(0.05),
                                     ],
                                   ),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                              ],
-                            ),
-                          ],
-                        ),
+                                child: const Icon(
+                                  Icons.build_circle_outlined,
+                                  color: Color(0xFF8B5CF6),
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      data['name'] ?? 'Unknown',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF1E293B),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${data['type'] ?? 'N/A'} • ${data['condition'] ?? 'N/A'}',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+                                ),
+                                child: const Text(
+                                  'MAINTENANCE',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF8B5CF6),
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () => _markAsAvailable(doc.id, data['name'] ?? 'Equipment'),
+                                  icon: const Icon(Icons.check_circle_outline, size: 18),
+                                  label: const Text('Mark Complete'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF10B981),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: const Color(0xFFEF4444)),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: IconButton(
+                                  onPressed: () => _showDeleteEquipmentDialog(doc.id, data['name'] ?? 'Equipment'),
+                                  icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444)),
+                                  tooltip: 'Delete Equipment',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     );
                   }),
@@ -425,16 +582,50 @@ class _MaintenanceManagementScreenState extends State<MaintenanceManagementScree
       stream: _firestore.collection('equipment').snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF2B6C67)),
+          );
         }
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 60, color: Color(0xFFEF4444)),
+                const SizedBox(height: 16),
+                const Text(
+                  'Error loading equipment',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+              ],
+            ),
+          );
         }
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Center(child: Text('No equipment found'));
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.inventory_2_outlined, size: 80, color: Color(0xFFE8ECEF)),
+                SizedBox(height: 16),
+                Text(
+                  'No equipment found',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          );
         }
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           itemCount: snapshot.data!.docs.length,
           itemBuilder: (context, index) {
             final doc = snapshot.data!.docs[index];
@@ -444,51 +635,155 @@ class _MaintenanceManagementScreenState extends State<MaintenanceManagementScree
             final condition = data['condition'] ?? 'Good';
             final type = data['type'] ?? 'General';
             
-            return Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              child: ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: status == 'maintenance' ? Colors.purple.withOpacity(0.1) : Colors.blue.withOpacity(0.1),
-                  child: Icon(
-                    status == 'maintenance' ? Icons.build : Icons.inventory,
-                    color: status == 'maintenance' ? Colors.purple : Colors.blue,
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE8ECEF)),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1E293B).withOpacity(0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
-                ),
-                title: Text(name),
-                subtitle: Text('$type - $condition - Status: $status'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (status == 'maintenance')
-                      Chip(label: const Text('Maintenance'), backgroundColor: Colors.purple.withOpacity(0.2))
-                    else
-                      IconButton(
-                        icon: const Icon(Icons.build, color: Colors.purple),
-                        onPressed: () => _markForMaintenance(doc.id, name),
-                        tooltip: 'Mark for Maintenance',
-                      ),
-                    PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert),
-                      onSelected: (value) {
-                        if (value == 'delete') {
-                          _showDeleteEquipmentDialog(doc.id, name);
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(Icons.delete, color: Colors.red, size: 20),
-                              SizedBox(width: 8),
-                              Text('Delete Item', style: TextStyle(color: Colors.red)),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              (status == 'maintenance' ? const Color(0xFF8B5CF6) : const Color(0xFF3B82F6)).withOpacity(0.1),
+                              (status == 'maintenance' ? const Color(0xFF7C3AED) : const Color(0xFF1D4ED8)).withOpacity(0.05),
                             ],
                           ),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                        child: Icon(
+                          status == 'maintenance' ? Icons.build_circle_outlined : Icons.inventory_2_outlined,
+                          color: status == 'maintenance' ? const Color(0xFF8B5CF6) : const Color(0xFF3B82F6),
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '$type • $condition',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              (status == 'maintenance' ? const Color(0xFF8B5CF6) : const Color(0xFF10B981)).withOpacity(0.1),
+                              (status == 'maintenance' ? const Color(0xFF8B5CF6) : const Color(0xFF10B981)).withOpacity(0.05),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: (status == 'maintenance' ? const Color(0xFF8B5CF6) : const Color(0xFF10B981)).withOpacity(0.3),
+                          ),
+                        ),
+                        child: Text(
+                          status.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: status == 'maintenance' ? const Color(0xFF8B5CF6) : const Color(0xFF10B981),
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      if (status != 'maintenance')
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => _markForMaintenance(doc.id, name),
+                            icon: const Icon(Icons.build_outlined, size: 18),
+                            label: const Text('Mark for Maintenance'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF8B5CF6),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 18),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
+                            ),
+                          ),
+                        )
+                      else
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.build_circle_outlined, size: 18, color: Color(0xFF8B5CF6)),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Under Maintenance',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF8B5CF6),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      const SizedBox(width: 12),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xFFEF4444)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: IconButton(
+                          onPressed: () => _showDeleteEquipmentDialog(doc.id, name),
+                          icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444)),
+                          tooltip: 'Delete Equipment',
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             );
           },

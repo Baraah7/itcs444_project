@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../user/my_reservations.dart';
 import '../user/donation_history.dart';
+import '../user/reservation_details.dart';
+import '../user/user_donation_details.dart';
 import '../../tracking/notification_card.dart';
 
 class NotificationsScreen extends StatelessWidget {
@@ -15,11 +17,22 @@ class NotificationsScreen extends StatelessWidget {
     final userId = auth.currentUser?.docId;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Notifications'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: false,
+        title: const Text(
+          'Notifications',
+          style: TextStyle(
+            color: Color(0xFF1E293B),
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.done_all),
+            icon: const Icon(Icons.done_all, color: Color(0xFF2B6C67)),
             onPressed: () => _markAllAsRead(userId),
             tooltip: 'Mark all as read',
           ),
@@ -89,6 +102,9 @@ class NotificationsScreen extends StatelessWidget {
                       ? DateTime.tryParse(data['createdAt'] as String)
                       : null;
 
+              // Get item ID for navigation (rentalId or donationId)
+              final itemId = data['rentalId'] ?? data['donationId'] ?? data['itemId'];
+
               return NotificationCard(
                 notificationId: doc.id,
                 title: title,
@@ -97,7 +113,7 @@ class NotificationsScreen extends StatelessWidget {
                 isRead: isRead,
                 createdAt: createdAt,
                 collection: 'notifications',
-                onTap: () => _handleNotificationTap(context, type),
+                onTap: () => _handleNotificationTap(context, type, itemId),
               );
             },
           );
@@ -106,7 +122,7 @@ class NotificationsScreen extends StatelessWidget {
     );
   }
 
-  void _handleNotificationTap(BuildContext context, String type) {
+  void _handleNotificationTap(BuildContext context, String type, String? itemId) {
     // Navigate to appropriate screen based on notification type
     switch (type) {
       case 'rental_reminder':
@@ -117,18 +133,36 @@ class NotificationsScreen extends StatelessWidget {
       case 'checked_out':
       case 'returned':
       case 'extended':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const MyReservationsScreen()),
-        );
+        if (itemId != null && itemId.isNotEmpty) {
+          // Navigate to specific reservation details
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => ReservationDetailsPage(rentalId: itemId)),
+          );
+        } else {
+          // Fallback to reservations list
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const MyReservationsScreen()),
+          );
+        }
         break;
       case 'donation':
       case 'donation_approved':
       case 'donation_rejected':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const DonationHistory()),
-        );
+        if (itemId != null && itemId.isNotEmpty) {
+          // Navigate to specific donation details
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => UserDonationDetails(donationID: itemId)),
+          );
+        } else {
+          // Fallback to donations list
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const DonationHistory()),
+          );
+        }
         break;
       default:
         // For any unknown type, show the reservations screen as fallback

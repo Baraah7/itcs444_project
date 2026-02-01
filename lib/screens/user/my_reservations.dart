@@ -14,183 +14,191 @@ class MyReservationsScreen extends StatefulWidget {
   State<MyReservationsScreen> createState() => _MyReservationsScreenState();
 }
 
-class _MyReservationsScreenState extends State<MyReservationsScreen>
-    with SingleTickerProviderStateMixin {
+class _MyReservationsScreenState extends State<MyReservationsScreen> {
   final ReservationService _reservationService = ReservationService();
-  late TabController _tabController;
 
   String _searchQuery = "";
   String _selectedStatus = "All";
   DateTime? _startDate;
   DateTime? _endDate;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+  bool _showHistory = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF2B6C67),
         elevation: 0,
-        centerTitle: false,
+        centerTitle: true,
         title: const Text(
-          'My Reservations',
+          'Reservations',
           style: TextStyle(
-            color: Color(0xFF1E293B),
-            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
             fontSize: 20,
           ),
         ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50),
-          child: Column(
-            children: [
-              Container(
-                color: const Color(0xFFE8ECEF),
-                height: 1,
-              ),
-              TabBar(
-                controller: _tabController,
-                labelColor: const Color(0xFF2B6C67),
-                unselectedLabelColor: const Color(0xFF64748B),
-                indicatorColor: const Color(0xFF2B6C67),
-                indicatorWeight: 3,
-                labelStyle: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-                tabs: const [
-                  Tab(
-                    icon: Icon(Icons.pending_actions),
-                    text: 'Active',
-                  ),
-                  Tab(
-                    icon: Icon(Icons.history),
-                    text: 'History',
-                  ),
-                ],
-              ),
-            ],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Active/History Selection
+            _buildViewSelector(),
+            // Search Bar
+            _buildSearchBar(),
+            // Filters
+            _buildFilters(isHistory: _showHistory),
+            // Reservations List
+            _buildReservationsContent(isHistory: _showHistory),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildViewSelector() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(
+            color: const Color(0xFFE8ECEF),
+            width: 1,
           ),
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      child: Row(
         children: [
-          _buildReservationsList(isHistory: false),
-          _buildReservationsList(isHistory: true),
+          Expanded(
+            child: Row(
+              children: [
+                _viewSelectorButton('Active', !_showHistory),
+                const SizedBox(width: 12),
+                _viewSelectorButton('History', _showHistory),
+              ],
+            ),
+          ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const UserEquipmentPage()),
-          );
+    );
+  }
+
+  Widget _viewSelectorButton(String label, bool isSelected) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _showHistory = label == 'History';
+            _selectedStatus = "All"; // Reset filter when switching views
+          });
         },
-        backgroundColor: const Color(0xFF2B6C67),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'New Reservation',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color.fromARGB(255, 222, 235, 234) : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? const Color(0xFF2B6C67) : const Color(0xFFE8ECEF),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                label == 'Active' ? Icons.pending_actions : Icons.history,
+                size: 18,
+                color: isSelected ? const Color(0xFF2B6C67) : const Color(0xFF64748B),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? const Color(0xFF2B6C67) : const Color(0xFF64748B),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildReservationsList({required bool isHistory}) {
-    return Column(
-      children: [
-        _buildSearchBar(),
-        _buildFilters(isHistory: isHistory),
+  Widget _buildReservationsContent({required bool isHistory}) {
+    return StreamBuilder<List<Rental>>(
+      stream: _reservationService.getUserRentals(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            height: 200,
+            child: const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF2B6C67),
+              ),
+            ),
+          );
+        }
 
-        Expanded(
-          child: StreamBuilder<List<Rental>>(
-            stream: _reservationService.getUserRentals(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator(
-                    color: Color(0xFF2B6C67),
+        if (snapshot.hasError) {
+          return Container(
+            height: 200,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error,
+                    size: 60,
+                    color: Color(0xFFEF4444),
                   ),
-                );
-              }
-
-              if (snapshot.hasError) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error,
-                        size: 60,
-                        color: Color(0xFFEF4444),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Error loading reservations',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Color(0xFF1E293B),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${snapshot.error}',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Color(0xFF64748B)),
-                      ),
-                    ],
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Error loading reservations',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Color(0xFF1E293B),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                );
-              }
+                  const SizedBox(height: 8),
+                  Text(
+                    '${snapshot.error}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
 
-              List<Rental> rentals = snapshot.data ?? [];
+        List<Rental> rentals = snapshot.data ?? [];
 
-              // Filter by tab
-              rentals = rentals.where((r) {
-                if (isHistory) {
-                  return r.status == 'returned' || r.status == 'cancelled';
-                } else {
-                  return r.status == 'pending' ||
-                      r.status == 'approved' ||
-                      r.status == 'checked_out';
-                }
-              }).toList();
+        // Filter by tab
+        rentals = rentals.where((r) {
+          if (isHistory) {
+            return r.status == 'returned' || r.status == 'cancelled';
+          } else {
+            return r.status == 'pending' ||
+                r.status == 'approved' ||
+                r.status == 'checked_out';
+          }
+        }).toList();
 
-              // Apply filtering
-              rentals = _applyFilters(rentals, isHistory: isHistory);
+        // Apply filtering
+        rentals = _applyFilters(rentals, isHistory: isHistory);
 
-              if (rentals.isEmpty) {
-                return _buildEmptyState(isHistory: isHistory);
-              }
+        if (rentals.isEmpty) {
+          return _buildEmptyState(isHistory: isHistory);
+        }
 
-              return ListView.builder(
-                padding: const EdgeInsets.all(20),
-                itemCount: rentals.length,
-                itemBuilder: (context, index) {
-                  return _buildReservationCard(rentals[index], isHistory);
-                },
-              );
-            },
-          ),
-        ),
-      ],
+        return Column(
+          children: rentals.map((rental) => _buildReservationCard(rental, isHistory)).toList(),
+        );
+      },
     );
   }
 
@@ -237,55 +245,101 @@ class _MyReservationsScreenState extends State<MyReservationsScreen>
   }
 
   Widget _buildFilters({required bool isHistory}) {
+    // Define status options based on view type
+    final List<String> statusOptions = [
+      "All",
+      if (!isHistory) ...[
+        "pending",
+        "approved",
+        "checked_out",
+      ],
+      if (isHistory) ...[
+        "returned",
+        "cancelled",
+      ],
+    ];
+
     return Container(
       height: 60,
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
+      child: Row(
         children: [
-          _filterChip("All"),
-          if (!isHistory) ...[
-            _filterChip("pending"),
-            _filterChip("approved"),
-            _filterChip("checked_out"),
-          ],
-          if (isHistory) ...[
-            _filterChip("returned"),
-            _filterChip("cancelled"),
-          ],
-          const SizedBox(width: 8),
-          _buildDateRangeButton(),
-        ],
-      ),
-    );
-  }
-
-  Widget _filterChip(String status) {
-    final isSelected = _selectedStatus == status;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(
-          status == "All" ? "All" : status.capitalize(),
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: isSelected ? const Color(0xFF2B6C67) : const Color(0xFF64748B),
+          // Status Filter Dropdown
+          const SizedBox(width: 9,),
+          Container(
+            width: 140,
+            margin: const EdgeInsets.only(right: 12),
+            child: DropdownButtonFormField<String>(
+              initialValue: _selectedStatus,
+              decoration: InputDecoration(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE8ECEF)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE8ECEF)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFF2B6C67), width: 2),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+              style: const TextStyle(
+                color: Color(0xFF1E293B),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+              dropdownColor: Colors.white,
+              items: statusOptions.map((status) {
+                return DropdownMenuItem<String>(
+                  value: status,
+                  child: Text(
+                    status == "All" ? "All" : status.capitalize(),
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                );
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    _selectedStatus = value;
+                  });
+                }
+              },
+            ),
           ),
-        ),
-        selected: isSelected,
-        onSelected: (_) {
-          setState(() {
-            _selectedStatus = status;
-          });
-        },
-        backgroundColor: Colors.white,
-        selectedColor: const Color(0xFF2B6C67).withOpacity(0.1),
-        checkmarkColor: const Color(0xFF2B6C67),
-        side: BorderSide(
-          color: isSelected ? const Color(0xFF2B6C67) : const Color(0xFFE8ECEF),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+
+          // Date Range Button
+          _buildDateRangeButton(),
+
+          const SizedBox(width: 12,),
+          // const Spacer(),
+
+          // New Reservation Button
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const UserEquipmentPage()),
+              );
+            },
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('New Reservation'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2B6C67),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -304,7 +358,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen>
         foregroundColor: const Color(0xFF2B6C67),
         side: const BorderSide(color: Color(0xFFE8ECEF)),
         backgroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 22),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
@@ -316,7 +370,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen>
     final format = DateFormat('MMM dd, yyyy');
     
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -747,50 +801,48 @@ class _MyReservationsScreenState extends State<MyReservationsScreen>
   }
 
   Widget _buildEmptyState({required bool isHistory}) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: const Color(0xFFE8ECEF),
-                  width: 2,
-                ),
-              ),
-              child: Icon(
-                isHistory ? Icons.history : Icons.event_busy,
-                size: 64,
-                color: const Color(0xFF94A3B8),
+    return Padding(
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: const Color(0xFFE8ECEF),
+                width: 2,
               ),
             ),
-            const SizedBox(height: 24),
-            Text(
-              isHistory ? "No rental history" : "No active reservations",
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1E293B),
-              ),
+            child: Icon(
+              isHistory ? Icons.history : Icons.event_busy,
+              size: 64,
+              color: const Color(0xFF94A3B8),
             ),
-            const SizedBox(height: 8),
-            Text(
-              isHistory
-                  ? "Your past reservations will appear here"
-                  : "Start by browsing available equipment",
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF64748B),
-              ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            isHistory ? "No rental history" : "No active reservations",
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1E293B),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            isHistory
+                ? "Your past reservations will appear here"
+                : "Start by browsing available equipment",
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF64748B),
+            ),
+          ),
+        ],
       ),
     );
   }

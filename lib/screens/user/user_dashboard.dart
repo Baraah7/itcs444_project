@@ -9,6 +9,8 @@ import '../../providers/auth_provider.dart' as CustomAuth;
 import '../shared/notifications_screen.dart';
 import 'settings.dart';
 import 'equipment_detail.dart';
+import 'package:itcs444_project/screens/user/reservation_details.dart';
+import 'package:itcs444_project/screens/user/user_donation_details.dart';
 
 class UserDashboard extends StatefulWidget {
   const UserDashboard({super.key});
@@ -38,8 +40,8 @@ class _UserDashboardState extends State<UserDashboard> {
       appBar: AppBar(
         elevation: 0,
         centerTitle: false,
-        backgroundColor: Colors.white,
-
+        backgroundColor: Color(0xFF1A4A47),
+        iconTheme: IconThemeData(color: Colors.white),
         actions: [
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
@@ -52,7 +54,7 @@ class _UserDashboardState extends State<UserDashboard> {
               return Stack(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.notifications_outlined, color: Color(0xFF2B6C67)),
+                    icon: const Icon(Icons.notifications_outlined, color: Colors.white),
                     onPressed: () => Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const NotificationsScreen()),
@@ -88,7 +90,7 @@ class _UserDashboardState extends State<UserDashboard> {
             },
           ),
            IconButton(
-             icon: const Icon(Icons.settings_outlined, color: Color(0xFF2B6C67)),
+             icon: const Icon(Icons.settings_outlined, color: Colors.white),
              onPressed: () => Navigator.push(
                context,
                MaterialPageRoute(builder: (context) => const Settings()),
@@ -158,23 +160,6 @@ class _UserDashboardState extends State<UserDashboard> {
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.85),
                       fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      user?.role?.toUpperCase() ?? 'USER',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        letterSpacing: 0.5,
-                      ),
                     ),
                   ),
                 ],
@@ -563,12 +548,12 @@ class _UserDashboardState extends State<UserDashboard> {
                     if (collection == 'donations') {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const DonationHistory()),
+                        MaterialPageRoute(builder: (context) => UserDonationDetails(donationID: d.id)),
                       );
                     } else {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const MyReservationsScreen()),
+                        MaterialPageRoute(builder: (context) => ReservationDetailsPage(rentalId: d.id)),
                       );
                     }
                   },
@@ -799,12 +784,10 @@ class _UserDashboardState extends State<UserDashboard> {
           ),
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 110,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              _quickActionCard(
+        Row(
+          children: [
+            Expanded(
+              child: _quickActionCard(
                 title: "Make Donation",
                 subtitle: "Give equipment quickly",
                 icon: Icons.volunteer_activism_outlined,
@@ -812,8 +795,10 @@ class _UserDashboardState extends State<UserDashboard> {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const DonationForm()));
                 },
               ),
-              const SizedBox(width: 12),
-              _quickActionCard(
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _quickActionCard(
                 title: "New Reservation",
                 subtitle: "Reserve equipment",
                 icon: Icons.event_available_outlined,
@@ -821,9 +806,8 @@ class _UserDashboardState extends State<UserDashboard> {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const UserEquipmentPage()));
                 },
               ),
-              const SizedBox(width: 12),
-            ],
-          ),
+            ),
+          ],
         ),
       ],
     );
@@ -833,7 +817,6 @@ class _UserDashboardState extends State<UserDashboard> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 220,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: const Color.fromARGB(255, 255, 255, 255),
@@ -962,7 +945,7 @@ class _UserDashboardState extends State<UserDashboard> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
-                childAspectRatio: 0.65,
+                childAspectRatio: 0.8,
               ),
               itemBuilder: (context, index) {
                 final doc = equipmentDocs[index];

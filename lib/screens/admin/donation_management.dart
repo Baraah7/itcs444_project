@@ -1,8 +1,8 @@
-//Review + approve donations
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:itcs444_project/models/donation_model.dart';
 import 'package:itcs444_project/screens/admin/admin_donation_details.dart';
+import 'package:itcs444_project/screens/shared/donation_form.dart';
 import 'package:itcs444_project/services/donation_service.dart';
 
 class DonationList extends StatefulWidget {
@@ -40,22 +40,15 @@ class _DonationListState extends State<DonationList> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF2B6C67),
         elevation: 0,
-        centerTitle: false,
+        centerTitle: true,
         title: const Text(
           'Donation Management',
           style: TextStyle(
-            color: Color(0xFF1E293B),
-            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
             fontSize: 20,
-          ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            color: const Color(0xFFE8ECEF),
-            height: 1,
           ),
         ),
       ),
@@ -134,50 +127,73 @@ class _DonationListState extends State<DonationList> {
           ),
           const SizedBox(height: 16),
 
-          // Status Filters with counts
-          SizedBox(
-            height: 44,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _statusFilters.length,
-              itemBuilder: (context, index) {
-                final status = _statusFilters[index];
-                final isSelected = _selectedStatus == status;
-                final count = statusCounts[status] ?? 0;
-
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    label: Text(
-                      '$status ($count)',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: isSelected
-                            ? const Color(0xFF2B6C67)
-                            : const Color(0xFF64748B),
+          // Filter Row with Dropdown and Add Button
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    border: Border.all(color: const Color(0xFFE8ECEF)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedStatus,
+                      isExpanded: true,
+                      icon: const Icon(
+                        Icons.arrow_drop_down,
+                        color: Color(0xFF64748B),
                       ),
-                    ),
-                    selected: isSelected,
-                    onSelected: (_) {
-                      setState(() => _selectedStatus = status);
-                    },
-                    backgroundColor: Colors.white,
-                    selectedColor: const Color(0xFF2B6C67).withOpacity(0.1),
-                    checkmarkColor: const Color(0xFF2B6C67),
-                    side: BorderSide(
-                      color: isSelected
-                          ? const Color(0xFF2B6C67)
-                          : const Color(0xFFE8ECEF),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 8,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF1E293B),
+                      ),
+                      items: _statusFilters.map((String status) {
+                        final count = statusCounts[status] ?? 0;
+                        return DropdownMenuItem<String>(
+                          value: status,
+                          child: Text('$status ($count)'),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() => _selectedStatus = newValue!);
+                      },
                     ),
                   ),
-                );
-              },
-            ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DonationForm(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.add, color: Colors.white, size: 18),
+                label: const Text(
+                  'Add Donation',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2B6C67),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                  shadowColor: Colors.transparent,
+                ),
+              ),
+            ],
           ),
         ],
       ),

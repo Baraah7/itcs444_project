@@ -84,7 +84,6 @@ class FileDownloadService {
                   _buildPdfTableRow('Total Equipment Items', '${summary['totalEquipmentItems'] ?? 0}'),
                   _buildPdfTableRow('Total Rentals', '${summary['totalRentals'] ?? 0}'),
                   _buildPdfTableRow('Utilization Rate', '${(summary['utilizationRate'] ?? 0).toStringAsFixed(1)}%'),
-                  _buildPdfTableRow('Total Revenue', '\$${(summary['totalRevenue'] ?? 0).toStringAsFixed(2)}'),
                   _buildPdfTableRow('Overdue Rate', '${(summary['overdueRate'] ?? 0).toStringAsFixed(1)}%'),
                 ],
               ),
@@ -105,7 +104,6 @@ class FileDownloadService {
                   children: [
                     _buildPdfTableRow('Active Rentals', '${summary['keyMetrics']['activeRentals'] ?? 0}', true),
                     _buildPdfTableRow('Available Equipment', '${summary['keyMetrics']['availableEquipment'] ?? 0}'),
-                    _buildPdfTableRow('Average Revenue per Rental', '\$${(summary['keyMetrics']['averageRevenuePerRental'] ?? 0).toStringAsFixed(2)}'),
                   ],
                 ),
                 

@@ -14,14 +14,14 @@ class EquipmentDetailPage extends StatelessWidget {
         title: const Text(
           "Equipment Details",
           style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF1E293B),
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1E293B),
+        backgroundColor: Color(0xFF2B6C67),
+        foregroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
 
       body: FutureBuilder<DocumentSnapshot>(
