@@ -259,20 +259,17 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
       ],
     ];
 
-    return Container(
-      height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           // Status Filter Dropdown
-          const SizedBox(width: 9,),
-          Container(
-            width: 140,
-            margin: const EdgeInsets.only(right: 12),
+          Expanded(
+            flex: 3,
             child: DropdownButtonFormField<String>(
               initialValue: _selectedStatus,
               decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(color: Color(0xFFE8ECEF)),
@@ -290,16 +287,17 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
               ),
               style: const TextStyle(
                 color: Color(0xFF1E293B),
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
               dropdownColor: Colors.white,
+              isExpanded: true,
               items: statusOptions.map((status) {
                 return DropdownMenuItem<String>(
                   value: status,
                   child: Text(
                     status == "All" ? "All" : status.capitalize(),
-                    style: const TextStyle(fontSize: 14),
+                    style: const TextStyle(fontSize: 13),
                   ),
                 );
               }).toList(),
@@ -313,30 +311,41 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
             ),
           ),
 
-          // Date Range Button
-          _buildDateRangeButton(),
+          const SizedBox(width: 8),
 
-          const SizedBox(width: 12,),
-          // const Spacer(),
+          // Date Range Button
+          Expanded(
+            flex: 3,
+            child: _buildDateRangeButton(),
+          ),
+
+          const SizedBox(width: 8),
 
           // New Reservation Button
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const UserEquipmentPage()),
-              );
-            },
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('New Reservation'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2B6C67),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          Expanded(
+            flex: 4,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const UserEquipmentPage()),
+                );
+              },
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text(
+                'New Reservation',
+                style: TextStyle(fontSize: 11),
+                overflow: TextOverflow.ellipsis,
               ),
-              elevation: 0,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2B6C67),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
             ),
           ),
         ],
@@ -347,18 +356,19 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
   Widget _buildDateRangeButton() {
     return OutlinedButton.icon(
       onPressed: _pickDateRange,
-      icon: const Icon(Icons.date_range, size: 18),
+      icon: const Icon(Icons.date_range, size: 16),
       label: Text(
         _startDate != null && _endDate != null
             ? '${DateFormat('MM/dd').format(_startDate!)} - ${DateFormat('MM/dd').format(_endDate!)}'
-            : 'Date Range',
-        style: const TextStyle(fontSize: 13),
+            : 'Date',
+        style: const TextStyle(fontSize: 12),
+        overflow: TextOverflow.ellipsis,
       ),
       style: OutlinedButton.styleFrom(
         foregroundColor: const Color(0xFF2B6C67),
         side: const BorderSide(color: Color(0xFFE8ECEF)),
         backgroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 22),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),

@@ -945,7 +945,7 @@ class _UserDashboardState extends State<UserDashboard> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
-                childAspectRatio: 0.8,
+                childAspectRatio: 0.68,
               ),
               itemBuilder: (context, index) {
                 final doc = equipmentDocs[index];
@@ -1007,14 +1007,14 @@ class _UserDashboardState extends State<UserDashboard> {
               ),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Stack(
                     children: [
                       Container(
-                        height: 110,
+                        height: 90,
                         width: double.infinity,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
@@ -1066,21 +1066,21 @@ class _UserDashboardState extends State<UserDashboard> {
                     ],
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 10),
 
                   Text(
                     name,
                     style: const TextStyle(
-                      fontSize: 15,
+                      fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF1E293B),
                       letterSpacing: -0.1,
                     ),
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
 
                   Row(
                     children: [
@@ -1119,7 +1119,7 @@ class _UserDashboardState extends State<UserDashboard> {
                     child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
+                          horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFF2B6C67), Color(0xFF1A4A47)],
@@ -1138,12 +1138,12 @@ class _UserDashboardState extends State<UserDashboard> {
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.visibility, size: 16, color: Colors.white),
-                          SizedBox(width: 8),
+                          Icon(Icons.visibility, size: 14, color: Colors.white),
+                          SizedBox(width: 6),
                           Text(
                             "View Details",
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: Colors.white,
                               letterSpacing: 0.3,
