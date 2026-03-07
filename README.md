@@ -10,23 +10,23 @@ Key Features:
 - **Reservation System**: Reservation of equipment with features including:
 - **Checking equipment availability**
 - **Canceling reservations**
-- Extending rental periods
+- **Extending rental periods**
 - **Maintenance Tracking**: Monitoring equipment maintenance status and history
 - **User Profiles**: Managing user information and rental history
 - **Multi-Platform Support**: Designed for Android, iOS, and Web
 
 ## 🛠️ Technology Suite
 
-| Components | Technologies Used |
+|         Components          |            Technologies Used            |
 
-|------------|-----------------|
+|---------------|----------------------|
 
-| **Front End** | Flutter (Dart) |
+|        **Front End**        |              Flutter (Dart)             |
 
-| **Server & Authentication** | Firebase Authentication |
+| **Server & Authentication** |          Firebase Authentication        |
 
-| **Database** | Cloud Firestore |
+|         **Database**        |             Cloud Firestore             |
 
-| **Status Management** | (Derived from the Flutter architecture) |
+|    **Status Management**    | (Derived from the Flutter architecture) |
 
-| Platform Support** | Android, iOS, Web |
+|    **Platform Support**     |           Android, iOS, Web             |
