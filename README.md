@@ -1,16 +1,32 @@
-# itcs444_project
+# UCO Parents Care Center App
 
-A new Flutter project.
+## 📱 Project Overview
 
-## Getting Started
+A cross-platform mobile application, developed using Flutter, that enables users to seamlessly rent equipment. The project offers an integrated rental management system, including user verification, booking management, rent equipments and maintenance tracking easily.
 
-This project is a starting point for a Flutter application.
+Key Features:
+- **User Authentication**: Firebase integration for secure user login and registration
+- **Equipment Preview**: View available equipment with details and status
+- **Reservation System**: Reservation of equipment with features including:
+- **Checking equipment availability**
+- **Canceling reservations**
+- Extending rental periods
+- **Maintenance Tracking**: Monitoring equipment maintenance status and history
+- **User Profiles**: Managing user information and rental history
+- **Multi-Platform Support**: Designed for Android, iOS, and Web
 
-A few resources to get you started if this is your first Flutter project:
+## 🛠️ Technology Suite
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+| Components | Technologies Used |
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+|------------|-----------------|
+
+| **Front End** | Flutter (Dart) |
+
+| **Server & Authentication** | Firebase Authentication |
+
+| **Database** | Cloud Firestore |
+
+| **Status Management** | (Derived from the Flutter architecture) |
+
+| Platform Support** | Android, iOS, Web |
