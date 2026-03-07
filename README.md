@@ -2,7 +2,7 @@
 
 ## 📱 Project Overview
 
-A cross-platform mobile application, developed using Flutter, that enables users to seamlessly rent equipment. The project offers an integrated rental management system, including user verification, booking management, rent equipments and maintenance tracking easily.
+A cross-platform mobile application, developed using Flutter, that enables users to seamlessly rent equipment. The project offers an integrated rental management system, including user verification, booking management, and maintenance tracking easily.
 
 Key Features:
 - **User Authentication**: Firebase integration for secure user login and registration
