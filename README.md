@@ -16,17 +16,10 @@ Key Features:
 - **Multi-Platform Support**: Designed for Android, iOS, and Web
 
 ## 🛠️ Technology Suite
-
-|         Components          |            Technologies Used            |
-
-|---------------|----------------------|
-
-|        **Front End**        |              Flutter (Dart)             |
-
-| **Server & Authentication** |          Firebase Authentication        |
-
-|         **Database**        |             Cloud Firestore             |
-
-|    **Status Management**    | (Derived from the Flutter architecture) |
-
-|    **Platform Support**     |           Android, iOS, Web             |
+| Components | Technologies Used |
+|-------------|----------------|
+| **Front End** | Flutter (Dart) |
+| **Server & Authentication** | Firebase Authentication | 
+| **Database** | Cloud Firestore | 
+| **Status Management** | (Derived from the Flutter architecture) | 
+| **Platform Support** | Android, iOS, Web | 
